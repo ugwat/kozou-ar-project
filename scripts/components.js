@@ -155,7 +155,12 @@ AFRAME.registerComponent('opening-animation', {
   init: function() {
     // マーカーが認識されたときのイベントリスナー
     const markerEl = document.querySelector('[mindar-image-target]');
-    markerEl.addEventListener('targetFound', this.startAnimation.bind(this));
+    if (markerEl) {
+      console.log("マーカー要素を検出しました");
+      markerEl.addEventListener('targetFound', this.startAnimation.bind(this));
+    } else {
+      console.error("マーカー要素が見つかりません");
+    }
     
     // ロゴエンティティの参照を保持
     this.logoEntity = this.el;
@@ -165,10 +170,18 @@ AFRAME.registerComponent('opening-animation', {
     
     // 初期状態では非表示
     this.logoEntity.setAttribute('visible', false);
+    
+    console.log("opening-animationコンポーネント初期化完了");
   },
   
   startAnimation: function() {
-    if (this.animationState !== 'waiting') return;
+    // 状態チェックを追加
+    if (!this.el || this.animationState !== 'waiting') {
+      console.log("アニメーション開始条件を満たしていません。状態:", this.animationState);
+      return;
+    }
+    
+    console.log("オープニングアニメーションを開始します");
     this.animationState = 'starting';
     
     // ロゴを初期位置に配置
@@ -190,9 +203,15 @@ AFRAME.registerComponent('opening-animation', {
       dur: 1000,
       easing: 'easeOutQuad'
     });
-    document.querySelector('[mindar-image-target]').appendChild(flashEntity);
     
-    // 1. 浮かび上がるアニメーション
+    const targetEntity = document.querySelector('[mindar-image-target]');
+    if (targetEntity) {
+      targetEntity.appendChild(flashEntity);
+    } else {
+      console.error("フラッシュエフェクト: ターゲットエンティティが見つかりません");
+    }
+    
+    // 1. 浮かび上がるアニメーション - アニメーション終了イベントを追加
     this.logoEntity.setAttribute('animation__rise', {
       property: 'position',
       from: '0 0.05 0',
@@ -201,12 +220,18 @@ AFRAME.registerComponent('opening-animation', {
       easing: 'easeOutQuad'
     });
     
-    // アニメーションの連鎖
-    setTimeout(() => this.growAnimation(), 1000);
+    // アニメーション終了を監視して次のステップに進む
+    this.logoEntity.addEventListener('animationcomplete__rise', () => {
+      console.log("浮かび上がりアニメーション完了、拡大アニメーションを開始");
+      this.growAnimation();
+    }, { once: true });
   },
   
   growAnimation: function() {
-    if (this.animationState !== 'starting') return;
+    if (this.animationState !== 'starting') {
+      console.log("拡大アニメーションをスキップします。状態:", this.animationState);
+      return;
+    }
     this.animationState = 'growing';
     
     // 2. 拡大と回転のアニメーション
@@ -226,12 +251,18 @@ AFRAME.registerComponent('opening-animation', {
       easing: 'easeInOutQuad'
     });
     
-    // アニメーションの連鎖
-    setTimeout(() => this.floatAnimation(), 2500);
+    // 拡大アニメーション完了を監視
+    this.logoEntity.addEventListener('animationcomplete__grow', () => {
+      console.log("拡大アニメーション完了、浮遊アニメーションを開始");
+      this.floatAnimation();
+    }, { once: true });
   },
   
   floatAnimation: function() {
-    if (this.animationState !== 'growing') return;
+    if (this.animationState !== 'growing') {
+      console.log("浮遊アニメーションをスキップします。状態:", this.animationState);
+      return;
+    }
     this.animationState = 'floating';
     
     // 3. ふわふわ浮遊するアニメーション
@@ -256,12 +287,20 @@ AFRAME.registerComponent('opening-animation', {
       easing: 'easeInOutSine'
     });
     
-    // アニメーションの連鎖
-    setTimeout(() => this.flyAwayAnimation(), 5000);
+    // 浮遊アニメーション後、飛び去りアニメーションへ
+    console.log("浮遊アニメーション開始、5秒後に飛び去りアニメーションへ");
+    setTimeout(() => {
+      this.flyAwayAnimation();
+    }, 5000);
   },
   
   flyAwayAnimation: function() {
-    if (this.animationState !== 'floating') return;
+    if (this.animationState !== 'floating') {
+      console.log("飛び去りアニメーションをスキップします。状態:", this.animationState);
+      return;
+    }
+    
+    console.log("飛び去りアニメーションを開始");
     this.animationState = 'flying';
     
     // 浮遊アニメーションを停止
@@ -295,43 +334,34 @@ AFRAME.registerComponent('opening-animation', {
       easing: 'easeInQuad'
     });
     
-    // 次のステップに移行
-    setTimeout(() => this.transitionToNextStep(), 2000);
+    // 飛び去りアニメーション完了を監視
+    this.logoEntity.addEventListener('animationcomplete__flyaway', () => {
+      console.log("飛び去りアニメーション完了、次のステップへ移行");
+      this.transitionToNextStep();
+    }, { once: true });
   },
   
   transitionToNextStep: function() {
-    if (this.animationState !== 'flying') return;
+    if (this.animationState !== 'flying') {
+      console.log("次のステップへの移行をスキップします。状態:", this.animationState);
+      return;
+    }
+    
+    console.log("次のステップへ移行");
     this.animationState = 'completed';
     
     // ロゴを非表示に
     this.logoEntity.setAttribute('visible', false);
     
-    // パーティクルエフェクトの表示（オプション）
-    const particleEntity = document.createElement('a-entity');
-    particleEntity.setAttribute('position', '0 0 -1');
-    particleEntity.setAttribute('particle-system', {
-      preset: 'dust',
-      particleCount: 100,
-      color: '#00a2ff',
-      size: 0.2,
-      texture: 'https://cdn.glitch.me/d5169f5e-9e1d-4f22-9785-2c61b2afa997%2Fparticle.png',
-      blending: 'additive',
-      randomize: true
-    });
-    document.querySelector('[mindar-image-target]').appendChild(particleEntity);
-    
-    // 1秒後にパーティクルを消去
-    setTimeout(() => {
-      particleEntity.parentNode.removeChild(particleEntity);
-    }, 3000);
-    
     // Step 1のコンテンツを表示
+    console.log("ステップ1のコンテンツを表示");
     this.showStep1Content();
   },
   
   showStep1Content: function() {
     // 実際のステップ1のコンテンツを表示する処理をここに実装
     // 例: ステップガイドコンポーネントの呼び出し
+    console.log("ステップ1のコンテンツを表示中");
     const event = new CustomEvent('show-step', { detail: { step: 1 } });
     document.dispatchEvent(event);
   }
@@ -424,5 +454,39 @@ AFRAME.registerComponent('particle-system', {
       }
     });
     this.particles = [];
+  }
+});
+
+// ステップガイドコンポーネント (まだ完全には実装されていない)
+AFRAME.registerComponent('step-guide', {
+  init: function() {
+    this.currentStep = 0;
+    this.stepContent = [
+      { title: "ステップ1", text: "まずは麺をほぐす" },
+      { title: "ステップ2", text: "具材と麺を混ぜる" },
+      { title: "ステップ3", text: "一口目を味わう" },
+      { title: "ステップ4", text: "お好みで辛味を加える" },
+      { title: "ステップ5", text: "最後までおいしく食べる" }
+    ];
+    
+    // ステップ表示イベントのリスナー
+    document.addEventListener('show-step', this.showStep.bind(this));
+  },
+  
+  showStep: function(event) {
+    const step = event.detail.step;
+    if (step >= 1 && step <= 5) {
+      this.currentStep = step - 1;
+      this.updateStepDisplay();
+    }
+  },
+  
+  updateStepDisplay: function() {
+    // 該当するステップのコンテンツを表示
+    const step = this.stepContent[this.currentStep];
+    console.log(`ステップ表示: ${step.title} - ${step.text}`);
+    
+    // 実際の表示処理をここに実装
+    // この部分はまだ完全には実装されていない
   }
 });
