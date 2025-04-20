@@ -56,56 +56,45 @@
       background-color: #000;
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
       z-index: 999;
       color: #00ff00;
       font-family: 'Press Start 2P', cursive;
-      font-size: 14px;
       overflow: hidden;
     }
     
     .retro-title {
-      margin-top: 25px;
+      margin-top: 5vh;
+      padding: 0 5vw;
       text-align: center;
       line-height: 1.6;
+      font-size: 2.2vw;
     }
     
-    .grid-container {
-      position: relative;
-      width: 100%;
-      height: 70%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .grid-background {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .kozou-logo {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      max-width: 70%;
-      max-height: 70%;
-      z-index: 5;
+    /* スマホ向け */
+    @media (max-width: 768px) {
+      .retro-title {
+        font-size: 3.5vw;
+        margin-top: 4vh;
+      }
     }
     
     .loading-text {
       text-align: center;
-      margin: 20px 0;
+      margin: 2vh 0;
+      font-size: 2.5vw;
+    }
+    
+    @media (max-width: 768px) {
+      .loading-text {
+        font-size: 4vw;
+      }
     }
     
     .progress-container {
-      width: 80%;
-      height: 30px;
+      width: 70%;
+      height: 3vh;
       border: 2px solid #00ff00;
-      margin: 10px auto;
+      margin: 1vh auto;
       position: relative;
     }
     
@@ -121,64 +110,59 @@
       100% { width: 100%; }
     }
     
-    .next-step {
-      margin-top: 40px;
-      text-align: center;
-    }
-    
-    .step-text {
-      font-size: 18px;
-      margin-bottom: 15px;
-    }
-    
-    .step-divider {
-      width: 80%;
-      height: 2px;
-      background-color: #00ff00;
-      margin: 0 auto 20px auto;
-    }
-    
-    .instruction-container {
+    .grid-container {
+      position: relative;
+      width: 100%;
+      height: 65vh;
       display: flex;
+      justify-content: center;
       align-items: center;
-      margin: 0 auto;
-      width: 80%;
+      margin-top: 1vh;
     }
     
-    .bowl-icon {
-      width: 80px;
-      height: 80px;
-      margin-right: 20px;
+    .grid-background {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
     
-    .instruction-text {
-      font-family: 'DotGothic16', sans-serif;
-      font-size: 16px;
-      line-height: 1.4;
-    }
-    
-    .go-button {
-      margin-top: 20px;
-      color: #ffff00;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 10px;
-      border-bottom: 2px solid #ffff00;
-      text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
-      animation: blink 1s infinite;
-    }
-    
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
+    .kozou-logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 70%;
+      max-height: 40%;
+      z-index: 5;
     }
     
     .bottom-text {
       position: absolute;
-      bottom: 20px;
-      left: 20px;
-      font-size: 12px;
+      bottom: 3vh;
+      left: 3vw;
+      font-size: 1.5vw;
       color: #00ff00;
+    }
+    
+    @media (max-width: 768px) {
+      .bottom-text {
+        font-size: 2.5vw;
+      }
+    }
+    
+    .emblem-logo {
+      position: absolute;
+      bottom: 3vh;
+      right: 3vw;
+      width: 60px;
+      height: 60px;
+    }
+    
+    @media (max-width: 768px) {
+      .emblem-logo {
+        width: 40px;
+        height: 40px;
+      }
     }
     
     /* ARコンテナ */
@@ -553,30 +537,11 @@
       <img src="assets/kozou-logo.png" class="kozou-logo" alt="KOZOU Logo">
     </div>
     
-    <div class="next-step">
-      <div class="step-text">NEXT STEP:</div>
-      <div class="step-divider"></div>
-      
-      <div class="instruction-container">
-        <img src="assets/bowl-icon.png" class="bowl-icon" alt="Bowl Icon">
-        <div class="instruction-text">
-          カメラへのアクセスを許可して、<br>
-          丼のロゴを読み取ってください.<br>
-          ALLOW ACCESS TO THE CAMERA AND<br>
-          READ THE RICE BOWL LOGO.
-        </div>
-      </div>
-      
-      <div class="go-button" id="start-button">
-        GO NEXT STEP &gt;&gt;&gt;&gt;&gt;&gt;&gt;
-      </div>
-    </div>
-    
     <div class="bottom-text">
       &gt;DO NOT CLOSE THIS SITE PLAESE
     </div>
     
-    <img src="assets/emblem-logo.png" style="position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px;">
+    <img src="assets/emblem-logo.png" class="emblem-logo" alt="Emblem Logo">
   </div>
 
   <!-- ARスキャナーオーバーレイ -->
@@ -701,7 +666,6 @@
     // 要素の参照
     const loadingScreen = document.getElementById('loading-screen');
     const retroStartScreen = document.getElementById('retro-start-screen');
-    const startButton = document.getElementById('start-button');
     const debugPanel = document.getElementById('debug-panel');
     const debugStatus = document.getElementById('debug-status');
     const arContainer = document.getElementById('ar-container');
@@ -726,20 +690,17 @@
         // ローディング画面を非表示にしてスタート画面を表示
         loadingScreen.style.display = 'none';
         retroStartScreen.style.display = 'block';
+        
+        // 3秒後に自動でARシーンを作成（スタートボタンクリックをシミュレート）
+        setTimeout(() => {
+          createARScene();
+        }, 3000);
       }, 1500);
       
       // エラーハンドリング
       window.addEventListener('error', function(event) {
         updateDebugStatus(`エラー: ${event.message}`);
       });
-    });
-    
-    // スタートボタンクリック時の処理
-    startButton.addEventListener('click', function() {
-      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
-      
-      // ARシーンを動的に作成
-      createARScene();
     });
     
     // ARシーンを動的に作成する関数
@@ -836,12 +797,6 @@
         // カメラエラー時にスタート画面を再表示
         retroStartScreen.style.display = 'block';
         scannerOverlay.style.display = 'none';
-        
-        // エラーメッセージを表示
-        const instructionText = document.querySelector('.instruction-text');
-        if (instructionText) {
-          instructionText.innerHTML = "カメラへのアクセスが拒否されました。<br>再度お試しください。";
-        }
       });
     }
     
@@ -880,9 +835,6 @@
     // ターゲットロスト時の処理
     function onTargetLost() {
       updateDebugStatus("ターゲットロスト");
-      
-      // ターゲットを見失った後は、スキャナーは再表示しない
-      // 必要に応じてここでスキャナーを再表示するコードを追加
     }
     
     // カメラキャンバスのスタイルを調整する関数
