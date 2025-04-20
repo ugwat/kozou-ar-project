@@ -1,335 +1,461 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>KOZOU+ まぜそばAR</title>
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
-  <script src="scripts/components.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>改良版未来的ARスキャナー</title>
   <style>
-    body { 
-      margin: 0; 
-      overflow: hidden; 
-      width: 100%; 
-      height: 100vh; /* 画面全体の高さを使用 */
-    }
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
     
-    /* ローディング画面 */
-    #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
+    body {
+      margin: 0;
+      padding: 0;
       width: 100%;
-      height: 100%;
-      background-color: black;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      color: white;
-    }
-    .spinner {
-      border: 5px solid rgba(0, 0, 0, 0.1);
-      border-top: 5px solid #00a2ff;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    
-    /* スタート画面 */
-    #start-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 999;
-      color: white;
-      text-align: center;
-    }
-    .kozou-logo {
-      color: #00a2ff;
-      font-size: 3rem;
-      margin-bottom: 2rem;
-      font-weight: bold;
-      text-shadow: 0 0 10px rgba(0, 162, 255, 0.7);
-    }
-    .welcome-text {
-      margin-bottom: 1.5rem;
-      font-size: 1.2rem;
-      max-width: 80%;
-    }
-    .start-button {
-      background-color: #00a2ff;
-      color: white;
-      border: none;
-      padding: 15px 40px;
-      font-size: 1.2rem;
-      border-radius: 30px;
-      cursor: pointer;
-      margin-top: 2rem;
-      box-shadow: 0 0 15px rgba(0, 162, 255, 0.5);
-    }
-    
-    /* デバッグパネル */
-    #debug-panel {
-      position: fixed;
-      top: 0;
-      left: 0;
-      background-color: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 10px;
-      font-family: monospace;
-      z-index: 1001;
-      pointer-events: none;
-    }
-    
-    /* SNSシェア */
-    .sns-share {
-      position: fixed;
-      bottom: 20px;
-      width: 100%;
-      text-align: center;
-      z-index: 900;
-      color: white;
-      font-size: 0.9rem;
-    }
-    .sns-share span {
-      color: #00a2ff;
-      font-weight: bold;
-    }
-
-    /* ARコンテナ */
-    #ar-container {
-      width: 100%;
-      height: 100vh; /* 画面全体の高さを使用 */
+      height: 100vh;
+      background: url('/api/placeholder/400/640') center center/cover no-repeat;
+      font-family: 'Share Tech Mono', monospace;
+      overflow: hidden;
       position: relative;
     }
-
-    /* ARシーン */
-    #ar-scene {
-      width: 100%;
-      height: 100%;
-      display: block;
+    
+    .scanner-overlay {
       position: absolute;
       top: 0;
       left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
     }
-
-    /* A-Frameのキャンバスを全画面表示 */
-    .a-canvas {
-      width: 100% !important;
-      height: 100% !important;
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
+    
+    .main-frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 2px solid rgba(0, 162, 255, 0.5);
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    .scanner-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .target-scanner {
+      position: relative;
+      width: 256px;
+      height: 256px;
+    }
+    
+    .corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: rgba(0, 210, 255, 0.8);
+      opacity: 0.8;
+    }
+    
+    .top-left {
+      top: 0;
+      left: 0;
+      border-top: 2px solid;
+      border-left: 2px solid;
+    }
+    
+    .top-right {
+      top: 0;
+      right: 0;
+      border-top: 2px solid;
+      border-right: 2px solid;
+    }
+    
+    .bottom-left {
+      bottom: 0;
+      left: 0;
+      border-bottom: 2px solid;
+      border-left: 2px solid;
+    }
+    
+    .bottom-right {
+      bottom: 0;
+      right: 0;
+      border-bottom: 2px solid;
+      border-right: 2px solid;
+    }
+    
+    /* スキャンバーの新しいスタイル */
+    .scan-bar {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(to right, 
+        rgba(0, 210, 255, 0) 0%,
+        rgba(0, 210, 255, 0.8) 50%,
+        rgba(0, 210, 255, 0) 100%);
+      opacity: 0.8;
+      animation: scanbar 2s ease-in-out infinite;
+    }
+    
+    @keyframes scanbar {
+      0% {
+        left: -100%;
+        opacity: 0.3;
+      }
+      50% {
+        left: 0;
+        opacity: 0.8;
+      }
+      100% {
+        left: 100%;
+        opacity: 0.3;
+      }
+    }
+    
+    /* ターゲットサークルの代わりに新しいスキャンフレーム */
+    .scan-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border: 1px solid rgba(0, 210, 255, 0.6);
+      box-shadow: 0 0 10px rgba(0, 162, 255, 0.3);
+      opacity: 0.8;
+      animation: pulse-frame 2s infinite;
+    }
+    
+    @keyframes pulse-frame {
+      0% {
+        opacity: 0.6;
+        box-shadow: 0 0 5px rgba(0, 162, 255, 0.3);
+      }
+      50% {
+        opacity: 0.8;
+        box-shadow: 0 0 15px rgba(0, 162, 255, 0.5);
+      }
+      100% {
+        opacity: 0.6;
+        box-shadow: 0 0 5px rgba(0, 162, 255, 0.3);
+      }
+    }
+    
+    /* 座標テキスト - 左側 */
+    .coordinates-left {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      color: #00d2ff;
+      font-size: 10px;
+      opacity: 0.8;
+      text-align: left;
+      height: 100px;
+      overflow: hidden;
+    }
+    
+    .coord-number {
+      font-size: 10px;
+      line-height: 14px;
+      animation: scroll-numbers 3s linear infinite;
+    }
+    
+    /* 座標テキスト - 右側 */
+    .coordinates-right {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      color: #00d2ff;
+      font-size: 10px;
+      opacity: 0.8;
+      text-align: right;
+      height: 100px;
+      overflow: hidden;
+    }
+    
+    @keyframes scroll-numbers {
+      0% { transform: translateY(-300px); }
+      100% { transform: translateY(300px); }
+    }
+    
+    .crosshair-h {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 2px;
+      background-color: rgba(0, 210, 255, 0.8);
+      opacity: 0.8;
+    }
+    
+    .crosshair-v {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 48px;
+      background-color: rgba(0, 210, 255, 0.8);
+      opacity: 0.8;
+    }
+    
+    .status-indicator {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00d2ff;
+      font-size: 12px;
+      text-align: center;
+      width: 256px;
+    }
+    
+    .status-text {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      animation: pulse-text 2s infinite;
+    }
+    
+    @keyframes pulse-text {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+    
+    .status-bars {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+    
+    .bar {
+      width: 20px;
+      height: 4px;
+      background-color: rgba(0, 51, 77, 0.8);
+    }
+    
+    .bar.active {
+      background-color: rgba(0, 210, 255, 0.8);
+    }
+    
+    .bottom-status {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00d2ff;
+      font-size: 12px;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .system-name {
+      text-align: center;
+      width: 100%;
+    }
+    
+    .pulse-dot {
+      animation: pulse-dot 2s infinite;
+    }
+    
+    @keyframes pulse-dot {
+      0% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.3;
+      }
+    }
+    
+    .instruction {
+      text-align: center;
+      font-size: 10px;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+    
+    .hud-left {
+      position: absolute;
+      top: 25%;
+      left: 16px;
+      color: #00d2ff;
+      font-size: 12px;
+    }
+    
+    .hud-right {
+      position: absolute;
+      top: 25%;
+      right: 16px;
+      color: #00d2ff;
+      font-size: 12px;
+      text-align: right;
+    }
+    
+    .hud-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .hud-dot {
+      width: 4px;
+      height: 4px;
+      background-color: #00d2ff;
+      margin: 0 4px;
+    }
+    
+    .hud-text {
+      font-size: 12px;
     }
   </style>
 </head>
 <body>
-  <!-- デバッグパネル -->
-  <div id="debug-panel" style="display: none;">
-    デバッグ情報: <span id="debug-status">初期化中...</span>
+  <div class="scanner-overlay">
+    <div class="main-frame">
+      <div class="scanner-container">
+        <div class="target-scanner">
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+          
+          <!-- 新しいスキャンバー -->
+          <div class="scan-bar"></div>
+          
+          <!-- 新しいスキャンフレーム -->
+          <div class="scan-frame"></div>
+          
+          <!-- 座標テキスト - 左側 -->
+          <div class="coordinates-left">
+            <div class="coord-number">
+              X: 0.342<br>
+              Y: 1.092<br>
+              Z: 0.875<br>
+              X: 0.341<br>
+              Y: 1.095<br>
+              Z: 0.873<br>
+              X: 0.339<br>
+              Y: 1.098<br>
+              Z: 0.877<br>
+              X: 0.336<br>
+              Y: 1.102<br>
+              Z: 0.880<br>
+              X: 0.334<br>
+              Y: 1.105<br>
+              Z: 0.883<br>
+              X: 0.332<br>
+              Y: 1.108<br>
+              Z: 0.885<br>
+            </div>
+          </div>
+          
+          <!-- 座標テキスト - 右側 -->
+          <div class="coordinates-right">
+            <div class="coord-number" style="animation-delay: -1.5s;">
+              A: 42.31<br>
+              B: 18.72<br>
+              C: 29.54<br>
+              A: 42.35<br>
+              B: 18.70<br>
+              C: 29.57<br>
+              A: 42.38<br>
+              B: 18.68<br>
+              C: 29.60<br>
+              A: 42.42<br>
+              B: 18.65<br>
+              C: 29.63<br>
+              A: 42.45<br>
+              B: 18.63<br>
+              C: 29.66<br>
+              A: 42.49<br>
+              B: 18.61<br>
+              C: 29.69<br>
+            </div>
+          </div>
+          
+          <div class="crosshair-h"></div>
+          <div class="crosshair-v"></div>
+        </div>
+      </div>
+      
+      <div class="status-indicator">
+        <div class="status-text">マーカースキャン中</div>
+        <div class="status-bars">
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </div>
+      
+      <div class="bottom-status">
+        <div class="system-name">
+          KOZOU+ AR システム <span class="pulse-dot">●</span>
+        </div>
+        <div class="instruction">
+          QRコードをフレーム内に収めてください
+        </div>
+      </div>
+    </div>
+    
+    <div class="hud-left">
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">AR.SYS</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">SCAN.v2</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">MODEL.QR</div>
+      </div>
+    </div>
+    
+    <div class="hud-right">
+      <div class="hud-item">
+        <div class="hud-text">INIT_05</div>
+        <div class="hud-dot"></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-text">CAM_ON</div>
+        <div class="hud-dot"></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-text" id="tracking-status">SEEK_31%</div>
+        <div class="hud-dot"></div>
+      </div>
+    </div>
   </div>
-
-  <!-- ローディング画面 -->
-  <div id="loading-screen">
-    <div class="spinner"></div>
-    <div>読み込み中...</div>
-  </div>
-
-  <!-- スタート画面 - 最初は非表示 -->
-  <div id="start-screen" style="display: none;">
-    <div class="kozou-logo">KOZOU+</div>
-    <div class="welcome-text">まぜそば体験ガイドへようこそ</div>
-    <div class="welcome-text">カメラを起動してロゴを読み込んでください</div>
-    <button class="start-button" id="start-button">タップして開始</button>
-  </div>
-
-  <!-- SNSシェア -->
-  <div class="sns-share">
-    ぜひSNSでシェアしてください <span>#KOZOU</span>
-  </div>
-
-  <!-- ARコンテンツを動的に追加するためのコンテナ -->
-  <div id="ar-container"></div>
-
-  <script>
-    // 要素の参照
-    const loadingScreen = document.getElementById('loading-screen');
-    const startScreen = document.getElementById('start-screen');
-    const startButton = document.getElementById('start-button');
-    const debugPanel = document.getElementById('debug-panel');
-    const debugStatus = document.getElementById('debug-status');
-    const arContainer = document.getElementById('ar-container');
-    
-    // デバッグログの追加関数
-    function updateDebugStatus(message) {
-      debugStatus.textContent = message;
-      console.log(`[DEBUG] ${message}`);
-    }
-    
-    // 初期化処理
-    document.addEventListener("DOMContentLoaded", function() {
-      updateDebugStatus("DOM読み込み完了");
-      
-      // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
-      setTimeout(() => {
-        updateDebugStatus("リソース読み込み完了");
-        
-        // ローディング画面を非表示にしてスタート画面を表示
-        loadingScreen.style.display = 'none';
-        startScreen.style.display = 'flex';
-      }, 1500);
-      
-      // エラーハンドリング
-      window.addEventListener('error', function(event) {
-        updateDebugStatus(`エラー: ${event.message}`);
-      });
-    });
-    
-    // スタートボタンクリック時の処理
-    startButton.addEventListener('click', function() {
-      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
-      
-      // スタート画面の表示を維持したまま、ARシーンを動的に作成
-      createARScene();
-    });
-    
-    // ARシーンを動的に作成する関数
-    function createARScene() {
-      updateDebugStatus("ARシーンを作成中...");
-      
-      // A-Frameシーンを動的に作成
-      const sceneEl = document.createElement('a-scene');
-      sceneEl.setAttribute('id', 'ar-scene');
-      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
-      sceneEl.setAttribute('color-space', 'sRGB');
-      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
-      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
-      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
-      
-      // 画面サイズに合わせるための属性を追加
-      sceneEl.setAttribute('embedded', '');
-      sceneEl.setAttribute('seamless-tab-navigation', '');
-      
-      // アセット
-      const assetsEl = document.createElement('a-assets');
-      
-      const emblemLogo = document.createElement('img');
-      emblemLogo.setAttribute('id', 'emblem-logo');
-      emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
-      
-      const textLogo = document.createElement('img');
-      textLogo.setAttribute('id', 'text-logo');
-      textLogo.setAttribute('src', 'assets/text-logo.png');
-      
-      assetsEl.appendChild(emblemLogo);
-      assetsEl.appendChild(textLogo);
-      sceneEl.appendChild(assetsEl);
-      
-      // カメラ
-      const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('position', '0 0 0');
-      cameraEl.setAttribute('look-controls', 'enabled: false');
-      sceneEl.appendChild(cameraEl);
-      
-      // ターゲットコンテナ
-      const targetContainerEl = document.createElement('a-entity');
-      targetContainerEl.setAttribute('id', 'target-container');
-      targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
-      
-      // ロゴ表示
-      const logoDisplayEl = document.createElement('a-plane');
-      logoDisplayEl.setAttribute('id', 'logo-display');
-      logoDisplayEl.setAttribute('position', '0 0 0');
-      logoDisplayEl.setAttribute('hologram-effect', '');
-      logoDisplayEl.setAttribute('opening-animation', '');
-      
-      const logoImageEl = document.createElement('a-image');
-      logoImageEl.setAttribute('src', '#emblem-logo');
-      logoImageEl.setAttribute('width', '1');
-      logoImageEl.setAttribute('height', '1');
-      logoImageEl.setAttribute('opacity', '0.9');
-      
-      logoDisplayEl.appendChild(logoImageEl);
-      targetContainerEl.appendChild(logoDisplayEl);
-      sceneEl.appendChild(targetContainerEl);
-      
-      // ARコンテナに追加
-      arContainer.appendChild(sceneEl);
-      
-      // シーンの初期化完了イベントを監視
-      sceneEl.addEventListener('loaded', function() {
-        updateDebugStatus("ARシーン初期化完了、カメラへのアクセスを要求します");
-        
-        // スタート画面を非表示
-        startScreen.style.display = 'none';
-        
-        // MindARを開始（ここでカメラへのアクセス要求が発生）
-        const mindARSystem = sceneEl.systems['mindar-image-system'];
-        mindARSystem.start();
-        
-        // ターゲット検出イベントリスナー設定
-        targetContainerEl.addEventListener('targetFound', function() {
-          updateDebugStatus("ターゲット検出");
-        });
-        
-        targetContainerEl.addEventListener('targetLost', function() {
-          updateDebugStatus("ターゲットロスト");
-        });
-
-        // カメラがアクティブになった後のスタイル調整
-        setTimeout(() => {
-          adjustCanvasStyles();
-        }, 500);
-      });
-      
-      // エラーハンドリング
-      sceneEl.addEventListener('camera-error', function() {
-        updateDebugStatus("カメラエラー: アクセスが拒否されました");
-        
-        // カメラエラー時にスタート画面を再表示
-        startScreen.style.display = 'flex';
-        startScreen.querySelector('.welcome-text').textContent = 
-          "カメラへのアクセスが拒否されました。再度お試しください。";
-      });
-    }
-    
-    // カメラキャンバスのスタイルを調整する関数
-    function adjustCanvasStyles() {
-      updateDebugStatus("カメラ表示スタイルを調整中...");
-      
-      // A-Frameのキャンバス要素
-      const canvas = document.querySelector('.a-canvas');
-      if (canvas) {
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "absolute";
-        canvas.style.top = "0";
-        canvas.style.left = "0";
-        canvas.style.objectFit = "cover"; // 画面全体をカバー
-      } else {
-        updateDebugStatus("キャンバス要素が見つかりません");
-      }
-    }
-    
-    // デバッグ表示の切り替え（URLに?debug=trueを付けるとデバッグモード）
-    if (window.location.search.includes('debug=true')) {
-      debugPanel.style.display = 'block';
-    }
-  </script>
 </body>
 </html>
