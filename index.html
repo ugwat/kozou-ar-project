@@ -23,6 +23,7 @@
       height: 100vh;
       background-color: #000;
       font-family: 'Press Start 2P', cursive;
+      color: #00ff00;
     }
     
     /* ローディング画面 */
@@ -61,43 +62,134 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: #000;
-      overflow: hidden;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    
+    .retro-container {
+      position: relative;
+      width: 90%;
+      max-width: 700px;
+      height: 700px;
+      max-height: 90vh;
+      border: 3px solid #00ff00;
+      padding: 20px;
       display: flex;
       flex-direction: column;
-      z-index: 999;
-      color: #00ff00;
     }
     
     .retro-title {
-      padding: 20px 10px;
-      text-align: center;
-      font-size: 14px;
-      line-height: 1.8;
+      height: 60px;
+      overflow: hidden;
     }
     
-    @media screen and (min-width: 768px) {
-      .retro-title {
-        font-size: 18px;
-      }
-    }
-    
-    .loading-text {
-      text-align: center;
-      margin: 10px 0;
+    .typing-text {
+      display: inline-block;
+      white-space: pre;
+      margin: 0;
+      line-height: 1.5;
+      height: 40px;
       font-size: 16px;
     }
     
-    .progress-container {
-      width: 80%;
-      max-width: 400px;
-      height: 30px;
+    .kozou-logo-container {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .kozou-logo {
+      max-width: 80%;
+      max-height: 200px;
+      object-fit: contain;
+    }
+    
+    .next-step {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      color: #00ff00;
+    }
+    
+    .next-step-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    
+    .next-step-divider {
+      width: 100%;
+      height: 2px;
+      background-color: #00ff00;
+      margin-bottom: 20px;
+    }
+    
+    .instruction-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .bowl-icon {
+      width: 80px;
+      height: 80px;
       border: 2px solid #00ff00;
-      margin: 10px auto;
-      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-right: 20px;
+    }
+    
+    .bowl-icon img {
+      width: 60px;
+      height: 60px;
+    }
+    
+    .instruction-text {
+      font-family: 'DotGothic16', sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      color: #00ff00;
+    }
+    
+    .go-button {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 18px;
+      color: #ffff00;
+      text-align: center;
+      padding: 10px 0;
+      cursor: pointer;
+      text-decoration: underline;
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .progress-container {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      right: 20px;
+      text-align: center;
+    }
+    
+    .progress-text {
+      margin-bottom: 10px;
+      font-size: 14px;
     }
     
     .progress-bar {
+      width: 100%;
+      height: 30px;
+      border: 2px solid #00ff00;
+      position: relative;
+    }
+    
+    .progress-fill {
       height: 100%;
       width: 40%;
       background-color: #00ff00;
@@ -109,61 +201,9 @@
       100% { width: 100%; }
     }
     
-    .grid-container {
-      position: relative;
-      width: 100%;
-      flex: 1;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-    
-    .grid-background {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    
-    .kozou-logo {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 70%;
-      max-width: 300px;
-      object-fit: contain;
-    }
-    
-    .bottom-area {
-      width: 100%;
-      padding: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    
-    .bottom-text {
-      font-size: 10px;
-      color: #00ff00;
-    }
-    
-    @media screen and (min-width: 768px) {
-      .bottom-text {
-        font-size: 12px;
-      }
-    }
-    
-    .emblem-logo {
-      width: 40px;
-      height: 40px;
-    }
-    
-    @media screen and (min-width: 768px) {
-      .emblem-logo {
-        width: 60px;
-        height: 60px;
-      }
+    @keyframes typing {
+      from { width: 0; }
+      to { width: 100%; }
     }
     
     /* ARコンテナ */
@@ -185,7 +225,7 @@
 
     /* iOS Safariでの全画面表示対応 */
     @supports (-webkit-touch-callout: none) {
-      #retro-start-screen, #ar-container, .a-canvas {
+      body, #retro-start-screen, #ar-container, .a-canvas {
         height: -webkit-fill-available !important;
       }
     }
@@ -204,27 +244,44 @@
   </div>
 
   <!-- レトロスタート画面 -->
-  <div id="retro-start-screen" style="display: none;">
-    <div class="retro-title">
-      &gt;HOW TO EAT OUR MAZESOBA...<br>
-      &gt;WE ARE HAPPY TO SHERE ON YOUR : SNS
-    </div>
-    
-    <div class="loading-text">CALLING...</div>
-    <div class="progress-container">
-      <div class="progress-bar"></div>
-    </div>
-    
-    <div class="grid-container">
-      <img src="assets/grid-background.png" class="grid-background" alt="Grid Background">
-      <img src="assets/kozou-logo.png" class="kozou-logo" alt="KOZOU Logo">
-    </div>
-    
-    <div class="bottom-area">
-      <div class="bottom-text">
-        &gt;DO NOT CLOSE THIS SITE PLAESE
+  <div id="retro-start-screen">
+    <div class="retro-container">
+      <div class="retro-title">
+        <div class="typing-text" id="typing-text1">&gt;HOW TO EAT OUR MAZESOBA...</div>
+        <div class="typing-text" id="typing-text2">&gt;WE ARE HAPPY TO SHERE ON YOUR : SNS</div>
       </div>
-      <img src="assets/emblem-logo.png" class="emblem-logo" alt="Emblem Logo">
+      
+      <div class="kozou-logo-container">
+        <img src="assets/kozou-logo.png" class="kozou-logo" alt="KOZOU Logo">
+      </div>
+      
+      <div class="next-step">
+        <div class="next-step-title">NEXT STEP:</div>
+        <div class="next-step-divider"></div>
+        
+        <div class="instruction-container">
+          <div class="bowl-icon">
+            <img src="assets/bowl-icon.png" alt="Bowl Icon">
+          </div>
+          <div class="instruction-text">
+            カメラへのアクセスを許可して、<br>
+            丼のロゴを読み取ってください.<br>
+            ALLOW ACCESS TO THE CAMERA AND<br>
+            READ THE RICE BOWL LOGO.
+          </div>
+        </div>
+        
+        <div class="go-button" id="start-button">
+          GO NEXT STEP &gt;&gt;&gt;&gt;&gt;&gt;&gt;
+        </div>
+      </div>
+      
+      <div class="progress-container">
+        <div class="progress-text">CALLING...</div>
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -235,9 +292,24 @@
     // 要素の参照
     const loadingScreen = document.getElementById('loading-screen');
     const retroStartScreen = document.getElementById('retro-start-screen');
+    const startButton = document.getElementById('start-button');
     const debugPanel = document.getElementById('debug-panel');
     const debugStatus = document.getElementById('debug-status');
     const arContainer = document.getElementById('ar-container');
+    const typingText1 = document.getElementById('typing-text1');
+    const typingText2 = document.getElementById('typing-text2');
+    
+    // タイピングアニメーション用の関数
+    function typeWriter(element, text, i, callback) {
+      if (i < text.length) {
+        element.innerHTML = text.substring(0, i+1);
+        setTimeout(function() {
+          typeWriter(element, text, i + 1, callback);
+        }, 80);
+      } else if (callback) {
+        setTimeout(callback, 500);
+      }
+    }
     
     // デバッグログの追加関数
     function updateDebugStatus(message) {
@@ -257,7 +329,17 @@
         
         // ローディング画面を非表示にしてスタート画面を表示
         loadingScreen.style.display = 'none';
-        retroStartScreen.style.display = 'block';
+        retroStartScreen.style.display = 'flex';
+        
+        // タイピングアニメーションを開始
+        const text1 = typingText1.textContent;
+        const text2 = typingText2.textContent;
+        typingText1.textContent = "";
+        typingText2.textContent = "";
+        
+        typeWriter(typingText1, text1, 0, function() {
+          typeWriter(typingText2, text2, 0);
+        });
       }, 1500);
       
       // エラーハンドリング
@@ -266,16 +348,16 @@
       });
     });
     
-    // 進行するための関数（クリックイベントなどで呼び出す）
-    function startARExperience() {
-      updateDebugStatus("ARエクスペリエンス開始");
+    // スタートボタンクリック時の処理
+    startButton.addEventListener('click', function() {
+      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
       
       // スタート画面を非表示
       retroStartScreen.style.display = 'none';
       
       // ARシーンを動的に作成
       createARScene();
-    }
+    });
     
     // ARシーンを動的に作成する関数
     function createARScene() {
@@ -377,7 +459,7 @@
         updateDebugStatus("カメラエラー: アクセスが拒否されました");
         
         // カメラエラー時にスタート画面を再表示
-        retroStartScreen.style.display = 'block';
+        retroStartScreen.style.display = 'flex';
       });
     }
     
@@ -385,11 +467,6 @@
     if (window.location.search.includes('debug=true')) {
       debugPanel.style.display = 'block';
     }
-    
-    // イベントリスナーを追加（クリックでARエクスペリエンスを開始）
-    retroStartScreen.addEventListener('click', function() {
-      startARExperience();
-    });
   </script>
 </body>
 </html>
