@@ -1,30 +1,213 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>改良版未来的ARスキャナー</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KOZOU+ まぜそばAR</title>
+  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
+  <script src="scripts/components.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-    
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
+    body { 
+      margin: 0; 
+      overflow: hidden; 
+      width: 100%; 
       height: 100vh;
-      background: url('/api/placeholder/400/640') center center/cover no-repeat;
-      font-family: 'Share Tech Mono', monospace;
-      overflow: hidden;
-      position: relative;
+      font-family: 'DotGothic16', sans-serif;
+      background-color: #000;
     }
     
-    .scanner-overlay {
-      position: absolute;
+    /* ローディング画面 */
+    #loading-screen {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      background-color: black;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       z-index: 1000;
+      color: white;
+    }
+    .spinner {
+      border: 5px solid rgba(0, 255, 0, 0.1);
+      border-top: 5px solid #00ff00;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* レトロスタート画面 */
+    #retro-start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      z-index: 999;
+      color: #00ff00;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 14px;
+      overflow: hidden;
+    }
+    
+    .retro-title {
+      margin-top: 25px;
+      text-align: center;
+      line-height: 1.6;
+    }
+    
+    .grid-container {
+      position: relative;
+      width: 100%;
+      height: 70%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .grid-background {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .kozou-logo {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      max-width: 70%;
+      max-height: 70%;
+      z-index: 5;
+    }
+    
+    .loading-text {
+      text-align: center;
+      margin: 20px 0;
+    }
+    
+    .progress-container {
+      width: 80%;
+      height: 30px;
+      border: 2px solid #00ff00;
+      margin: 10px auto;
+      position: relative;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      width: 40%;
+      background-color: #00ff00;
+      animation: loading 3s infinite linear;
+    }
+    
+    @keyframes loading {
+      0% { width: 0; }
+      100% { width: 100%; }
+    }
+    
+    .next-step {
+      margin-top: 40px;
+      text-align: center;
+    }
+    
+    .step-text {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    
+    .step-divider {
+      width: 80%;
+      height: 2px;
+      background-color: #00ff00;
+      margin: 0 auto 20px auto;
+    }
+    
+    .instruction-container {
+      display: flex;
+      align-items: center;
+      margin: 0 auto;
+      width: 80%;
+    }
+    
+    .bowl-icon {
+      width: 80px;
+      height: 80px;
+      margin-right: 20px;
+    }
+    
+    .instruction-text {
+      font-family: 'DotGothic16', sans-serif;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+    
+    .go-button {
+      margin-top: 20px;
+      color: #ffff00;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 10px;
+      border-bottom: 2px solid #ffff00;
+      text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+      animation: blink 1s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    
+    .bottom-text {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      font-size: 12px;
+      color: #00ff00;
+    }
+    
+    /* ARコンテナ */
+    #ar-container {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+    }
+
+    /* ARシーン */
+    #ar-scene {
+      width: 100%;
+      height: 100%;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* スキャナーオーバーレイ */
+    .scanner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
     }
     
     .main-frame {
@@ -90,7 +273,6 @@
       border-right: 2px solid;
     }
     
-    /* スキャンバーの新しいスタイル */
     .scan-bar {
       position: absolute;
       top: 50%;
@@ -120,7 +302,6 @@
       }
     }
     
-    /* ターゲットサークルの代わりに新しいスキャンフレーム */
     .scan-frame {
       position: absolute;
       top: 50%;
@@ -149,7 +330,6 @@
       }
     }
     
-    /* 座標テキスト - 左側 */
     .coordinates-left {
       position: absolute;
       top: 50%;
@@ -161,6 +341,7 @@
       text-align: left;
       height: 100px;
       overflow: hidden;
+      font-family: 'Press Start 2P', cursive;
     }
     
     .coord-number {
@@ -169,7 +350,6 @@
       animation: scroll-numbers 3s linear infinite;
     }
     
-    /* 座標テキスト - 右側 */
     .coordinates-right {
       position: absolute;
       top: 50%;
@@ -181,6 +361,7 @@
       text-align: right;
       height: 100px;
       overflow: hidden;
+      font-family: 'Press Start 2P', cursive;
     }
     
     @keyframes scroll-numbers {
@@ -219,6 +400,7 @@
       font-size: 12px;
       text-align: center;
       width: 256px;
+      font-family: 'Press Start 2P', cursive;
     }
     
     .status-text {
@@ -267,6 +449,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      font-family: 'Press Start 2P', cursive;
     }
     
     .system-name {
@@ -303,6 +486,7 @@
       left: 16px;
       color: #00d2ff;
       font-size: 12px;
+      font-family: 'Press Start 2P', cursive;
     }
     
     .hud-right {
@@ -312,6 +496,7 @@
       color: #00d2ff;
       font-size: 12px;
       text-align: right;
+      font-family: 'Press Start 2P', cursive;
     }
     
     .hud-item {
@@ -330,10 +515,72 @@
     .hud-text {
       font-size: 12px;
     }
+
+    /* iOS Safariでの全画面表示対応 */
+    @supports (-webkit-touch-callout: none) {
+      #retro-start-screen, #ar-container, .a-canvas {
+        height: -webkit-fill-available !important;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="scanner-overlay">
+  <!-- デバッグパネル -->
+  <div id="debug-panel" style="display: none;">
+    デバッグ情報: <span id="debug-status">初期化中...</span>
+  </div>
+
+  <!-- ローディング画面 -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <div>読み込み中...</div>
+  </div>
+
+  <!-- レトロスタート画面 -->
+  <div id="retro-start-screen" style="display: none;">
+    <div class="retro-title">
+      &gt;HOW TO EAT OUR MAZESOBA...<br>
+      &gt;WE ARE HAPPY TO SHERE ON YOUR : SNS
+    </div>
+    
+    <div class="loading-text">CALLING...</div>
+    <div class="progress-container">
+      <div class="progress-bar"></div>
+    </div>
+    
+    <div class="grid-container">
+      <img src="assets/grid-background.png" class="grid-background" alt="Grid Background">
+      <img src="assets/kozou-logo.png" class="kozou-logo" alt="KOZOU Logo">
+    </div>
+    
+    <div class="next-step">
+      <div class="step-text">NEXT STEP:</div>
+      <div class="step-divider"></div>
+      
+      <div class="instruction-container">
+        <img src="assets/bowl-icon.png" class="bowl-icon" alt="Bowl Icon">
+        <div class="instruction-text">
+          カメラへのアクセスを許可して、<br>
+          丼のロゴを読み取ってください.<br>
+          ALLOW ACCESS TO THE CAMERA AND<br>
+          READ THE RICE BOWL LOGO.
+        </div>
+      </div>
+      
+      <div class="go-button" id="start-button">
+        GO NEXT STEP &gt;&gt;&gt;&gt;&gt;&gt;&gt;
+      </div>
+    </div>
+    
+    <div class="bottom-text">
+      &gt;DO NOT CLOSE THIS SITE PLAESE
+    </div>
+    
+    <img src="assets/emblem-logo.png" style="position: absolute; bottom: 20px; right: 20px; width: 60px; height: 60px;">
+  </div>
+
+  <!-- ARスキャナーオーバーレイ -->
+  <div id="futuristic-scanner" class="scanner-overlay">
     <div class="main-frame">
       <div class="scanner-container">
         <div class="target-scanner">
@@ -342,13 +589,9 @@
           <div class="corner bottom-left"></div>
           <div class="corner bottom-right"></div>
           
-          <!-- 新しいスキャンバー -->
           <div class="scan-bar"></div>
-          
-          <!-- 新しいスキャンフレーム -->
           <div class="scan-frame"></div>
           
-          <!-- 座標テキスト - 左側 -->
           <div class="coordinates-left">
             <div class="coord-number">
               X: 0.342<br>
@@ -366,13 +609,9 @@
               X: 0.334<br>
               Y: 1.105<br>
               Z: 0.883<br>
-              X: 0.332<br>
-              Y: 1.108<br>
-              Z: 0.885<br>
             </div>
           </div>
           
-          <!-- 座標テキスト - 右側 -->
           <div class="coordinates-right">
             <div class="coord-number" style="animation-delay: -1.5s;">
               A: 42.31<br>
@@ -390,9 +629,6 @@
               A: 42.45<br>
               B: 18.63<br>
               C: 29.66<br>
-              A: 42.49<br>
-              B: 18.61<br>
-              C: 29.69<br>
             </div>
           </div>
           
@@ -457,5 +693,220 @@
       </div>
     </div>
   </div>
+
+  <!-- ARコンテンツを動的に追加するためのコンテナ -->
+  <div id="ar-container"></div>
+
+  <script>
+    // 要素の参照
+    const loadingScreen = document.getElementById('loading-screen');
+    const retroStartScreen = document.getElementById('retro-start-screen');
+    const startButton = document.getElementById('start-button');
+    const debugPanel = document.getElementById('debug-panel');
+    const debugStatus = document.getElementById('debug-status');
+    const arContainer = document.getElementById('ar-container');
+    const scannerOverlay = document.getElementById('futuristic-scanner');
+    
+    // デバッグログの追加関数
+    function updateDebugStatus(message) {
+      if (debugStatus) {
+        debugStatus.textContent = message;
+      }
+      console.log(`[DEBUG] ${message}`);
+    }
+    
+    // 初期化処理
+    document.addEventListener("DOMContentLoaded", function() {
+      updateDebugStatus("DOM読み込み完了");
+      
+      // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
+      setTimeout(() => {
+        updateDebugStatus("リソース読み込み完了");
+        
+        // ローディング画面を非表示にしてスタート画面を表示
+        loadingScreen.style.display = 'none';
+        retroStartScreen.style.display = 'block';
+      }, 1500);
+      
+      // エラーハンドリング
+      window.addEventListener('error', function(event) {
+        updateDebugStatus(`エラー: ${event.message}`);
+      });
+    });
+    
+    // スタートボタンクリック時の処理
+    startButton.addEventListener('click', function() {
+      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
+      
+      // ARシーンを動的に作成
+      createARScene();
+    });
+    
+    // ARシーンを動的に作成する関数
+    function createARScene() {
+      updateDebugStatus("ARシーンを作成中...");
+      
+      // A-Frameシーンを動的に作成
+      const sceneEl = document.createElement('a-scene');
+      sceneEl.setAttribute('id', 'ar-scene');
+      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
+      sceneEl.setAttribute('color-space', 'sRGB');
+      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
+      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
+      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
+      
+      // 画面サイズに合わせるための属性を追加
+      sceneEl.setAttribute('embedded', '');
+      sceneEl.setAttribute('seamless-tab-navigation', '');
+      
+      // アセット
+      const assetsEl = document.createElement('a-assets');
+      
+      const emblemLogo = document.createElement('img');
+      emblemLogo.setAttribute('id', 'emblem-logo');
+      emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
+      
+      const textLogo = document.createElement('img');
+      textLogo.setAttribute('id', 'text-logo');
+      textLogo.setAttribute('src', 'assets/text-logo.png');
+      
+      assetsEl.appendChild(emblemLogo);
+      assetsEl.appendChild(textLogo);
+      sceneEl.appendChild(assetsEl);
+      
+      // カメラ
+      const cameraEl = document.createElement('a-camera');
+      cameraEl.setAttribute('position', '0 0 0');
+      cameraEl.setAttribute('look-controls', 'enabled: false');
+      sceneEl.appendChild(cameraEl);
+      
+      // ターゲットコンテナ
+      const targetContainerEl = document.createElement('a-entity');
+      targetContainerEl.setAttribute('id', 'target-container');
+      targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
+      
+      // ロゴ表示
+      const logoDisplayEl = document.createElement('a-plane');
+      logoDisplayEl.setAttribute('id', 'logo-display');
+      logoDisplayEl.setAttribute('position', '0 0 0');
+      logoDisplayEl.setAttribute('hologram-effect', '');
+      logoDisplayEl.setAttribute('opening-animation', '');
+      
+      const logoImageEl = document.createElement('a-image');
+      logoImageEl.setAttribute('src', '#emblem-logo');
+      logoImageEl.setAttribute('width', '1');
+      logoImageEl.setAttribute('height', '1');
+      logoImageEl.setAttribute('opacity', '0.9');
+      
+      logoDisplayEl.appendChild(logoImageEl);
+      targetContainerEl.appendChild(logoDisplayEl);
+      sceneEl.appendChild(targetContainerEl);
+      
+      // ARコンテナに追加
+      arContainer.appendChild(sceneEl);
+      
+      // シーンの初期化完了イベントを監視
+      sceneEl.addEventListener('loaded', function() {
+        updateDebugStatus("ARシーン初期化完了、カメラへのアクセスを要求します");
+        
+        // スタート画面を非表示
+        retroStartScreen.style.display = 'none';
+        
+        // スキャナーオーバーレイを表示
+        scannerOverlay.style.display = 'block';
+        
+        // MindARを開始（ここでカメラへのアクセス要求が発生）
+        const mindARSystem = sceneEl.systems['mindar-image-system'];
+        mindARSystem.start();
+        
+        // ターゲット検出イベントリスナー設定
+        targetContainerEl.addEventListener('targetFound', onTargetFound);
+        targetContainerEl.addEventListener('targetLost', onTargetLost);
+
+        // カメラがアクティブになった後のスタイル調整
+        setTimeout(() => {
+          adjustCanvasStyles();
+        }, 500);
+      });
+      
+      // エラーハンドリング
+      sceneEl.addEventListener('camera-error', function() {
+        updateDebugStatus("カメラエラー: アクセスが拒否されました");
+        
+        // カメラエラー時にスタート画面を再表示
+        retroStartScreen.style.display = 'block';
+        scannerOverlay.style.display = 'none';
+        
+        // エラーメッセージを表示
+        const instructionText = document.querySelector('.instruction-text');
+        if (instructionText) {
+          instructionText.innerHTML = "カメラへのアクセスが拒否されました。<br>再度お試しください。";
+        }
+      });
+    }
+    
+    // ターゲット検出時の処理
+    function onTargetFound() {
+      updateDebugStatus("ターゲット検出");
+      
+      // スキャナーのUI要素を更新
+      const statusText = document.querySelector('.status-text');
+      const trackingStatus = document.getElementById('tracking-status');
+      const statusBars = document.querySelectorAll('.status-bars .bar');
+      
+      if (statusText) statusText.textContent = 'ターゲット認識中';
+      if (trackingStatus) trackingStatus.textContent = 'TRACK_92%';
+      
+      // ステータスバーを更新
+      statusBars.forEach((bar, index) => {
+        if (index < 8) {
+          bar.classList.add('active');
+        }
+      });
+      
+      // フェードアウトアニメーション
+      setTimeout(() => {
+        // スキャナーを徐々に非表示
+        scannerOverlay.style.opacity = '0';
+        scannerOverlay.style.transition = 'opacity 1s ease-out';
+        
+        // アニメーション完了後に完全に非表示
+        setTimeout(() => {
+          scannerOverlay.style.display = 'none';
+        }, 1000);
+      }, 1500);
+    }
+    
+    // ターゲットロスト時の処理
+    function onTargetLost() {
+      updateDebugStatus("ターゲットロスト");
+      
+      // ターゲットを見失った後は、スキャナーは再表示しない
+      // 必要に応じてここでスキャナーを再表示するコードを追加
+    }
+    
+    // カメラキャンバスのスタイルを調整する関数
+    function adjustCanvasStyles() {
+      updateDebugStatus("カメラ表示スタイルを調整中...");
+      
+      // A-Frameのキャンバス要素
+      const canvas = document.querySelector('.a-canvas');
+      if (canvas) {
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.objectFit = "cover"; // 画面全体をカバー
+      } else {
+        updateDebugStatus("キャンバス要素が見つかりません");
+      }
+    }
+    
+    // デバッグ表示の切り替え（URLに?debug=trueを付けるとデバッグモード）
+    if (window.location.search.includes('debug=true')) {
+      debugPanel.style.display = 'block';
+    }
+  </script>
 </body>
 </html>
