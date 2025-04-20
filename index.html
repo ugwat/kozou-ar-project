@@ -18,15 +18,13 @@
     body { 
       margin: 0; 
       padding: 0;
-      overflow: hidden; 
       width: 100%; 
-      height: 100vh;
+      height: 100%;
       background-color: #000;
       font-family: 'Press Start 2P', cursive;
       color: #00ff00;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      position: fixed;
+      overflow: hidden;
     }
     
     /* ローディング画面 */
@@ -60,120 +58,111 @@
     
     /* レトロスタイルのメイン画面 */
     #retro-start-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
-      max-width: 414px; /* iPhone 12最大幅 */
-      height: 90vh;
-      max-height: 800px;
+      height: 100%;
       background-color: #000;
-      border-left: 2px solid #00ff00;
-      border-right: 2px solid #00ff00;
       display: none;
-      flex-direction: column;
-      align-items: center;
-      position: relative;
-      overflow: hidden;
-      padding: 20px;
       z-index: 999;
     }
     
+    /* 画面フレーム */
+    .frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 350px;
+      height: 600px;
+      max-height: 90%;
+      border: 2px solid #00ff00;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+    }
+    
+    /* 上部テキスト */
     .header-text {
       width: 100%;
       text-align: left;
-      font-size: 2.5vw;
-      line-height: 1.6;
-      margin-bottom: 10px;
-      height: 60px;
-      overflow: hidden;
+      font-size: 10px;
+      line-height: 1.8;
+      margin-bottom: 15px;
     }
     
-    @media (min-width: 414px) {
-      .header-text {
-        font-size: 12px;
-      }
-    }
-    
-    .typing-text {
-      display: inline-block;
-      white-space: pre;
-      margin: 0;
-      line-height: 1.5;
-    }
-    
+    /* ロゴコンテナ */
     .logo-container {
-      width: 80%;
-      padding-top: 20px;
-      padding-bottom: 20px;
+      width: 100%;
       display: flex;
       justify-content: center;
       align-items: center;
-      background-color: rgba(0, 0, 0, 0.8);
-      border-radius: 20px;
       margin: 10px 0;
     }
     
     .kozou-logo {
       width: 100%;
-      max-width: 300px;
+      max-width: 280px;
       height: auto;
     }
     
+    /* NEXT STEP部分 */
     .next-step {
       width: 100%;
-      margin-top: 20px;
-      text-align: left;
+      margin-top: 15px;
     }
     
     .next-step-title {
       font-size: 16px;
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
     
     .next-step-divider {
       width: 100%;
       height: 2px;
       background-color: #00ff00;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     
+    /* 説明部分 */
     .instruction-container {
       display: flex;
-      align-items: flex-start;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
     }
     
     .bowl-icon {
-      flex: 0 0 80px;
-      height: 80px;
+      flex: 0 0 70px;
+      height: 70px;
       border: 2px solid #00ff00;
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-right: 20px;
+      margin-right: 15px;
     }
     
     .bowl-icon img {
-      width: 60px;
-      height: 60px;
-      object-fit: contain;
+      width: 50px;
+      height: 50px;
     }
     
     .instruction-text {
       flex: 1;
       font-family: 'DotGothic16', sans-serif;
-      font-size: 14px;
+      font-size: 12px;
       line-height: 1.5;
-      color: #00ff00;
     }
     
+    /* GOボタン */
     .go-button {
       width: 100%;
-      font-family: 'Press Start 2P', cursive;
-      font-size: 16px;
+      font-size: 14px;
       color: #ffff00;
       text-align: center;
-      padding: 10px 0;
+      padding: 5px 0;
       cursor: pointer;
-      margin-top: 20px;
+      margin: 10px 0;
       text-decoration: underline;
       animation: blink 1s infinite;
     }
@@ -183,30 +172,27 @@
       50% { opacity: 0.7; }
     }
     
+    /* プログレスバー */
     .footer-bar {
-      position: absolute;
-      bottom: 20px;
-      left: 0;
       width: 100%;
-      padding: 0 20px;
+      margin-top: auto;
+      padding-bottom: 10px;
     }
     
     .calling-text {
       text-align: center;
-      margin-bottom: 10px;
-      color: #00ff00;
+      margin-bottom: 5px;
     }
     
     .progress-bar {
       width: 100%;
-      height: 30px;
+      height: 25px;
       border: 2px solid #00ff00;
-      position: relative;
     }
     
     .progress-fill {
       height: 100%;
-      width: 40%;
+      width: 50%;
       background-color: #00ff00;
       animation: loading 3s infinite linear;
     }
@@ -216,15 +202,30 @@
       100% { width: 100%; }
     }
     
+    /* タイピングアニメーション */
+    .typing-text {
+      overflow: hidden;
+      border-right: .15em solid #00ff00;
+      white-space: nowrap;
+      margin: 0;
+      letter-spacing: .1em;
+      animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+    }
+    
     @keyframes typing {
-      from { width: 0; }
-      to { width: 100%; }
+      from { width: 0 }
+      to { width: 100% }
+    }
+    
+    @keyframes blink-caret {
+      from, to { border-color: transparent }
+      50% { border-color: #00ff00 }
     }
     
     /* ARコンテナ */
     #ar-container {
       width: 100%;
-      height: 100vh;
+      height: 100%;
       position: fixed;
       top: 0;
       left: 0;
@@ -239,13 +240,6 @@
       position: absolute;
       top: 0;
       left: 0;
-    }
-
-    /* iOS Safariでの全画面表示対応 */
-    @supports (-webkit-touch-callout: none) {
-      body, #retro-start-screen, #ar-container, .a-canvas {
-        height: -webkit-fill-available !important;
-      }
     }
   </style>
 </head>
@@ -263,40 +257,42 @@
 
   <!-- レトロスタート画面 -->
   <div id="retro-start-screen">
-    <div class="header-text">
-      <div class="typing-text" id="typing-text1">&gt;HOW TO EAT OUR MAZESOBA...</div>
-      <div class="typing-text" id="typing-text2">&gt;WE ARE HAPPY TO SHERE ON YOUR : SNS</div>
-    </div>
-    
-    <div class="logo-container">
-      <img src="assets/kozou-logo.png" class="kozou-logo" alt="KOZOU Logo">
-    </div>
-    
-    <div class="next-step">
-      <div class="next-step-title">NEXT STEP:</div>
-      <div class="next-step-divider"></div>
+    <div class="frame">
+      <div class="header-text">
+        <div class="typing-text" id="typing-text1">&gt;HOW TO EAT OUR MAZESOBA...</div>
+        <div class="typing-text" id="typing-text2">&gt;WE ARE HAPPY TO SHERE ON YOUR : SNS</div>
+      </div>
       
-      <div class="instruction-container">
-        <div class="bowl-icon">
-          <img src="assets/bowl-icon.png" alt="Bowl Icon">
+      <div class="logo-container">
+        <img src="assets/kozou-logo.png" class="kozou-logo" alt="KOZOU Logo">
+      </div>
+      
+      <div class="next-step">
+        <div class="next-step-title">NEXT STEP:</div>
+        <div class="next-step-divider"></div>
+        
+        <div class="instruction-container">
+          <div class="bowl-icon">
+            <img src="assets/bowl-icon.png" alt="Bowl Icon">
+          </div>
+          <div class="instruction-text">
+            カメラへのアクセスを許可して、<br>
+            丼のロゴを読み取ってください.<br>
+            ALLOW ACCESS TO THE CAMERA AND<br>
+            READ THE RICE BOWL LOGO.
+          </div>
         </div>
-        <div class="instruction-text">
-          カメラへのアクセスを許可して、<br>
-          丼のロゴを読み取ってください.<br>
-          ALLOW ACCESS TO THE CAMERA AND<br>
-          READ THE RICE BOWL LOGO.
+        
+        <div class="go-button" id="start-button">
+          GO NEXT STEP &gt;&gt;&gt;&gt;&gt;&gt;&gt;
         </div>
       </div>
       
-      <div class="go-button" id="start-button">
-        GO NEXT STEP &gt;&gt;&gt;&gt;&gt;&gt;&gt;
-      </div>
-    </div>
-    
-    <div class="footer-bar">
-      <div class="calling-text">CALLING...</div>
-      <div class="progress-bar">
-        <div class="progress-fill"></div>
+      <div class="footer-bar">
+        <div class="calling-text">CALLING...</div>
+        <div class="progress-bar">
+          <div class="progress-fill"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -345,7 +341,7 @@
         
         // ローディング画面を非表示にしてスタート画面を表示
         loadingScreen.style.display = 'none';
-        retroStartScreen.style.display = 'flex';
+        retroStartScreen.style.display = 'block';
         
         // タイピングアニメーションを開始
         const text1 = typingText1.textContent;
@@ -465,7 +461,7 @@
             canvas.style.position = "absolute";
             canvas.style.top = "0";
             canvas.style.left = "0";
-            canvas.style.objectFit = "cover"; // 画面全体をカバー
+            canvas.style.objectFit = "cover";
           }
         }, 500);
       });
@@ -475,7 +471,7 @@
         updateDebugStatus("カメラエラー: アクセスが拒否されました");
         
         // カメラエラー時にスタート画面を再表示
-        retroStartScreen.style.display = 'flex';
+        retroStartScreen.style.display = 'block';
       });
     }
     
