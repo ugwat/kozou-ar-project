@@ -339,83 +339,6 @@
       left: 0;
       z-index: 1;
     }
-    
-    /* スキャナーオーバーレイ - スキャン部分を目立たせる */
-    .scanner-overlay {
-      background-color: rgba(0, 0, 0, 0.7); /* 半透明の黒背景でスキャン部分以外を暗く */
-      transition: opacity 0.5s ease;
-    }
-    
-    /* スキャンエリアの強調 */
-    .target-scanner {
-      position: relative;
-      width: 256px;
-      height: 256px;
-      z-index: 5;
-    }
-    
-    /* スキャン部分のスポットライト効果 */
-    .scan-spotlight {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 60%, rgba(0, 0, 0, 0.7) 100%);
-      box-shadow: 0 0 50px 30px rgba(0, 210, 255, 0.2);
-      pointer-events: none;
-      z-index: 2;
-    }
-    
-    /* スキャンフレームの強調 */
-    .scan-frame {
-      border: 2px solid rgba(0, 210, 255, 0.8);
-      box-shadow: 0 0 20px rgba(0, 210, 255, 0.7), inset 0 0 20px rgba(0, 210, 255, 0.4);
-      animation: pulse-scan 2s infinite;
-    }
-    
-    @keyframes pulse-scan {
-      0%, 100% { 
-        box-shadow: 0 0 20px rgba(0, 210, 255, 0.7), inset 0 0 20px rgba(0, 210, 255, 0.4);
-      }
-      50% { 
-        box-shadow: 0 0 30px rgba(0, 210, 255, 0.9), inset 0 0 30px rgba(0, 210, 255, 0.6);
-      }
-    }
-
-    /* アニメーション最適化 */
-    .retro-frame, .kozou-logo, .scan-bar, .scan-frame, .progress-fill {
-      will-change: transform, opacity; /* GPUアクセラレーションのヒントを追加 */
-      transform: translateZ(0); /* 強制的にGPUレイヤーに昇格 */
-    }
-    
-    /* アニメーションのフレームレート削減 */
-    @keyframes logo-float {
-      0%, 100% { transform: translateY(0) translateZ(0); }
-      50% { transform: translateY(-8px) translateZ(0); }
-    }
-    
-    /* スキャンラインのアニメーション最適化 */
-    @keyframes scanline {
-      0% { transform: translateY(0) translateZ(0); }
-      100% { transform: translateY(100%) translateZ(0); }
-    }
-    
-    /* プログレスバーのアニメーション最適化 */
-    @keyframes loading {
-      0% { transform: scaleX(0) translateZ(0); transform-origin: left; }
-      100% { transform: scaleX(1) translateZ(0); transform-origin: left; }
-    }
-    
-    /* プログレスバーのwidth変更をやめてtransformを使用 */
-    .progress-fill {
-      width: 100%; 
-      transform: scaleX(0);
-      transform-origin: left;
-      animation: loading 5s infinite linear;
-    }
   </style>
 </head>
 <body>
@@ -479,129 +402,6 @@
     </div>
   </div>
 
-  <!-- ARスキャナーオーバーレイ -->
-  <div id="futuristic-scanner" class="scanner-overlay">
-    <div class="main-frame">
-      <div class="scanner-container">
-        <div class="target-scanner">
-          <div class="corner top-left"></div>
-          <div class="corner top-right"></div>
-          <div class="corner bottom-left"></div>
-          <div class="corner bottom-right"></div>
-          
-          <!-- スキャンバー -->
-          <div class="scan-bar"></div>
-          
-          <!-- スキャンフレーム - 強調 -->
-          <div class="scan-frame"></div>
-          
-          <!-- スポットライト効果追加 -->
-          <div class="scan-spotlight"></div>
-          
-          <!-- 座標テキスト - 左側 -->
-          <div class="coordinates-left">
-            <div class="coord-number">
-              X: 0.342<br>
-              Y: 1.092<br>
-              Z: 0.875<br>
-              X: 0.341<br>
-              Y: 1.095<br>
-              Z: 0.873<br>
-              X: 0.339<br>
-              Y: 1.098<br>
-              Z: 0.877<br>
-              X: 0.336<br>
-              Y: 1.102<br>
-              Z: 0.880<br>
-              X: 0.334<br>
-              Y: 1.105<br>
-              Z: 0.883<br>
-            </div>
-          </div>
-          
-          <!-- 座標テキスト - 右側 -->
-          <div class="coordinates-right">
-            <div class="coord-number" style="animation-delay: -1.5s;">
-              A: 42.31<br>
-              B: 18.72<br>
-              C: 29.54<br>
-              A: 42.35<br>
-              B: 18.70<br>
-              C: 29.57<br>
-              A: 42.38<br>
-              B: 18.68<br>
-              C: 29.60<br>
-              A: 42.42<br>
-              B: 18.65<br>
-              C: 29.63<br>
-              A: 42.45<br>
-              B: 18.63<br>
-              C: 29.66<br>
-            </div>
-          </div>
-          
-          <div class="crosshair-h"></div>
-          <div class="crosshair-v"></div>
-        </div>
-      </div>
-      
-      <div class="status-indicator">
-        <div class="status-text">マーカースキャン中</div>
-        <div class="status-bars">
-          <div class="bar active"></div>
-          <div class="bar active"></div>
-          <div class="bar active"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-        </div>
-      </div>
-      
-      <div class="bottom-status">
-        <div class="system-name">
-          KOZOU+ AR システム <span class="pulse-dot">●</span>
-        </div>
-        <div class="instruction">
-          QRコードをフレーム内に収めてください
-        </div>
-      </div>
-    </div>
-    
-    <div class="hud-left">
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">AR.SYS</div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">SCAN.v2</div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">MODEL.QR</div>
-      </div>
-    </div>
-    
-    <div class="hud-right">
-      <div class="hud-item">
-        <div class="hud-text">INIT_05</div>
-        <div class="hud-dot"></div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-text">CAM_ON</div>
-        <div class="hud-dot"></div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-text" id="tracking-status">SEEK_31%</div>
-        <div class="hud-dot"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- ARコンテンツを動的に追加するためのコンテナ -->
   <div id="ar-container"></div>
 
@@ -616,86 +416,62 @@
     const typingText1 = document.getElementById('typing-text1');
     const typingText2 = document.getElementById('typing-text2');
     const retroFrame = document.querySelector('.retro-frame');
-    const scannerOverlay = document.getElementById('futuristic-scanner');
     
     // 3D傾斜効果をマウス/タッチ移動で微調整
     function addTiltEffect() {
       // 基本の傾き角度
-      let baseRotateX = 15;
+      let baseRotateX = 15;  // より強い傾き
       let baseRotateY = -2;
       let baseRotateZ = 0.5;
       
-      // 最後のマウス移動処理時間
-      let lastMouseMoveTime = 0;
-      
-      // マウス移動時の処理 - スロットリング追加
+      // マウス移動時の処理
       document.addEventListener('mousemove', function(e) {
-        // 60msごとに処理（約16fpsに制限）
-        const now = Date.now();
-        if (now - lastMouseMoveTime < 60) return;
-        lastMouseMoveTime = now;
-        
         if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
         
         const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
         const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
         
-        // transform: translateZ(0)でGPUアクセラレーションを活用
-        retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
+        retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
       });
       
-      // デバイスの傾き検出を最適化
+      // スマホやタブレットでのジャイロセンサー対応
       if (window.DeviceOrientationEvent) {
-        let lastOrientationTime = 0;
         window.addEventListener('deviceorientation', function(e) {
-          // 100msごとに処理（約10fpsに制限）
-          const now = Date.now();
-          if (now - lastOrientationTime < 100) return;
-          lastOrientationTime = now;
-          
           if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
           if (!e.beta || !e.gamma) return;
           
-          const xTilt = e.gamma / 10;
-          const yTilt = e.beta / 10;
+          const xTilt = e.gamma / 10; // 左右の傾き (-90〜90)
+          const yTilt = e.beta / 10;  // 前後の傾き (-180〜180)
           
-          retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
+          retroFrame.style.transform = `rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
         });
       }
       
-      // グリッチエフェクトの発生頻度を下げる
+      // グリッチエフェクトをランダムに発生
       setInterval(() => {
-        if (Math.random() > 0.98) { // 2%の確率に下げる
-          retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
+        if (Math.random() > 0.95) { // 5%の確率で発生
+          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
           
           setTimeout(() => {
-            retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
+            retroFrame.style.transform = `rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
           }, 150);
         }
-      }, 3000); // 3秒ごとに確認（2秒から3秒に延長）
-    }
-    
-    // スキャナーオーバーレイを表示する際にアニメーション追加
-    function showScannerOverlay() {
-      scannerOverlay.style.display = 'block';
-      scannerOverlay.style.opacity = '0';
+      }, 2000);
       
-      // フェードインアニメーション
-      setTimeout(() => {
-        scannerOverlay.style.transition = 'opacity 0.5s ease-in';
-        scannerOverlay.style.opacity = '1';
-      }, 100);
-      
-      // パルス効果のアニメーションを開始
-      startPulseEffect();
-    }
-    
-    // パルス効果のアニメーション
-    function startPulseEffect() {
-      const scanFrame = document.querySelector('.scan-frame');
-      if (scanFrame) {
-        scanFrame.style.animation = 'pulse-scan 2s infinite';
+      // 常に微細な動きを加える - frame-floatアニメーションで置き換えるため削除
+      /*
+      let time = 0;
+      function animate() {
+        time += 0.01;
+        const floatX = Math.sin(time) * 0.5;
+        const floatY = Math.cos(time * 0.8) * 0.5;
+        
+        retroFrame.style.transform = `rotateX(${baseRotateX + floatY}deg) rotateY(${baseRotateY + floatX}deg) rotateZ(${baseRotateZ}deg)`;
+        
+        requestAnimationFrame(animate);
       }
+      animate();
+      */
     }
     
     // タイピングアニメーション用の関数
@@ -722,43 +498,27 @@
     document.addEventListener("DOMContentLoaded", function() {
       updateDebugStatus("DOM読み込み完了");
       
-      // CSSアニメーションを最適化するためのクラスを追加
-      document.body.classList.add('hardware-accelerated');
-      
-      // リソースの読み込みを最適化
-      const imagesToPreload = [
-        'assets/kozou-logo.png',
-        'assets/bowl-icon.png',
-        'assets/emblem-logo.png'
-      ];
-      
-      // 画像をプリロード
-      let loadedCount = 0;
-      imagesToPreload.forEach(src => {
-        const img = new Image();
-        img.onload = () => {
-          loadedCount++;
-          if (loadedCount === imagesToPreload.length) {
-            // すべての画像がロードされたらスタート画面を表示
-            loadingScreen.style.display = 'none';
-            retroStartScreen.style.display = 'block';
-            
-            // タイピングアニメーションを開始
-            const text1 = typingText1.textContent;
-            const text2 = typingText2.textContent;
-            typingText1.textContent = "";
-            typingText2.textContent = "";
-            
-            typeWriter(typingText1, text1, 0, function() {
-              typeWriter(typingText2, text2, 0);
-            });
-          }
-        };
-        img.src = src;
-      });
-      
-      // 3D傾斜効果を追加（最適化済み）
+      // 3D傾斜効果を追加
       addTiltEffect();
+      
+      // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
+      setTimeout(() => {
+        updateDebugStatus("リソース読み込み完了");
+        
+        // ローディング画面を非表示にしてスタート画面を表示
+        loadingScreen.style.display = 'none';
+        retroStartScreen.style.display = 'block';
+        
+        // タイピングアニメーションを開始
+        const text1 = typingText1.textContent;
+        const text2 = typingText2.textContent;
+        typingText1.textContent = "";
+        typingText2.textContent = "";
+        
+        typeWriter(typingText1, text1, 0, function() {
+          typeWriter(typingText2, text2, 0);
+        });
+      }, 1500);
       
       // エラーハンドリング
       window.addEventListener('error', function(event) {
@@ -844,9 +604,6 @@
       sceneEl.addEventListener('loaded', function() {
         updateDebugStatus("ARシーン初期化完了、カメラへのアクセスを要求します");
         
-        // スキャナーオーバーレイを表示（背景を暗くし、スキャン部分を強調）
-        showScannerOverlay();
-        
         // MindARを開始（ここでカメラへのアクセス要求が発生）
         const mindARSystem = sceneEl.systems['mindar-image-system'];
         mindARSystem.start();
@@ -854,14 +611,6 @@
         // ターゲット検出イベントリスナー設定
         targetContainerEl.addEventListener('targetFound', function() {
           updateDebugStatus("ターゲット検出");
-          
-          // ターゲット検出時にスキャナーを非表示にする
-          scannerOverlay.style.transition = 'opacity 0.5s ease-out';
-          scannerOverlay.style.opacity = '0';
-          
-          setTimeout(() => {
-            scannerOverlay.style.display = 'none';
-          }, 500);
         });
         
         targetContainerEl.addEventListener('targetLost', function() {
@@ -888,7 +637,6 @@
         
         // カメラエラー時にスタート画面を再表示
         retroStartScreen.style.display = 'block';
-        scannerOverlay.style.display = 'none';
       });
     }
     
