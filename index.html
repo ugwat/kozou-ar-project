@@ -340,7 +340,7 @@
       z-index: 1;
     }
     
-    /* スキャナーオーバーレイの最適化 - シンプルな実装 */
+    /* スキャナーオーバーレイの最適化 - 縦長長方形マスク */
     .scan-highlight {
       position: fixed;
       top: 0;
@@ -357,12 +357,90 @@
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 250px;
-      height: 250px;
-      border-radius: 50%;
-      background: transparent;
+      width: 200px;  /* 横幅 */
+      height: 300px; /* 縦長に変更 */
       transform: translate(-50%, -50%);
+      background: transparent;
       box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6); /* 内側を透明にする */
+    }
+
+    /* HUD的な要素を追加 - 軽量実装 */
+    .scan-highlight::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 210px;  /* マスクより少し大きく */
+      height: 310px; /* マスクより少し大きく */
+      transform: translate(-50%, -50%);
+      border: 1px solid #00d2ff;
+      box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+      pointer-events: none;
+    }
+
+    /* スキャンエリアの角を示す軽量マーカー */
+    .scan-corner {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: #00d2ff;
+      pointer-events: none;
+      z-index: 991;
+    }
+
+    .scan-corner-tl {
+      top: calc(50% - 155px);
+      left: calc(50% - 105px);
+      border-top: 2px solid;
+      border-left: 2px solid;
+    }
+
+    .scan-corner-tr {
+      top: calc(50% - 155px);
+      right: calc(50% - 105px);
+      border-top: 2px solid;
+      border-right: 2px solid;
+    }
+
+    .scan-corner-bl {
+      bottom: calc(50% - 155px);
+      left: calc(50% - 105px);
+      border-bottom: 2px solid;
+      border-left: 2px solid;
+    }
+
+    .scan-corner-br {
+      bottom: calc(50% - 155px);
+      right: calc(50% - 105px);
+      border-bottom: 2px solid;
+      border-right: 2px solid;
+    }
+
+    /* マーカー検出後のオーバーレイ - 別に用意 */
+    .explanation-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.7); /* 少し暗め */
+      z-index: 995; /* スキャンハイライトより上 */
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    /* 説明コンテンツ用のコンテナ */
+    .explanation-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      max-width: 500px;
+      text-align: center;
+      color: #00d2ff;
+      font-family: 'Press Start 2P', cursive;
     }
   </style>
 </head>
@@ -427,8 +505,21 @@
     </div>
   </div>
 
-  <!-- スキャナーを表示するときに追加 -->
-  <div class="scan-highlight"></div>
+  <!-- スキャンハイライト部分 -->
+  <div class="scan-highlight">
+    <!-- 角マーカー -->
+    <div class="scan-corner scan-corner-tl"></div>
+    <div class="scan-corner scan-corner-tr"></div>
+    <div class="scan-corner scan-corner-bl"></div>
+    <div class="scan-corner scan-corner-br"></div>
+  </div>
+
+  <!-- マーカー読み取り後の説明オーバーレイ -->
+  <div class="explanation-overlay">
+    <div class="explanation-content">
+      <!-- こちらにまぜそばの説明アニメーションが表示される -->
+    </div>
+  </div>
 
   <!-- ARコンテンツを動的に追加するためのコンテナ -->
   <div id="ar-container"></div>
@@ -445,61 +536,36 @@
     const typingText2 = document.getElementById('typing-text2');
     const retroFrame = document.querySelector('.retro-frame');
     
-    // 3D傾斜効果をマウス/タッチ移動で微調整
-    function addTiltEffect() {
-      // 基本の傾き角度
-      let baseRotateX = 15;  // より強い傾き
-      let baseRotateY = -2;
-      let baseRotateZ = 0.5;
-      
-      // マウス移動時の処理
-      document.addEventListener('mousemove', function(e) {
-        if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
-        
-        const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
-        const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
-        
-        retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
-      });
-      
-      // スマホやタブレットでのジャイロセンサー対応
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', function(e) {
-          if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
-          if (!e.beta || !e.gamma) return;
-          
-          const xTilt = e.gamma / 10; // 左右の傾き (-90〜90)
-          const yTilt = e.beta / 10;  // 前後の傾き (-180〜180)
-          
-          retroFrame.style.transform = `rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
-        });
+    // スキャンハイライトを表示する関数
+    function showScanHighlight() {
+      const scanHighlight = document.querySelector('.scan-highlight');
+      if (scanHighlight) {
+        scanHighlight.style.display = 'block';
       }
-      
-      // グリッチエフェクトをランダムに発生
-      setInterval(() => {
-        if (Math.random() > 0.95) { // 5%の確率で発生
-          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
-          
-          setTimeout(() => {
-            retroFrame.style.transform = `rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
-          }, 150);
+    }
+
+    // 説明オーバーレイを表示する関数（マーカー検出時に呼び出す）
+    function showExplanationOverlay() {
+      const explanationOverlay = document.querySelector('.explanation-overlay');
+      if (explanationOverlay) {
+        explanationOverlay.style.display = 'block';
+        // フェードイン
+        setTimeout(() => {
+          explanationOverlay.style.opacity = '1';
+        }, 100);
+        
+        // ここに説明アニメーションの処理を追加
+        const explanationContent = document.querySelector('.explanation-content');
+        if (explanationContent) {
+          explanationContent.innerHTML = `
+            <h2 style="margin-bottom: 20px; text-shadow: 0 0 10px #00d2ff;">まぜそばの食べ方</h2>
+            <div style="font-size: 14px; margin-bottom: 30px; text-shadow: 0 0 5px #00d2ff;">
+              まずは、しっかりと混ぜましょう！
+            </div>
+            <!-- アニメーションはここに追加 -->
+          `;
         }
-      }, 2000);
-      
-      // 常に微細な動きを加える - frame-floatアニメーションで置き換えるため削除
-      /*
-      let time = 0;
-      function animate() {
-        time += 0.01;
-        const floatX = Math.sin(time) * 0.5;
-        const floatY = Math.cos(time * 0.8) * 0.5;
-        
-        retroFrame.style.transform = `rotateX(${baseRotateX + floatY}deg) rotateY(${baseRotateY + floatX}deg) rotateZ(${baseRotateZ}deg)`;
-        
-        requestAnimationFrame(animate);
       }
-      animate();
-      */
     }
     
     // タイピングアニメーション用の関数
@@ -525,9 +591,6 @@
     // 初期化処理
     document.addEventListener("DOMContentLoaded", function() {
       updateDebugStatus("DOM読み込み完了");
-      
-      // 3D傾斜効果を追加
-      addTiltEffect();
       
       // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
       setTimeout(() => {
@@ -639,6 +702,18 @@
         // ターゲット検出イベントリスナー設定
         targetContainerEl.addEventListener('targetFound', function() {
           updateDebugStatus("ターゲット検出");
+          
+          // スキャンハイライトを非表示
+          const scanHighlight = document.querySelector('.scan-highlight');
+          if (scanHighlight) {
+            scanHighlight.style.opacity = '0';
+            setTimeout(() => {
+              scanHighlight.style.display = 'none';
+            }, 500);
+          }
+          
+          // 説明オーバーレイを表示
+          showExplanationOverlay();
         });
         
         targetContainerEl.addEventListener('targetLost', function() {
