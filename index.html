@@ -384,6 +384,38 @@
         box-shadow: 0 0 30px rgba(0, 210, 255, 0.9), inset 0 0 30px rgba(0, 210, 255, 0.6);
       }
     }
+
+    /* アニメーション最適化 */
+    .retro-frame, .kozou-logo, .scan-bar, .scan-frame, .progress-fill {
+      will-change: transform, opacity; /* GPUアクセラレーションのヒントを追加 */
+      transform: translateZ(0); /* 強制的にGPUレイヤーに昇格 */
+    }
+    
+    /* アニメーションのフレームレート削減 */
+    @keyframes logo-float {
+      0%, 100% { transform: translateY(0) translateZ(0); }
+      50% { transform: translateY(-8px) translateZ(0); }
+    }
+    
+    /* スキャンラインのアニメーション最適化 */
+    @keyframes scanline {
+      0% { transform: translateY(0) translateZ(0); }
+      100% { transform: translateY(100%) translateZ(0); }
+    }
+    
+    /* プログレスバーのアニメーション最適化 */
+    @keyframes loading {
+      0% { transform: scaleX(0) translateZ(0); transform-origin: left; }
+      100% { transform: scaleX(1) translateZ(0); transform-origin: left; }
+    }
+    
+    /* プログレスバーのwidth変更をやめてtransformを使用 */
+    .progress-fill {
+      width: 100%; 
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: loading 5s infinite linear;
+    }
   </style>
 </head>
 <body>
@@ -589,43 +621,58 @@
     // 3D傾斜効果をマウス/タッチ移動で微調整
     function addTiltEffect() {
       // 基本の傾き角度
-      let baseRotateX = 15;  // より強い傾き
+      let baseRotateX = 15;
       let baseRotateY = -2;
       let baseRotateZ = 0.5;
       
-      // マウス移動時の処理
+      // 最後のマウス移動処理時間
+      let lastMouseMoveTime = 0;
+      
+      // マウス移動時の処理 - スロットリング追加
       document.addEventListener('mousemove', function(e) {
+        // 60msごとに処理（約16fpsに制限）
+        const now = Date.now();
+        if (now - lastMouseMoveTime < 60) return;
+        lastMouseMoveTime = now;
+        
         if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
         
         const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
         const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
         
-        retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
+        // transform: translateZ(0)でGPUアクセラレーションを活用
+        retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
       });
       
-      // スマホやタブレットでのジャイロセンサー対応
+      // デバイスの傾き検出を最適化
       if (window.DeviceOrientationEvent) {
+        let lastOrientationTime = 0;
         window.addEventListener('deviceorientation', function(e) {
+          // 100msごとに処理（約10fpsに制限）
+          const now = Date.now();
+          if (now - lastOrientationTime < 100) return;
+          lastOrientationTime = now;
+          
           if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
           if (!e.beta || !e.gamma) return;
           
-          const xTilt = e.gamma / 10; // 左右の傾き (-90〜90)
-          const yTilt = e.beta / 10;  // 前後の傾き (-180〜180)
+          const xTilt = e.gamma / 10;
+          const yTilt = e.beta / 10;
           
-          retroFrame.style.transform = `rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
+          retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
         });
       }
       
-      // グリッチエフェクトをランダムに発生
+      // グリッチエフェクトの発生頻度を下げる
       setInterval(() => {
-        if (Math.random() > 0.95) { // 5%の確率で発生
-          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
+        if (Math.random() > 0.98) { // 2%の確率に下げる
+          retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
           
           setTimeout(() => {
-            retroFrame.style.transform = `rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
+            retroFrame.style.transform = `translateZ(0) rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
           }, 150);
         }
-      }, 2000);
+      }, 3000); // 3秒ごとに確認（2秒から3秒に延長）
     }
     
     // スキャナーオーバーレイを表示する際にアニメーション追加
@@ -675,27 +722,43 @@
     document.addEventListener("DOMContentLoaded", function() {
       updateDebugStatus("DOM読み込み完了");
       
-      // 3D傾斜効果を追加
-      addTiltEffect();
+      // CSSアニメーションを最適化するためのクラスを追加
+      document.body.classList.add('hardware-accelerated');
       
-      // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
-      setTimeout(() => {
-        updateDebugStatus("リソース読み込み完了");
-        
-        // ローディング画面を非表示にしてスタート画面を表示
-        loadingScreen.style.display = 'none';
-        retroStartScreen.style.display = 'block';
-        
-        // タイピングアニメーションを開始
-        const text1 = typingText1.textContent;
-        const text2 = typingText2.textContent;
-        typingText1.textContent = "";
-        typingText2.textContent = "";
-        
-        typeWriter(typingText1, text1, 0, function() {
-          typeWriter(typingText2, text2, 0);
-        });
-      }, 1500);
+      // リソースの読み込みを最適化
+      const imagesToPreload = [
+        'assets/kozou-logo.png',
+        'assets/bowl-icon.png',
+        'assets/emblem-logo.png'
+      ];
+      
+      // 画像をプリロード
+      let loadedCount = 0;
+      imagesToPreload.forEach(src => {
+        const img = new Image();
+        img.onload = () => {
+          loadedCount++;
+          if (loadedCount === imagesToPreload.length) {
+            // すべての画像がロードされたらスタート画面を表示
+            loadingScreen.style.display = 'none';
+            retroStartScreen.style.display = 'block';
+            
+            // タイピングアニメーションを開始
+            const text1 = typingText1.textContent;
+            const text2 = typingText2.textContent;
+            typingText1.textContent = "";
+            typingText2.textContent = "";
+            
+            typeWriter(typingText1, text1, 0, function() {
+              typeWriter(typingText2, text2, 0);
+            });
+          }
+        };
+        img.src = src;
+      });
+      
+      // 3D傾斜効果を追加（最適化済み）
+      addTiltEffect();
       
       // エラーハンドリング
       window.addEventListener('error', function(event) {
