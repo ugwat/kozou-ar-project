@@ -63,14 +63,22 @@
     
     /* レトロスタイルのメイン画面 */
     #retro-start-screen {
-      width: 90%;
-      max-width: 500px;
-      height: 90%;
-      max-height: 90vh;
-      display: none;
-      position: relative;
-      perspective: 2000px;
-      z-index: 999;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      color: #fff;
+      font-family: 'Press Start 2P', cursive;
+      text-align: center;
+      padding: 20px;
+      box-sizing: border-box;
     }
     
     /* 外枠 - 3D変形とグロー効果 - ふわふわ動き追加 */
@@ -347,9 +355,12 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.6); /* 半透明の黒 */
-      z-index: 990; /* スキャナーの下 */
-      pointer-events: none; /* クリックイベントを透過 */
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 999;
+      pointer-events: none;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
     }
 
     .scan-highlight::before {
@@ -441,6 +452,16 @@
       text-align: center;
       color: #00d2ff;
       font-family: 'Press Start 2P', cursive;
+    }
+
+    /* 既存のスキャン枠を非表示にするスタイル */
+    .scan-frame {
+      display: none; /* 既存の正方形スキャン枠を非表示に */
+    }
+
+    /* その他のスキャン関連の既存要素も必要に応じて非表示 */
+    .target-scanner .corner {
+      display: none; /* 既存の角マーカーも非表示に */
     }
   </style>
 </head>
@@ -541,6 +562,19 @@
       const scanHighlight = document.querySelector('.scan-highlight');
       if (scanHighlight) {
         scanHighlight.style.display = 'block';
+        setTimeout(() => {
+          scanHighlight.style.opacity = '1';
+        }, 100);
+      }
+    }
+
+    function hideScanHighlight() {
+      const scanHighlight = document.querySelector('.scan-highlight');
+      if (scanHighlight) {
+        scanHighlight.style.opacity = '0';
+        setTimeout(() => {
+          scanHighlight.style.display = 'none';
+        }, 500);
       }
     }
 
@@ -630,116 +664,35 @@
     
     // ARシーンを動的に作成する関数
     function createARScene() {
-      updateDebugStatus("ARシーンを作成中...");
+      const sceneEl = document.querySelector('a-scene');
       
-      // A-Frameシーンを動的に作成
-      const sceneEl = document.createElement('a-scene');
-      sceneEl.setAttribute('id', 'ar-scene');
-      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
-      sceneEl.setAttribute('color-space', 'sRGB');
-      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
-      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
-      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
-      
-      // 画面サイズに合わせるための属性を追加
-      sceneEl.setAttribute('embedded', '');
-      sceneEl.setAttribute('seamless-tab-navigation', '');
-      
-      // アセット
-      const assetsEl = document.createElement('a-assets');
-      
-      const emblemLogo = document.createElement('img');
-      emblemLogo.setAttribute('id', 'emblem-logo');
-      emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
-      
-      const textLogo = document.createElement('img');
-      textLogo.setAttribute('id', 'text-logo');
-      textLogo.setAttribute('src', 'assets/text-logo.png');
-      
-      assetsEl.appendChild(emblemLogo);
-      assetsEl.appendChild(textLogo);
-      sceneEl.appendChild(assetsEl);
-      
-      // カメラ
-      const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('position', '0 0 0');
-      cameraEl.setAttribute('look-controls', 'enabled: false');
-      sceneEl.appendChild(cameraEl);
-      
-      // ターゲットコンテナ
-      const targetContainerEl = document.createElement('a-entity');
-      targetContainerEl.setAttribute('id', 'target-container');
-      targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
-      
-      // ロゴ表示
-      const logoDisplayEl = document.createElement('a-plane');
-      logoDisplayEl.setAttribute('id', 'logo-display');
-      logoDisplayEl.setAttribute('position', '0 0 0');
-      logoDisplayEl.setAttribute('hologram-effect', '');
-      logoDisplayEl.setAttribute('opening-animation', '');
-      
-      const logoImageEl = document.createElement('a-image');
-      logoImageEl.setAttribute('src', '#emblem-logo');
-      logoImageEl.setAttribute('width', '1');
-      logoImageEl.setAttribute('height', '1');
-      logoImageEl.setAttribute('opacity', '0.9');
-      
-      logoDisplayEl.appendChild(logoImageEl);
-      targetContainerEl.appendChild(logoDisplayEl);
-      sceneEl.appendChild(targetContainerEl);
-      
-      // ARコンテナに追加
-      arContainer.appendChild(sceneEl);
-      
-      // シーンの初期化完了イベントを監視
-      sceneEl.addEventListener('loaded', function() {
-        updateDebugStatus("ARシーン初期化完了、カメラへのアクセスを要求します");
+      sceneEl.addEventListener('loaded', () => {
+        console.log('ARシーンが読み込まれました');
+        updateDebugStatus('ARシーン読み込み完了');
         
-        // MindARを開始（ここでカメラへのアクセス要求が発生）
-        const mindARSystem = sceneEl.systems['mindar-image-system'];
-        mindARSystem.start();
+        // スタート画面を非表示にする
+        const startScreen = document.getElementById('retro-start-screen');
+        if (startScreen) {
+          startScreen.style.display = 'none';
+        }
         
-        // ターゲット検出イベントリスナー設定
-        targetContainerEl.addEventListener('targetFound', function() {
-          updateDebugStatus("ターゲット検出");
-          
-          // スキャンハイライトを非表示
-          const scanHighlight = document.querySelector('.scan-highlight');
-          if (scanHighlight) {
-            scanHighlight.style.opacity = '0';
-            setTimeout(() => {
-              scanHighlight.style.display = 'none';
-            }, 500);
-          }
-          
-          // 説明オーバーレイを表示
-          showExplanationOverlay();
-        });
+        // MindARシステムを開始
+        const mindarThree = sceneEl.systems['mindar-system'];
+        mindarThree.start();
         
-        targetContainerEl.addEventListener('targetLost', function() {
-          updateDebugStatus("ターゲットロスト");
-        });
-
-        // カメラがアクティブになった後のスタイル調整
+        // カメラアクセスが許可された後にスキャンハイライトを表示
         setTimeout(() => {
-          const canvas = document.querySelector('.a-canvas');
-          if (canvas) {
-            canvas.style.width = "100%";
-            canvas.style.height = "100%";
-            canvas.style.position = "absolute";
-            canvas.style.top = "0";
-            canvas.style.left = "0";
-            canvas.style.objectFit = "cover";
-          }
-        }, 500);
+          showScanHighlight();
+          updateDebugStatus('スキャンハイライト表示');
+        }, 1000);
       });
       
-      // エラーハンドリング
-      sceneEl.addEventListener('camera-error', function() {
-        updateDebugStatus("カメラエラー: アクセスが拒否されました");
-        
-        // カメラエラー時にスタート画面を再表示
-        retroStartScreen.style.display = 'block';
+      // ターゲット検出時のイベントリスナー
+      sceneEl.addEventListener('targetFound', () => {
+        console.log('ターゲットを検出しました');
+        updateDebugStatus('ターゲット検出');
+        hideScanHighlight();
+        showExplanationOverlay();
       });
     }
     
