@@ -339,6 +339,31 @@
       left: 0;
       z-index: 1;
     }
+    
+    /* スキャナーオーバーレイの最適化 - シンプルな実装 */
+    .scan-highlight {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.6); /* 半透明の黒 */
+      z-index: 990; /* スキャナーの下 */
+      pointer-events: none; /* クリックイベントを透過 */
+    }
+
+    .scan-highlight::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 250px;
+      height: 250px;
+      border-radius: 50%;
+      background: transparent;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6); /* 内側を透明にする */
+    }
   </style>
 </head>
 <body>
@@ -401,6 +426,9 @@
       </div>
     </div>
   </div>
+
+  <!-- スキャナーを表示するときに追加 -->
+  <div class="scan-highlight"></div>
 
   <!-- ARコンテンツを動的に追加するためのコンテナ -->
   <div id="ar-container"></div>
