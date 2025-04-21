@@ -69,18 +69,58 @@
       max-height: 90vh;
       display: none;
       position: relative;
+      perspective: 1000px;
     }
     
-    /* 外枠 */
+    /* 外枠 - 3D変形とグロー効果 */
     .retro-frame {
       width: 100%;
       height: 100%;
       border: 3px solid #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.3);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       padding: 4% 4%;
       position: relative;
+      transform: rotateX(5deg) rotateY(0deg) rotateZ(0deg);
+      transform-style: preserve-3d;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+    }
+    
+    /* スキャンラインアニメーション */
+    .retro-frame::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(to right, transparent, rgba(0, 255, 0, 0.7), transparent);
+      animation: scanline 3s linear infinite;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    @keyframes scanline {
+      0% { top: 0; }
+      100% { top: 100%; }
+    }
+    
+    /* ノイズテクスチャ */
+    .retro-frame::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3QUcCgkX9ZORbgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAVUlEQVRo3u3WQQqAMAxE0Vqo95+leC3xADpbEXwfZJkhs5gYAAAAAAAAAAA3F9/cG5PGR1eXu40Pc2/rHbAf93G/nnSf71qRuQuZu5ADAQAAAAAA/+sAZhfz8R3vJfAAAAAASUVORK5CYII=');
+      opacity: 0.05;
+      pointer-events: none;
+      z-index: 5;
     }
     
     /* 上部テキスト */
@@ -90,10 +130,11 @@
     
     .header-text {
       color: #00ff00;
-      font-size: min(3vw, 14px);
+      font-size: min(2.5vw, 12px);
       line-height: 1.8;
       overflow: hidden;
       white-space: nowrap;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
     }
     
     /* ロゴ部分 */
@@ -111,12 +152,34 @@
       justify-content: center;
       align-items: center;
       margin-bottom: 10%;
+      position: relative;
+    }
+    
+    .logo-container::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      right: 0;
+      bottom: -10px;
+      width: 80%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse at center, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: -1;
     }
     
     .kozou-logo {
       width: 70%;
       max-width: 300px;
       height: auto;
+      filter: drop-shadow(0 0 5px rgba(255, 0, 255, 0.3)) drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));
+      animation: logo-float 3s ease-in-out infinite;
+    }
+    
+    @keyframes logo-float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
     }
     
     /* NEXT STEP部分 */
@@ -127,13 +190,15 @@
     .next-step-title {
       font-size: min(4vw, 18px);
       margin-bottom: 2%;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
     }
     
     .divider {
       width: 100%;
       height: 2px;
-      background-color: #00ff00;
+      background: linear-gradient(to right, rgba(0, 255, 0, 0.3), #00ff00, rgba(0, 255, 0, 0.3));
       margin-bottom: 5%;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     }
     
     /* 説明部分 */
@@ -151,19 +216,22 @@
       justify-content: center;
       align-items: center;
       margin-right: 4%;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 5px rgba(0, 255, 0, 0.2);
     }
     
     .bowl-icon img {
       width: 70%;
       height: 70%;
       object-fit: contain;
+      filter: brightness(1.2) drop-shadow(0 0 3px rgba(0, 255, 0, 0.7));
     }
     
     .instruction-text {
       flex: 1;
       font-family: 'DotGothic16', sans-serif;
-      font-size: min(3vw, 14px);
+      font-size: min(2.5vw, 12px);
       line-height: 1.6;
+      text-shadow: 0 0 3px rgba(0, 255, 0, 0.5);
     }
     
     /* GOボタン */
@@ -174,6 +242,19 @@
       padding: 2% 0;
       cursor: pointer;
       text-decoration: underline;
+      text-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
+      animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { 
+        text-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
+        transform: scale(1);
+      }
+      50% { 
+        text-shadow: 0 0 15px rgba(255, 255, 0, 1);
+        transform: scale(1.02);
+      }
     }
     
     /* プログレスバー部分 */
@@ -186,24 +267,41 @@
       text-align: center;
       margin-bottom: 2%;
       font-size: min(3.5vw, 16px);
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
     }
     
     .progress-bar {
       width: 100%;
       height: min(5vh, 30px);
       border: 2px solid #00ff00;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
     }
     
     .progress-fill {
       height: 100%;
       width: 40%;
       background-color: #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
       animation: loading 3s infinite linear;
     }
     
     @keyframes loading {
       0% { width: 0; }
       100% { width: 100%; }
+    }
+
+    /* グリッチエフェクト - 時々発生 */
+    .glitch {
+      animation: glitch-anim 5s infinite;
+    }
+    
+    @keyframes glitch-anim {
+      0%, 95%, 100% { opacity: 1; transform: translate(0); }
+      95.5% { opacity: 0.9; transform: translate(-2px, 2px); }
+      96% { opacity: 0.9; transform: translate(2px, -2px); }
+      96.5% { opacity: 0.9; transform: translate(0px, 0px); }
     }
     
     /* ARコンテナ */
@@ -234,8 +332,8 @@
     <div class="retro-frame">
       <!-- 上部テキスト -->
       <div class="header-section">
-        <div class="header-text" id="typing-text1">&gt;HOW TO EAT OUR MAZESOBA...</div>
-        <div class="header-text" id="typing-text2">&gt;WE ARE HAPPY TO SHERE ON YOUR : SNS</div>
+        <div class="header-text glitch" id="typing-text1">&gt;HOW TO EAT OUR MAZESOBA...</div>
+        <div class="header-text glitch" id="typing-text2">&gt;WE ARE HAPPY TO SHERE ON YOUR : SNS</div>
       </div>
       
       <!-- 中央部分 -->
@@ -291,6 +389,37 @@
     const arContainer = document.getElementById('ar-container');
     const typingText1 = document.getElementById('typing-text1');
     const typingText2 = document.getElementById('typing-text2');
+    const retroFrame = document.querySelector('.retro-frame');
+    
+    // 3D傾斜効果をマウス/タッチ移動で微調整
+    function addTiltEffect() {
+      let initialX, initialY;
+      
+      // 基本の傾き角度
+      let baseRotateX = 5;
+      let baseRotateY = 0;
+      
+      // マウス移動時の処理
+      document.addEventListener('mousemove', function(e) {
+        if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
+        
+        const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+        const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+        
+        retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(0deg)`;
+      });
+      
+      // グリッチエフェクトをランダムに発生
+      setInterval(() => {
+        if (Math.random() > 0.95) { // 5%の確率で発生
+          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 2 - 1)}deg) rotateY(${baseRotateY + (Math.random() * 2 - 1)}deg) rotateZ(${Math.random() * 0.5 - 0.25}deg)`;
+          
+          setTimeout(() => {
+            retroFrame.style.transform = `rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(0deg)`;
+          }, 100);
+        }
+      }, 2000);
+    }
     
     // タイピングアニメーション用の関数
     function typeWriter(element, text, i, callback) {
@@ -315,6 +444,9 @@
     // 初期化処理
     document.addEventListener("DOMContentLoaded", function() {
       updateDebugStatus("DOM読み込み完了");
+      
+      // 3D傾斜効果を追加
+      addTiltEffect();
       
       // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
       setTimeout(() => {
