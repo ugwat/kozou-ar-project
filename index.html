@@ -69,7 +69,8 @@
       max-height: 90vh;
       display: none;
       position: relative;
-      perspective: 1000px;
+      perspective: 2000px;
+      z-index: 999;
     }
     
     /* 外枠 - 3D変形とグロー効果 */
@@ -77,21 +78,36 @@
       width: 100%;
       height: 100%;
       border: 3px solid #00ff00;
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 15px rgba(0, 255, 0, 0.3);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.7), inset 0 0 20px rgba(0, 255, 0, 0.4);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       padding: 4% 4%;
       position: relative;
-      transform: rotateX(5deg) rotateY(-2deg) rotateZ(0.5deg);
+      transform: rotateX(15deg) rotateY(-2deg) rotateZ(0.5deg);
       transform-style: preserve-3d;
       background-color: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(2px);
-      -webkit-backdrop-filter: blur(2px);
+      transform-origin: center center;
+    }
+    
+    /* 浮遊効果の強化 - 下部の光の反射 */
+    .retro-frame::before {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 10%;
+      right: 10%;
+      height: 15px;
+      background: radial-gradient(ellipse at center, rgba(0, 255, 0, 0.6) 0%, rgba(0, 255, 0, 0) 70%);
+      filter: blur(5px);
+      opacity: 0.7;
+      transform: rotateX(-60deg) scaleY(0.2);
+      z-index: -1;
+      pointer-events: none;
     }
     
     /* スキャンラインアニメーション */
-    .retro-frame::before {
+    .retro-frame::after {
       content: '';
       position: absolute;
       top: 0;
@@ -102,6 +118,7 @@
       animation: scanline 3s linear infinite;
       z-index: 10;
       pointer-events: none;
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     }
     
     @keyframes scanline {
@@ -109,23 +126,11 @@
       100% { top: 100%; }
     }
     
-    /* ノイズテクスチャ */
-    .retro-frame::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH3QUcCgkX9ZORbgAAAB1pVFh0Q29tbWVudAAAAAAAQ3JlYXRlZCB3aXRoIEdJTVBkLmUHAAAAVUlEQVRo3u3WQQqAMAxE0Vqo95+leC3xADpbEXwfZJkhs5gYAAAAAAAAAAA3F9/cG5PGR1eXu40Pc2/rHbAf93G/nnSf71qRuQuZu5ADAQAAAAAA/+sAZhfz8R3vJfAAAAAASUVORK5CYII=');
-      opacity: 0.05;
-      pointer-events: none;
-      z-index: 5;
-    }
-    
     /* 上部テキスト */
     .header-section {
       width: 100%;
+      margin-bottom: 1%;
+      transform: translateZ(20px);
     }
     
     .header-text {
@@ -134,16 +139,17 @@
       line-height: 1.8;
       overflow: hidden;
       white-space: nowrap;
-      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     }
     
-    /* ロゴ部分 */
+    /* ロゴ部分 - 位置調整 */
     .middle-section {
       flex: 1;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      padding: 5% 0;
+      justify-content: center;
+      padding: 0;
+      transform: translateZ(30px);
     }
     
     .logo-container {
@@ -151,20 +157,21 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      margin-bottom: 10%;
+      margin-top: 5%;
+      margin-bottom: 5%;
       position: relative;
     }
     
     .logo-container::before {
       content: '';
       position: absolute;
-      top: -10px;
+      top: -20px;
       left: 50%;
       right: 0;
-      bottom: -10px;
+      bottom: -20px;
       width: 80%;
       transform: translateX(-50%);
-      background: radial-gradient(ellipse at center, rgba(0, 255, 255, 0.1) 0%, transparent 70%);
+      background: radial-gradient(ellipse at center, rgba(255, 0, 255, 0.1) 0%, transparent 70%);
       pointer-events: none;
       z-index: -1;
     }
@@ -173,24 +180,26 @@
       width: 70%;
       max-width: 300px;
       height: auto;
-      filter: drop-shadow(0 0 5px rgba(255, 0, 255, 0.3)) drop-shadow(0 0 10px rgba(0, 255, 255, 0.3));
+      filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.5)) drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
       animation: logo-float 3s ease-in-out infinite;
     }
     
     @keyframes logo-float {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
+      50% { transform: translateY(-8px); }
     }
     
     /* NEXT STEP部分 */
     .next-step-section {
       width: 100%;
+      margin-top: 5%;
+      transform: translateZ(20px);
     }
     
     .next-step-title {
       font-size: min(4vw, 18px);
       margin-bottom: 2%;
-      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     }
     
     .divider {
@@ -198,7 +207,7 @@
       height: 2px;
       background: linear-gradient(to right, rgba(0, 255, 0, 0.3), #00ff00, rgba(0, 255, 0, 0.3));
       margin-bottom: 5%;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
     }
     
     /* 説明部分 */
@@ -216,14 +225,14 @@
       justify-content: center;
       align-items: center;
       margin-right: 4%;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 5px rgba(0, 255, 0, 0.2);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 255, 0, 0.3);
     }
     
     .bowl-icon img {
       width: 70%;
       height: 70%;
       object-fit: contain;
-      filter: brightness(1.2) drop-shadow(0 0 3px rgba(0, 255, 0, 0.7));
+      filter: brightness(1.2) drop-shadow(0 0 5px rgba(0, 255, 0, 0.7));
     }
     
     .instruction-text {
@@ -231,7 +240,7 @@
       font-family: 'DotGothic16', sans-serif;
       font-size: min(2.5vw, 12px);
       line-height: 1.6;
-      text-shadow: 0 0 3px rgba(0, 255, 0, 0.5);
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
     }
     
     /* GOボタン */
@@ -242,7 +251,7 @@
       padding: 2% 0;
       cursor: pointer;
       text-decoration: underline;
-      text-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
+      text-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
       animation: pulse 2s infinite;
       margin-top: auto;
       margin-bottom: 15px;
@@ -250,12 +259,12 @@
     
     @keyframes pulse {
       0%, 100% { 
-        text-shadow: 0 0 10px rgba(255, 255, 0, 0.7);
+        text-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
         transform: scale(1);
       }
       50% { 
-        text-shadow: 0 0 15px rgba(255, 255, 0, 1);
-        transform: scale(1.02);
+        text-shadow: 0 0 20px rgba(255, 255, 0, 1);
+        transform: scale(1.03);
       }
     }
     
@@ -263,6 +272,7 @@
     .bottom-section {
       width: 100%;
       margin-top: 5%;
+      transform: translateZ(10px);
     }
     
     .calling-text {
@@ -276,7 +286,7 @@
       width: 100%;
       height: min(2.5vh, 15px);
       border: 2px solid #00ff00;
-      box-shadow: 0 0 10px rgba(0, 255, 0, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.5);
       position: relative;
       overflow: hidden;
     }
@@ -285,7 +295,7 @@
       height: 100%;
       width: 40%;
       background-color: #00ff00;
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
       animation: loading 5s infinite linear;
     }
     
@@ -396,7 +406,7 @@
     // 3D傾斜効果をマウス/タッチ移動で微調整
     function addTiltEffect() {
       // 基本の傾き角度
-      let baseRotateX = 5;
+      let baseRotateX = 15;  // より強い傾き
       let baseRotateY = -2;
       let baseRotateZ = 0.5;
       
@@ -404,22 +414,48 @@
       document.addEventListener('mousemove', function(e) {
         if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
         
-        const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
-        const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+        const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
+        const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
         
         retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
       });
       
+      // スマホやタブレットでのジャイロセンサー対応
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', function(e) {
+          if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
+          if (!e.beta || !e.gamma) return;
+          
+          const xTilt = e.gamma / 10; // 左右の傾き (-90〜90)
+          const yTilt = e.beta / 10;  // 前後の傾き (-180〜180)
+          
+          retroFrame.style.transform = `rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
+        });
+      }
+      
       // グリッチエフェクトをランダムに発生
       setInterval(() => {
         if (Math.random() > 0.95) { // 5%の確率で発生
-          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 2 - 1)}deg) rotateY(${baseRotateY + (Math.random() * 2 - 1)}deg) rotateZ(${baseRotateZ + (Math.random() * 0.5 - 0.25)}deg)`;
+          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
           
           setTimeout(() => {
             retroFrame.style.transform = `rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
-          }, 100);
+          }, 150);
         }
       }, 2000);
+      
+      // 常に微細な動きを加える
+      let time = 0;
+      function animate() {
+        time += 0.01;
+        const floatX = Math.sin(time) * 0.5;
+        const floatY = Math.cos(time * 0.8) * 0.5;
+        
+        retroFrame.style.transform = `rotateX(${baseRotateX + floatY}deg) rotateY(${baseRotateY + floatX}deg) rotateZ(${baseRotateZ}deg)`;
+        
+        requestAnimationFrame(animate);
+      }
+      animate();
     }
     
     // タイピングアニメーション用の関数
@@ -592,11 +628,6 @@
     if (window.location.search.includes('debug=true')) {
       debugPanel.style.display = 'block';
     }
-
-    // 画面サイズ変更時にレイアウトを調整
-    window.addEventListener('resize', function() {
-      // 必要に応じてレイアウト調整のコードを追加
-    });
   </script>
 </body>
 </html>
