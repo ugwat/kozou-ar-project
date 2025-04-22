@@ -615,21 +615,22 @@
     function startARExperience() {
       updateDebugStatus("カメラへのアクセスを要求します");
 
-      // スキャナーUIを表示
-      scannerOverlay.style.display = 'block';
+      // 1. トップ画面（retro-start-screen）を非表示にする
+      retroStartScreen.style.display = "none";
+      
+      // 2. ARコンテナを表示
+      arContainer.style.display = "block";
 
-      // MindARの準備が終わるまで待つ（重要！！）
+      // 3. スキャナーオーバーレイを表示
+      scannerOverlay.style.display = "block";
+
+      // 4. MindAR準備待ちして起動
       const waitForSystem = setInterval(() => {
         const mindARSystem = arScene.systems['mindar-image-system'];
         if (mindARSystem && typeof mindARSystem.start === 'function') {
           clearInterval(waitForSystem);
-
-          // カメラ起動
           mindARSystem.start();
-
-          // Canvasのスタイルを調整
-          setTimeout(adjustCanvasStyles, 500);
-
+          setTimeout(adjustCanvasAndHideUI, 500);
           updateDebugStatus("MindAR起動しました");
         }
       }, 100);
@@ -705,9 +706,6 @@
           arSceneCreated = true;
           arScene = sceneEl;
           
-          // カメラを起動
-          startCamera();
-          
           // ターゲット検出イベントリスナー設定
           targetContainerEl.addEventListener('targetFound', function() {
             console.log("ターゲット検出");
@@ -742,50 +740,6 @@
         });
       } catch (error) {
         console.error("ARシーン作成エラー:", error);
-      }
-    }
-    
-    // カメラを起動する関数
-    function startCamera() {
-      console.log("カメラ起動開始");
-      
-      try {
-        const mindARSystem = arScene.systems['mindar-image-system'];
-        if (!mindARSystem) {
-          console.error("MindARシステムが見つかりません");
-          return;
-        }
-        
-        // カメラ許可のリクエストをハンドル
-        arScene.addEventListener('camera-init', function onCameraInit() {
-          console.log("カメラ初期化完了 - スキャナー表示可能");
-          
-          // カメラが準備できたらスキャナーを表示
-          scannerOverlay.style.display = 'block';
-          
-          // 確実にドットパターンを表示
-          const dotPattern = document.querySelector('.dot-pattern');
-          if (dotPattern) {
-            dotPattern.style.backgroundImage = 'radial-gradient(circle, rgba(100, 100, 100, 0.4) 1px, transparent 1.5px)';
-            dotPattern.style.backgroundSize = '15px 15px';
-            console.log("ドットパターンを表示");
-          }
-          
-          // キャンバスのスタイルを再調整（MindARの再レンダリング対策）
-          setTimeout(adjustCanvasAndHideUI, 100);
-          
-          // 一度だけ実行するためにリスナーを削除
-          arScene.removeEventListener('camera-init', onCameraInit);
-        });
-        
-        // カメラを開始 - ここで初めてカメラ許可が要求される
-        console.log("カメラにアクセス要求");
-        mindARSystem.start();
-        
-        // スタイル調整とUIの非表示化
-        setTimeout(adjustCanvasAndHideUI, 500);
-      } catch (error) {
-        console.error("カメラ起動エラー:", error);
       }
     }
     
