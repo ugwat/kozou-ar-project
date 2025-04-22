@@ -386,22 +386,8 @@
       z-index: 1;
     }
     
-    /* スキャナーオーバーレイの修正 */
-    .scanner-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 1000;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-    
-    /* スキャンハイライトの修正 - ドットパターン追加 */
-    .scan-highlight {
+    /* カスタムスキャンオーバーレイ */
+    #custom-scan-overlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -412,7 +398,11 @@
       pointer-events: none;
     }
     
-    /* スキャン枠のスタイル修正 */
+    #custom-scan-overlay.hidden {
+      display: none;
+    }
+    
+    /* スキャン枠 */
     .scan-frame-new {
       position: absolute;
       top: 50%;
@@ -423,10 +413,9 @@
       border: 2px solid #00d2ff;
       box-shadow: 0 0 20px rgba(0, 210, 255, 0.7);
       overflow: hidden;
-      z-index: 995;
     }
     
-    /* ドットパターンの作成 */
+    /* ドットパターン */
     .dot-pattern {
       position: absolute;
       top: 0;
@@ -438,7 +427,7 @@
       opacity: 0.3;
     }
     
-    /* スキャンライン - 赤色に変更 */
+    /* 赤いスキャンライン */
     .scan-line {
       position: absolute;
       left: 0;
@@ -580,8 +569,8 @@
     </div>
   </div>
 
-  <!-- スキャンハイライト部分の修正 -->
-  <div class="scan-highlight">
+  <!-- カスタムスキャンオーバーレイ -->
+  <div id="custom-scan-overlay" class="hidden">
     <div class="scan-frame-new">
       <div class="dot-pattern"></div>
       <div class="scan-line"></div>
@@ -889,10 +878,10 @@
     function createARScene() {
       updateDebugStatus("ARシーンを作成中...");
       
-      // A-Frameシーンを動的に作成
+      // A-Frameシーンを動的に作成 - カスタムUIを指定
       const sceneEl = document.createElement('a-scene');
       sceneEl.setAttribute('id', 'ar-scene');
-      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
+      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; uiScanning: #custom-scan-overlay; autoStart: false;');
       sceneEl.setAttribute('color-space', 'sRGB');
       sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
       sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
@@ -956,33 +945,32 @@
         const mindARSystem = sceneEl.systems['mindar-image-system'];
         mindARSystem.start();
         
-        // カメラが起動した後にスキャンUIを表示（タイミング調整）
-        setTimeout(() => {
-          showScanUI();
-        }, 1000);
+        // カスタムスキャンオーバーレイを表示
+        const customScanOverlay = document.getElementById('custom-scan-overlay');
+        if (customScanOverlay) {
+          customScanOverlay.classList.remove('hidden');
+        }
         
         // ターゲット検出イベントリスナー設定
         targetContainerEl.addEventListener('targetFound', function() {
           updateDebugStatus("ターゲット検出");
           
-          // スキャンUIを非表示
-          scannerOverlay.style.transition = 'opacity 0.5s ease-out';
-          scannerOverlay.style.opacity = '0';
+          // カスタムスキャンオーバーレイを非表示
+          if (customScanOverlay) {
+            customScanOverlay.classList.add('hidden');
+          }
           
-          scanHighlight.style.transition = 'opacity 0.5s ease-out';
-          scanHighlight.style.opacity = '0';
-          
-          setTimeout(() => {
-            scannerOverlay.style.display = 'none';
-            scanHighlight.style.display = 'none';
-            
-            // 説明オーバーレイを表示
-            showExplanationOverlay();
-          }, 500);
+          // 説明オーバーレイを表示
+          showExplanationOverlay();
         });
         
         targetContainerEl.addEventListener('targetLost', function() {
           updateDebugStatus("ターゲットロスト");
+          
+          // カスタムスキャンオーバーレイを再表示
+          if (customScanOverlay) {
+            customScanOverlay.classList.remove('hidden');
+          }
         });
 
         // カメラがアクティブになった後のスタイル調整
@@ -1005,8 +993,10 @@
         
         // カメラエラー時にスタート画面を再表示
         retroStartScreen.style.display = 'block';
-        scannerOverlay.style.display = 'none';
-        scanHighlight.style.display = 'none';
+        const customScanOverlay = document.getElementById('custom-scan-overlay');
+        if (customScanOverlay) {
+          customScanOverlay.classList.add('hidden');
+        }
       });
     }
     
