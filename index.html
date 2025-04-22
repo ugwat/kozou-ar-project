@@ -644,7 +644,7 @@
         // A-Frameシーンを動的に作成
         const sceneEl = document.createElement('a-scene');
         sceneEl.setAttribute('id', 'ar-scene');
-        sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
+        sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no');
         sceneEl.setAttribute('color-space', 'sRGB');
         sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
         sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
