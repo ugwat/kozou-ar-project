@@ -384,6 +384,7 @@
       top: 0;
       left: 0;
       z-index: 1;
+      display: none; /* 最初は非表示 */
     }
     
     /* カスタムスキャンオーバーレイ */
@@ -584,125 +585,8 @@
     </div>
   </div>
 
-  <!-- スキャナーオーバーレイ -->
-  <div id="futuristic-scanner" class="scanner-overlay">
-    <div class="main-frame">
-      <div class="scanner-container">
-        <div class="target-scanner">
-          <div class="corner top-left"></div>
-          <div class="corner top-right"></div>
-          <div class="corner bottom-left"></div>
-          <div class="corner bottom-right"></div>
-          
-          <!-- スキャンバー -->
-          <div class="scan-bar"></div>
-          
-          <!-- 非表示に設定したスキャンフレーム -->
-          <div class="scan-frame"></div>
-          
-          <!-- 座標テキスト - 左側 -->
-          <div class="coordinates-left">
-            <div class="coord-number">
-              X: 0.342<br>
-              Y: 1.092<br>
-              Z: 0.875<br>
-              X: 0.341<br>
-              Y: 1.095<br>
-              Z: 0.873<br>
-              X: 0.339<br>
-              Y: 1.098<br>
-              Z: 0.877<br>
-              X: 0.336<br>
-              Y: 1.102<br>
-              Z: 0.880<br>
-              X: 0.334<br>
-              Y: 1.105<br>
-              Z: 0.883<br>
-            </div>
-          </div>
-          
-          <!-- 座標テキスト - 右側 -->
-          <div class="coordinates-right">
-            <div class="coord-number" style="animation-delay: -1.5s;">
-              A: 42.31<br>
-              B: 18.72<br>
-              C: 29.54<br>
-              A: 42.35<br>
-              B: 18.70<br>
-              C: 29.57<br>
-              A: 42.38<br>
-              B: 18.68<br>
-              C: 29.60<br>
-              A: 42.42<br>
-              B: 18.65<br>
-              C: 29.63<br>
-              A: 42.45<br>
-              B: 18.63<br>
-              C: 29.66<br>
-            </div>
-          </div>
-          
-          <div class="crosshair-h"></div>
-          <div class="crosshair-v"></div>
-        </div>
-      </div>
-      
-      <div class="status-indicator">
-        <div class="status-text">マーカースキャン中</div>
-        <div class="status-bars">
-          <div class="bar active"></div>
-          <div class="bar active"></div>
-          <div class="bar active"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-        </div>
-      </div>
-      
-      <div class="bottom-status">
-        <div class="system-name">
-          KOZOU+ AR システム <span class="pulse-dot">●</span>
-        </div>
-        <div class="instruction">
-          QRコードをフレーム内に収めてください
-        </div>
-      </div>
-    </div>
-    
-    <div class="hud-left">
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">AR.SYS</div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">SCAN.v2</div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">MODEL.QR</div>
-      </div>
-    </div>
-    
-    <div class="hud-right">
-      <div class="hud-item">
-        <div class="hud-text">INIT_05</div>
-        <div class="hud-dot"></div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-text">CAM_ON</div>
-        <div class="hud-dot"></div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-text" id="tracking-status">SEEK_31%</div>
-        <div class="hud-dot"></div>
-      </div>
-    </div>
-  </div>
+  <!-- ARスキャナーオーバーレイ -->
+  <div id="scanner-overlay"></div>
 
   <!-- ARコンテンツを動的に追加するためのコンテナ -->
   <div id="ar-container"></div>
@@ -715,12 +599,14 @@
     const debugPanel = document.getElementById('debug-panel');
     const debugStatus = document.getElementById('debug-status');
     const arContainer = document.getElementById('ar-container');
+    const scannerOverlay = document.getElementById('scanner-overlay');
     const typingText1 = document.getElementById('typing-text1');
     const typingText2 = document.getElementById('typing-text2');
     const retroFrame = document.querySelector('.retro-frame');
-    const scannerOverlay = document.getElementById('futuristic-scanner');
-    const scanHighlight = document.querySelector('.scan-highlight');
-    const explanationOverlay = document.querySelector('.explanation-overlay');
+    
+    // グローバル変数
+    let arSceneCreated = false;
+    let arScene = null;
     
     // 3D傾斜効果をマウス/タッチ移動で微調整
     function addTiltEffect() {
@@ -762,53 +648,21 @@
           }, 150);
         }
       }, 2000);
-    }
-    
-    // スキャンUIを表示する関数
-    function showScanUI() {
-      // スキャナーオーバーレイをフェードイン
-      scannerOverlay.style.display = 'block';
-      setTimeout(() => {
-        scannerOverlay.style.opacity = '1';
-      }, 100);
       
-      // スキャンハイライトをフェードイン
-      scanHighlight.style.display = 'block';
-      setTimeout(() => {
-        scanHighlight.style.opacity = '1';
-      }, 100);
-      
-      // 古い四隅の要素を非表示
-      const corners = document.querySelectorAll('.corner, .scan-corner');
-      corners.forEach(corner => {
-        if (corner) corner.style.display = 'none';
-      });
-      
-      updateDebugStatus("スキャンUI表示完了");
-    }
-    
-    // 説明オーバーレイを表示する関数
-    function showExplanationOverlay() {
-      if (!explanationOverlay) return;
-      
-      // 説明内容を設定
-      const explanationContent = explanationOverlay.querySelector('.explanation-content');
-      if (explanationContent) {
-        explanationContent.innerHTML = `
-          <h2 style="margin-bottom: 20px; text-shadow: 0 0 10px #00d2ff;">まぜそばの食べ方</h2>
-          <div style="font-size: 14px; margin-bottom: 30px; text-shadow: 0 0 5px #00d2ff;">
-            まずは、しっかりと混ぜましょう！
-          </div>
-        `;
+      // 常に微細な動きを加える
+      let time = 0;
+      function animate() {
+        time += 0.01;
+        const floatX = Math.sin(time) * 0.5;
+        const floatY = Math.cos(time * 0.8) * 0.5;
+        
+        if (retroStartScreen.style.display === 'block') {
+          retroFrame.style.transform = `rotateX(${baseRotateX + floatY}deg) rotateY(${baseRotateY + floatX}deg) rotateZ(${baseRotateZ}deg)`;
+        }
+        
+        requestAnimationFrame(animate);
       }
-      
-      // フェードイン表示
-      explanationOverlay.style.display = 'block';
-      setTimeout(() => {
-        explanationOverlay.style.opacity = '1';
-      }, 100);
-      
-      updateDebugStatus("説明オーバーレイ表示");
+      animate();
     }
     
     // タイピングアニメーション用の関数
@@ -855,6 +709,9 @@
         typeWriter(typingText1, text1, 0, function() {
           typeWriter(typingText2, text2, 0);
         });
+        
+        // ARシーンを事前に作成（ただしカメラは起動しない）
+        prepareARScene();
       }, 1500);
       
       // エラーハンドリング
@@ -863,25 +720,19 @@
       });
     });
     
-    // スタートボタンクリック時の処理
-    startButton.addEventListener('click', function() {
-      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
+    // ARシーンを準備する関数（カメラはまだ起動しない）
+    function prepareARScene() {
+      updateDebugStatus("ARシーンを準備中（カメラはまだ起動しません）...");
       
-      // スタート画面を非表示
-      retroStartScreen.style.display = 'none';
+      if (arSceneCreated) {
+        updateDebugStatus("ARシーンはすでに作成済みです");
+        return;
+      }
       
-      // ARシーンを動的に作成
-      createARScene();
-    });
-    
-    // ARシーンを動的に作成する関数
-    function createARScene() {
-      updateDebugStatus("ARシーンを作成中...");
-      
-      // A-Frameシーンを動的に作成 - カスタムUIを指定
+      // A-Frameシーンを動的に作成
       const sceneEl = document.createElement('a-scene');
       sceneEl.setAttribute('id', 'ar-scene');
-      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; uiScanning: #custom-scan-overlay; autoStart: false;');
+      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
       sceneEl.setAttribute('color-space', 'sRGB');
       sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
       sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
@@ -939,52 +790,18 @@
       
       // シーンの初期化完了イベントを監視
       sceneEl.addEventListener('loaded', function() {
-        updateDebugStatus("ARシーン初期化完了、カメラへのアクセスを要求します");
-        
-        // MindARを開始（ここでカメラへのアクセス要求が発生）
-        const mindARSystem = sceneEl.systems['mindar-image-system'];
-        mindARSystem.start();
-        
-        // カスタムスキャンオーバーレイを表示
-        const customScanOverlay = document.getElementById('custom-scan-overlay');
-        if (customScanOverlay) {
-          customScanOverlay.classList.remove('hidden');
-        }
+        updateDebugStatus("ARシーン初期化完了（カメラはまだ起動していません）");
+        arSceneCreated = true;
+        arScene = sceneEl;
         
         // ターゲット検出イベントリスナー設定
         targetContainerEl.addEventListener('targetFound', function() {
           updateDebugStatus("ターゲット検出");
-          
-          // カスタムスキャンオーバーレイを非表示
-          if (customScanOverlay) {
-            customScanOverlay.classList.add('hidden');
-          }
-          
-          // 説明オーバーレイを表示
-          showExplanationOverlay();
         });
         
         targetContainerEl.addEventListener('targetLost', function() {
           updateDebugStatus("ターゲットロスト");
-          
-          // カスタムスキャンオーバーレイを再表示
-          if (customScanOverlay) {
-            customScanOverlay.classList.remove('hidden');
-          }
         });
-
-        // カメラがアクティブになった後のスタイル調整
-        setTimeout(() => {
-          const canvas = document.querySelector('.a-canvas');
-          if (canvas) {
-            canvas.style.width = "100%";
-            canvas.style.height = "100%";
-            canvas.style.position = "absolute";
-            canvas.style.top = "0";
-            canvas.style.left = "0";
-            canvas.style.objectFit = "cover";
-          }
-        }, 500);
       });
       
       // エラーハンドリング
@@ -993,11 +810,71 @@
         
         // カメラエラー時にスタート画面を再表示
         retroStartScreen.style.display = 'block';
-        const customScanOverlay = document.getElementById('custom-scan-overlay');
-        if (customScanOverlay) {
-          customScanOverlay.classList.add('hidden');
-        }
+        arContainer.style.display = 'none';
       });
+    }
+    
+    // スタートボタンクリック時の処理
+    startButton.addEventListener('click', function() {
+      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
+      
+      // スタート画面を非表示
+      retroStartScreen.style.display = 'none';
+      
+      // ARコンテナを表示
+      arContainer.style.display = 'block';
+      
+      // ARシーンが正常に作成された場合のみカメラを起動
+      if (arSceneCreated && arScene) {
+        startARExperience();
+      } else {
+        // ARシーンがまだ作成されていない場合は作成してから起動
+        prepareARScene();
+        // シーンのロードを待ってから起動
+        const waitForScene = setInterval(() => {
+          if (arSceneCreated && arScene) {
+            clearInterval(waitForScene);
+            startARExperience();
+          }
+        }, 100);
+      }
+    });
+    
+    // ARエクスペリエンスを開始する関数
+    function startARExperience() {
+      updateDebugStatus("カメラへのアクセスを要求します");
+      
+      // MindARを開始（ここでカメラへのアクセス要求が発生）
+      const mindARSystem = arScene.systems['mindar-image-system'];
+      
+      // カメラ起動前にスキャナーオーバーレイを表示
+      scannerOverlay.style.display = 'block';
+      
+      // カメラを起動
+      mindARSystem.start();
+      
+      // カメラがアクティブになった後のスタイル調整
+      setTimeout(() => {
+        adjustCanvasStyles();
+      }, 500);
+    }
+    
+    // カメラキャンバスのスタイルを調整する関数
+    function adjustCanvasStyles() {
+      updateDebugStatus("カメラ表示スタイルを調整中...");
+      
+      // A-Frameのキャンバス要素
+      const canvas = document.querySelector('.a-canvas');
+      if (canvas) {
+        canvas.style.width = "100%";
+        canvas.style.height = "100%";
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.objectFit = "cover";
+      } else {
+        updateDebugStatus("キャンバス要素が見つかりません");
+      }
     }
     
     // デバッグ表示の切り替え（URLに?debug=trueを付けるとデバッグモード）
