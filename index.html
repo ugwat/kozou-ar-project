@@ -613,27 +613,26 @@
     
     // ARエクスペリエンスを開始する関数
     function startARExperience() {
-      if (arStarted) return; // 既に開始している場合は何もしない
-      arStarted = true; // 開始フラグを立てる
-      
-      console.log("ARエクスペリエンス開始");
-      
-      // スタート画面を非表示
-      retroStartScreen.style.display = 'none';
-      
-      // ARコンテナを表示
-      arContainer.style.display = 'block';
-      scannerOverlay.style.display = 'none';
-      
-      // ARシーンが作成済みであれば直接カメラを起動
-      if (arSceneCreated && arScene) {
-        console.log("既存のARシーンを使用してカメラを起動");
-        startCamera();
-      } else {
-        // ARシーンを新規作成
-        console.log("ARシーンを新規作成");
-        prepareARScene();
-      }
+      updateDebugStatus("カメラへのアクセスを要求します");
+
+      // スキャナーUIを表示
+      scannerOverlay.style.display = 'block';
+
+      // MindARの準備が終わるまで待つ（重要！！）
+      const waitForSystem = setInterval(() => {
+        const mindARSystem = arScene.systems['mindar-image-system'];
+        if (mindARSystem && typeof mindARSystem.start === 'function') {
+          clearInterval(waitForSystem);
+
+          // カメラ起動
+          mindARSystem.start();
+
+          // Canvasのスタイルを調整
+          setTimeout(adjustCanvasStyles, 500);
+
+          updateDebugStatus("MindAR起動しました");
+        }
+      }, 100);
     }
     
     // ARシーンを準備する関数
