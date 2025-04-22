@@ -348,48 +348,66 @@
       z-index: 1;
     }
     
-    /* スキャナーオーバーレイの最適化 - 縦長長方形マスク */
+    /* スキャナーオーバーレイの修正 */
+    .scanner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    /* 既存のスキャン枠を非表示 */
+    .scan-frame {
+      display: none;
+    }
+    
+    /* スキャンハイライト（縦長長方形） */
     .scan-highlight {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 999;
+      background-color: rgba(0, 0, 0, 0.6);
+      z-index: 990;
       pointer-events: none;
       display: none;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
-
+    
     .scan-highlight::before {
       content: '';
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 200px;  /* 横幅 */
-      height: 300px; /* 縦長に変更 */
+      width: 200px;
+      height: 300px;
       transform: translate(-50%, -50%);
       background: transparent;
-      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6); /* 内側を透明にする */
+      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6);
     }
-
-    /* HUD的な要素を追加 - 軽量実装 */
+    
+    /* HUD的な要素 */
     .scan-highlight::after {
       content: '';
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 210px;  /* マスクより少し大きく */
-      height: 310px; /* マスクより少し大きく */
+      width: 210px;
+      height: 310px;
       transform: translate(-50%, -50%);
       border: 1px solid #00d2ff;
       box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
-      pointer-events: none;
     }
-
-    /* スキャンエリアの角を示す軽量マーカー */
+    
+    /* スキャンエリアの角マーカー */
     .scan-corner {
       position: absolute;
       width: 20px;
@@ -398,50 +416,50 @@
       pointer-events: none;
       z-index: 991;
     }
-
+    
     .scan-corner-tl {
       top: calc(50% - 155px);
       left: calc(50% - 105px);
       border-top: 2px solid;
       border-left: 2px solid;
     }
-
+    
     .scan-corner-tr {
       top: calc(50% - 155px);
       right: calc(50% - 105px);
       border-top: 2px solid;
       border-right: 2px solid;
     }
-
+    
     .scan-corner-bl {
       bottom: calc(50% - 155px);
       left: calc(50% - 105px);
       border-bottom: 2px solid;
       border-left: 2px solid;
     }
-
+    
     .scan-corner-br {
       bottom: calc(50% - 155px);
       right: calc(50% - 105px);
       border-bottom: 2px solid;
       border-right: 2px solid;
     }
-
-    /* マーカー検出後のオーバーレイ - 別に用意 */
+    
+    /* マーカー検出後のオーバーレイ */
     .explanation-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.7); /* 少し暗め */
-      z-index: 995; /* スキャンハイライトより上 */
+      background-color: rgba(0, 0, 0, 0.7);
+      z-index: 995;
       display: none;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
-
-    /* 説明コンテンツ用のコンテナ */
+    
+    /* 説明コンテンツ用コンテナ */
     .explanation-content {
       position: absolute;
       top: 50%;
@@ -451,17 +469,6 @@
       max-width: 500px;
       text-align: center;
       color: #00d2ff;
-      font-family: 'Press Start 2P', cursive;
-    }
-
-    /* 既存のスキャン枠を非表示にするスタイル */
-    .scan-frame {
-      display: none; /* 既存の正方形スキャン枠を非表示に */
-    }
-
-    /* その他のスキャン関連の既存要素も必要に応じて非表示 */
-    .target-scanner .corner {
-      display: none; /* 既存の角マーカーも非表示に */
     }
   </style>
 </head>
@@ -526,9 +533,8 @@
     </div>
   </div>
 
-  <!-- スキャンハイライト部分 -->
+  <!-- スキャンハイライト -->
   <div class="scan-highlight">
-    <!-- 角マーカー -->
     <div class="scan-corner scan-corner-tl"></div>
     <div class="scan-corner scan-corner-tr"></div>
     <div class="scan-corner scan-corner-bl"></div>
@@ -538,7 +544,127 @@
   <!-- マーカー読み取り後の説明オーバーレイ -->
   <div class="explanation-overlay">
     <div class="explanation-content">
-      <!-- こちらにまぜそばの説明アニメーションが表示される -->
+      <!-- まぜそばの説明内容がここに入る -->
+    </div>
+  </div>
+
+  <!-- スキャナーオーバーレイ -->
+  <div id="futuristic-scanner" class="scanner-overlay">
+    <div class="main-frame">
+      <div class="scanner-container">
+        <div class="target-scanner">
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+          
+          <!-- スキャンバー -->
+          <div class="scan-bar"></div>
+          
+          <!-- 非表示に設定したスキャンフレーム -->
+          <div class="scan-frame"></div>
+          
+          <!-- 座標テキスト - 左側 -->
+          <div class="coordinates-left">
+            <div class="coord-number">
+              X: 0.342<br>
+              Y: 1.092<br>
+              Z: 0.875<br>
+              X: 0.341<br>
+              Y: 1.095<br>
+              Z: 0.873<br>
+              X: 0.339<br>
+              Y: 1.098<br>
+              Z: 0.877<br>
+              X: 0.336<br>
+              Y: 1.102<br>
+              Z: 0.880<br>
+              X: 0.334<br>
+              Y: 1.105<br>
+              Z: 0.883<br>
+            </div>
+          </div>
+          
+          <!-- 座標テキスト - 右側 -->
+          <div class="coordinates-right">
+            <div class="coord-number" style="animation-delay: -1.5s;">
+              A: 42.31<br>
+              B: 18.72<br>
+              C: 29.54<br>
+              A: 42.35<br>
+              B: 18.70<br>
+              C: 29.57<br>
+              A: 42.38<br>
+              B: 18.68<br>
+              C: 29.60<br>
+              A: 42.42<br>
+              B: 18.65<br>
+              C: 29.63<br>
+              A: 42.45<br>
+              B: 18.63<br>
+              C: 29.66<br>
+            </div>
+          </div>
+          
+          <div class="crosshair-h"></div>
+          <div class="crosshair-v"></div>
+        </div>
+      </div>
+      
+      <div class="status-indicator">
+        <div class="status-text">マーカースキャン中</div>
+        <div class="status-bars">
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </div>
+      
+      <div class="bottom-status">
+        <div class="system-name">
+          KOZOU+ AR システム <span class="pulse-dot">●</span>
+        </div>
+        <div class="instruction">
+          QRコードをフレーム内に収めてください
+        </div>
+      </div>
+    </div>
+    
+    <div class="hud-left">
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">AR.SYS</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">SCAN.v2</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">MODEL.QR</div>
+      </div>
+    </div>
+    
+    <div class="hud-right">
+      <div class="hud-item">
+        <div class="hud-text">INIT_05</div>
+        <div class="hud-dot"></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-text">CAM_ON</div>
+        <div class="hud-dot"></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-text" id="tracking-status">SEEK_31%</div>
+        <div class="hud-dot"></div>
+      </div>
     </div>
   </div>
 
@@ -556,50 +682,91 @@
     const typingText1 = document.getElementById('typing-text1');
     const typingText2 = document.getElementById('typing-text2');
     const retroFrame = document.querySelector('.retro-frame');
+    const scannerOverlay = document.getElementById('futuristic-scanner');
+    const scanHighlight = document.querySelector('.scan-highlight');
+    const explanationOverlay = document.querySelector('.explanation-overlay');
     
-    // スキャンハイライトを表示する関数
-    function showScanHighlight() {
-      const scanHighlight = document.querySelector('.scan-highlight');
-      if (scanHighlight) {
-        scanHighlight.style.display = 'block';
-        setTimeout(() => {
-          scanHighlight.style.opacity = '1';
-        }, 100);
-      }
-    }
-
-    function hideScanHighlight() {
-      const scanHighlight = document.querySelector('.scan-highlight');
-      if (scanHighlight) {
-        scanHighlight.style.opacity = '0';
-        setTimeout(() => {
-          scanHighlight.style.display = 'none';
-        }, 500);
-      }
-    }
-
-    // 説明オーバーレイを表示する関数（マーカー検出時に呼び出す）
-    function showExplanationOverlay() {
-      const explanationOverlay = document.querySelector('.explanation-overlay');
-      if (explanationOverlay) {
-        explanationOverlay.style.display = 'block';
-        // フェードイン
-        setTimeout(() => {
-          explanationOverlay.style.opacity = '1';
-        }, 100);
+    // 3D傾斜効果をマウス/タッチ移動で微調整
+    function addTiltEffect() {
+      // 基本の傾き角度
+      let baseRotateX = 15;  // より強い傾き
+      let baseRotateY = -2;
+      let baseRotateZ = 0.5;
+      
+      // マウス移動時の処理
+      document.addEventListener('mousemove', function(e) {
+        if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
         
-        // ここに説明アニメーションの処理を追加
-        const explanationContent = document.querySelector('.explanation-content');
-        if (explanationContent) {
-          explanationContent.innerHTML = `
-            <h2 style="margin-bottom: 20px; text-shadow: 0 0 10px #00d2ff;">まぜそばの食べ方</h2>
-            <div style="font-size: 14px; margin-bottom: 30px; text-shadow: 0 0 5px #00d2ff;">
-              まずは、しっかりと混ぜましょう！
-            </div>
-            <!-- アニメーションはここに追加 -->
-          `;
-        }
+        const xAxis = (window.innerWidth / 2 - e.pageX) / 20;
+        const yAxis = (window.innerHeight / 2 - e.pageY) / 20;
+        
+        retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
+      });
+      
+      // スマホやタブレットでのジャイロセンサー対応
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener('deviceorientation', function(e) {
+          if (!retroStartScreen.style.display || retroStartScreen.style.display === 'none') return;
+          if (!e.beta || !e.gamma) return;
+          
+          const xTilt = e.gamma / 10; // 左右の傾き (-90〜90)
+          const yTilt = e.beta / 10;  // 前後の傾き (-180〜180)
+          
+          retroFrame.style.transform = `rotateX(${baseRotateX + yTilt}deg) rotateY(${baseRotateY + xTilt}deg) rotateZ(${baseRotateZ}deg)`;
+        });
       }
+      
+      // グリッチエフェクトをランダムに発生
+      setInterval(() => {
+        if (Math.random() > 0.95) { // 5%の確率で発生
+          retroFrame.style.transform = `rotateX(${baseRotateX + (Math.random() * 3 - 1.5)}deg) rotateY(${baseRotateY + (Math.random() * 3 - 1.5)}deg) rotateZ(${baseRotateZ + (Math.random() * 1 - 0.5)}deg)`;
+          
+          setTimeout(() => {
+            retroFrame.style.transform = `rotateX(${baseRotateX}deg) rotateY(${baseRotateY}deg) rotateZ(${baseRotateZ}deg)`;
+          }, 150);
+        }
+      }, 2000);
+    }
+    
+    // スキャンUIを表示する関数
+    function showScanUI() {
+      // スキャナーオーバーレイをフェードイン
+      scannerOverlay.style.display = 'block';
+      setTimeout(() => {
+        scannerOverlay.style.opacity = '1';
+      }, 100);
+      
+      // スキャンハイライトをフェードイン
+      scanHighlight.style.display = 'block';
+      setTimeout(() => {
+        scanHighlight.style.opacity = '1';
+      }, 100);
+      
+      updateDebugStatus("スキャンUI表示完了");
+    }
+    
+    // 説明オーバーレイを表示する関数
+    function showExplanationOverlay() {
+      if (!explanationOverlay) return;
+      
+      // 説明内容を設定
+      const explanationContent = explanationOverlay.querySelector('.explanation-content');
+      if (explanationContent) {
+        explanationContent.innerHTML = `
+          <h2 style="margin-bottom: 20px; text-shadow: 0 0 10px #00d2ff;">まぜそばの食べ方</h2>
+          <div style="font-size: 14px; margin-bottom: 30px; text-shadow: 0 0 5px #00d2ff;">
+            まずは、しっかりと混ぜましょう！
+          </div>
+        `;
+      }
+      
+      // フェードイン表示
+      explanationOverlay.style.display = 'block';
+      setTimeout(() => {
+        explanationOverlay.style.opacity = '1';
+      }, 100);
+      
+      updateDebugStatus("説明オーバーレイ表示");
     }
     
     // タイピングアニメーション用の関数
@@ -625,6 +792,9 @@
     // 初期化処理
     document.addEventListener("DOMContentLoaded", function() {
       updateDebugStatus("DOM読み込み完了");
+      
+      // 3D傾斜効果を追加
+      addTiltEffect();
       
       // リソースの読み込みを模倣（実際のリソース読み込みはここで行う）
       setTimeout(() => {
@@ -664,35 +834,126 @@
     
     // ARシーンを動的に作成する関数
     function createARScene() {
-      const sceneEl = document.querySelector('a-scene');
+      updateDebugStatus("ARシーンを作成中...");
       
-      sceneEl.addEventListener('loaded', () => {
-        console.log('ARシーンが読み込まれました');
-        updateDebugStatus('ARシーン読み込み完了');
+      // A-Frameシーンを動的に作成
+      const sceneEl = document.createElement('a-scene');
+      sceneEl.setAttribute('id', 'ar-scene');
+      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
+      sceneEl.setAttribute('color-space', 'sRGB');
+      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
+      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
+      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
+      
+      // 画面サイズに合わせるための属性を追加
+      sceneEl.setAttribute('embedded', '');
+      sceneEl.setAttribute('seamless-tab-navigation', '');
+      
+      // アセット
+      const assetsEl = document.createElement('a-assets');
+      
+      const emblemLogo = document.createElement('img');
+      emblemLogo.setAttribute('id', 'emblem-logo');
+      emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
+      
+      const textLogo = document.createElement('img');
+      textLogo.setAttribute('id', 'text-logo');
+      textLogo.setAttribute('src', 'assets/text-logo.png');
+      
+      assetsEl.appendChild(emblemLogo);
+      assetsEl.appendChild(textLogo);
+      sceneEl.appendChild(assetsEl);
+      
+      // カメラ
+      const cameraEl = document.createElement('a-camera');
+      cameraEl.setAttribute('position', '0 0 0');
+      cameraEl.setAttribute('look-controls', 'enabled: false');
+      sceneEl.appendChild(cameraEl);
+      
+      // ターゲットコンテナ
+      const targetContainerEl = document.createElement('a-entity');
+      targetContainerEl.setAttribute('id', 'target-container');
+      targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
+      
+      // ロゴ表示
+      const logoDisplayEl = document.createElement('a-plane');
+      logoDisplayEl.setAttribute('id', 'logo-display');
+      logoDisplayEl.setAttribute('position', '0 0 0');
+      logoDisplayEl.setAttribute('hologram-effect', '');
+      logoDisplayEl.setAttribute('opening-animation', '');
+      
+      const logoImageEl = document.createElement('a-image');
+      logoImageEl.setAttribute('src', '#emblem-logo');
+      logoImageEl.setAttribute('width', '1');
+      logoImageEl.setAttribute('height', '1');
+      logoImageEl.setAttribute('opacity', '0.9');
+      
+      logoDisplayEl.appendChild(logoImageEl);
+      targetContainerEl.appendChild(logoDisplayEl);
+      sceneEl.appendChild(targetContainerEl);
+      
+      // ARコンテナに追加
+      arContainer.appendChild(sceneEl);
+      
+      // シーンの初期化完了イベントを監視
+      sceneEl.addEventListener('loaded', function() {
+        updateDebugStatus("ARシーン初期化完了、カメラへのアクセスを要求します");
         
-        // スタート画面を非表示にする
-        const startScreen = document.getElementById('retro-start-screen');
-        if (startScreen) {
-          startScreen.style.display = 'none';
-        }
+        // MindARを開始（ここでカメラへのアクセス要求が発生）
+        const mindARSystem = sceneEl.systems['mindar-image-system'];
+        mindARSystem.start();
         
-        // MindARシステムを開始
-        const mindarThree = sceneEl.systems['mindar-system'];
-        mindarThree.start();
-        
-        // カメラアクセスが許可された後にスキャンハイライトを表示
+        // カメラが起動した後にスキャンUIを表示（タイミング調整）
         setTimeout(() => {
-          showScanHighlight();
-          updateDebugStatus('スキャンハイライト表示');
+          showScanUI();
         }, 1000);
+        
+        // ターゲット検出イベントリスナー設定
+        targetContainerEl.addEventListener('targetFound', function() {
+          updateDebugStatus("ターゲット検出");
+          
+          // スキャンUIを非表示
+          scannerOverlay.style.transition = 'opacity 0.5s ease-out';
+          scannerOverlay.style.opacity = '0';
+          
+          scanHighlight.style.transition = 'opacity 0.5s ease-out';
+          scanHighlight.style.opacity = '0';
+          
+          setTimeout(() => {
+            scannerOverlay.style.display = 'none';
+            scanHighlight.style.display = 'none';
+            
+            // 説明オーバーレイを表示
+            showExplanationOverlay();
+          }, 500);
+        });
+        
+        targetContainerEl.addEventListener('targetLost', function() {
+          updateDebugStatus("ターゲットロスト");
+        });
+
+        // カメラがアクティブになった後のスタイル調整
+        setTimeout(() => {
+          const canvas = document.querySelector('.a-canvas');
+          if (canvas) {
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+            canvas.style.position = "absolute";
+            canvas.style.top = "0";
+            canvas.style.left = "0";
+            canvas.style.objectFit = "cover";
+          }
+        }, 500);
       });
       
-      // ターゲット検出時のイベントリスナー
-      sceneEl.addEventListener('targetFound', () => {
-        console.log('ターゲットを検出しました');
-        updateDebugStatus('ターゲット検出');
-        hideScanHighlight();
-        showExplanationOverlay();
+      // エラーハンドリング
+      sceneEl.addEventListener('camera-error', function() {
+        updateDebugStatus("カメラエラー: アクセスが拒否されました");
+        
+        // カメラエラー時にスタート画面を再表示
+        retroStartScreen.style.display = 'block';
+        scannerOverlay.style.display = 'none';
+        scanHighlight.style.display = 'none';
       });
     }
     
