@@ -625,9 +625,15 @@
       arContainer.style.display = 'block';
       scannerOverlay.style.display = 'none';
       
-      // ARシーンを新規作成
-      console.log("ARシーンを新規作成");
-      prepareARScene();
+      // ARシーンが作成済みであれば直接カメラを起動
+      if (arSceneCreated && arScene) {
+        console.log("既存のARシーンを使用してカメラを起動");
+        startCamera();
+      } else {
+        // ARシーンを新規作成
+        console.log("ARシーンを新規作成");
+        prepareARScene();
+      }
     }
     
     // ARシーンを準備する関数
@@ -773,7 +779,7 @@
           arScene.removeEventListener('camera-init', onCameraInit);
         });
         
-        // カメラを開始
+        // カメラを開始 - ここで初めてカメラ許可が要求される
         console.log("カメラにアクセス要求");
         mindARSystem.start();
         
