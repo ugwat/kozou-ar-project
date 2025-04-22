@@ -15,6 +15,25 @@
       box-sizing: border-box;
     }
     
+    /* 座標表示を非表示に */
+    .coordinates-left,
+    .coordinates-right {
+      display: none !important;
+    }
+    
+    /* 既存の正方形スキャン枠と四隅の角を非表示に */
+    .scan-frame,
+    .corner,
+    .target-scanner > .corner {
+      display: none !important;
+    }
+    
+    /* スキャンライトに関する既存の要素も非表示に */
+    .crosshair-h,
+    .crosshair-v {
+      display: none !important;
+    }
+    
     body { 
       margin: 0; 
       padding: 0;
@@ -360,11 +379,6 @@
       display: none;
       opacity: 0;
       transition: opacity 0.5s ease;
-    }
-    
-    /* 既存のスキャン枠を非表示 */
-    .scan-frame {
-      display: none;
     }
     
     /* スキャンハイライト（縦長長方形） */
