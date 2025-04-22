@@ -316,7 +316,7 @@
       96.5% { opacity: 0.9; transform: translate(0px, 0px); }
     }
     
-    /* スキャナーオーバーレイ - スクリーンショットに合わせて修正 */
+    /* スキャナーオーバーレイ - スクリーンショットに完全に合わせた修正 */
     #scanner-overlay {
       position: fixed;
       top: 0;
@@ -329,21 +329,21 @@
       background-color: rgba(0, 0, 0, 0.7); /* 背景を暗く */
     }
     
-    /* 青いフレーム */
+    /* 青いフレーム - スクリーンショットのとおりの色に調整 */
     .scanner-frame {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 70%; /* スクリーンショットに合わせてサイズ調整 */
-      height: 85%; /* スクリーンショットに合わせてサイズ調整 */
-      border: 4px solid #00a2ff;
-      box-shadow: 0 0 20px rgba(0, 162, 255, 0.8);
+      width: 70%;
+      height: 85%;
+      border: 4px solid #00c8ff; /* スクリーンショットに合わせた青色 */
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.8); /* グロー効果も調整 */
       background-color: transparent;
       overflow: hidden;
     }
     
-    /* ドットパターン */
+    /* ドットパターン - 確実に表示されるように調整 */
     .dot-pattern {
       position: absolute;
       top: 0;
@@ -352,6 +352,7 @@
       height: 100%;
       background-image: radial-gradient(circle, rgba(100, 100, 100, 0.4) 1px, transparent 1.5px);
       background-size: 15px 15px;
+      background-repeat: repeat;
       opacity: 0.5;
       z-index: 1;
     }
@@ -708,9 +709,12 @@
     }
     
     // スタートボタンクリック時の処理
-    startButton.addEventListener('click', startARExperience);
+    startButton.addEventListener('click', function(e) {
+      e.preventDefault(); // イベントのデフォルト動作を防止
+      e.stopPropagation(); // イベントの伝播を停止
+      startARExperience();
+    });
     
-    // ARエクスペリエンスを開始する関数
     // ARエクスペリエンスを開始する関数
     function startARExperience() {
       if (arStarted) return; // 既に開始している場合は何もしない
@@ -719,12 +723,11 @@
       
       updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
       
-      // スタート画面を非表示
+      // まずスタート画面を非表示
       retroStartScreen.style.display = 'none';
       
-      // ARコンテナとスキャナーを表示
+      // ARコンテナを表示（スキャナーはまだ表示しない）
       arContainer.style.display = 'block';
-      scannerOverlay.style.display = 'block';
       
       // ARシーンが正常に作成された場合のみカメラを起動
       if (arSceneCreated && arScene) {
@@ -748,6 +751,25 @@
       
       // MindARを開始（ここでカメラへのアクセス要求が発生）
       const mindARSystem = arScene.systems['mindar-image-system'];
+      
+      // カメラ許可が得られたらスキャナーを表示するイベントリスナー
+      arScene.addEventListener('camera-init', function() {
+        updateDebugStatus("カメラ初期化完了");
+        
+        // カメラ初期化完了後にスキャナーオーバーレイを表示
+        scannerOverlay.style.display = 'block';
+        
+        // スキャナーのドットパターンが確実に表示されるようにDOM更新を強制
+        const dotPattern = document.querySelector('.dot-pattern');
+        if (dotPattern) {
+          dotPattern.style.display = 'none';
+          setTimeout(() => {
+            dotPattern.style.display = 'block';
+          }, 50);
+        }
+      }, { once: true });
+      
+      // カメラを起動
       mindARSystem.start();
       
       // カメラがアクティブになった後のスタイル調整
@@ -755,11 +777,16 @@
         adjustCanvasStyles();
         
         // MindARのデフォルトUIを非表示
-        const mindARUI = document.querySelectorAll('.mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr');
-        mindARUI.forEach(el => {
-          if (el) el.style.display = 'none';
-        });
+        hideDefaultMindARUI();
       }, 500);
+    }
+    
+    // MindARのデフォルトUIを非表示にする関数
+    function hideDefaultMindARUI() {
+      const mindARUI = document.querySelectorAll('.mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr');
+      mindARUI.forEach(el => {
+        if (el) el.style.display = 'none';
+      });
     }
     
     // カメラキャンバスのスタイルを調整する関数
