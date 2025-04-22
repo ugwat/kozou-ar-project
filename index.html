@@ -316,15 +316,37 @@
       96.5% { opacity: 0.9; transform: translate(0px, 0px); }
     }
     
-    /* スキャナーオーバーレイ - スクリーンショットに完全に合わせた修正 */
+    /* ARコンテナ */
+    #ar-container {
+      width: 100%;
+      height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      display: none; /* 最初は非表示 */
+    }
+    
+    /* A-Frameのキャンバスを背面に下げる */
+    .a-canvas {
+      position: absolute !important;
+      top: 0;
+      left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+      z-index: 10; /* Scannerより下にする */
+    }
+    
+    /* スキャナーUIを最前面に固定 */
     #scanner-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
+      z-index: 9999;
       pointer-events: none;
-      z-index: 990;
       display: none;
       background-color: rgba(0, 0, 0, 0.7); /* 背景を暗く */
     }
@@ -371,17 +393,6 @@
     @keyframes scan-animation {
       0% { top: 20%; }
       100% { top: 80%; }
-    }
-    
-    /* ARコンテナ */
-    #ar-container {
-      width: 100%;
-      height: 100%;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 1;
-      display: none; /* 最初は非表示 */
     }
     
     /* MindARのデフォルトスキャナーを隠す */
@@ -755,6 +766,9 @@
             console.log("ドットパターンを表示");
           }
           
+          // キャンバスのスタイルを再調整（MindARの再レンダリング対策）
+          setTimeout(adjustCanvasAndHideUI, 100);
+          
           // 一度だけ実行するためにリスナーを削除
           arScene.removeEventListener('camera-init', onCameraInit);
         });
@@ -781,6 +795,7 @@
         canvas.style.top = "0";
         canvas.style.left = "0";
         canvas.style.objectFit = "cover";
+        canvas.style.zIndex = "10"; // Scannerより低く設定
         console.log("キャンバススタイル調整完了");
       }
       
