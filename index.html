@@ -15,23 +15,42 @@
       box-sizing: border-box;
     }
     
-    /* 座標表示を非表示に */
+    /* すべての座標表示を完全に削除 */
     .coordinates-left,
-    .coordinates-right {
-      display: none !important;
-    }
-    
-    /* 既存の正方形スキャン枠と四隅の角を非表示に */
-    .scan-frame,
-    .corner,
-    .target-scanner > .corner {
-      display: none !important;
-    }
-    
-    /* スキャンライトに関する既存の要素も非表示に */
+    .coordinates-right,
     .crosshair-h,
-    .crosshair-v {
+    .crosshair-v,
+    .corner,
+    .target-scanner > .corner,
+    .scan-frame {
       display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+    
+    /* 左右のHUDも非表示 */
+    .hud-left,
+    .hud-right {
+      display: none !important;
+    }
+    
+    /* ステータステキストも非表示 */
+    .status-indicator,
+    .bottom-status {
+      display: none !important;
+    }
+    
+    /* スキャンUI部分のみを残す */
+    .main-frame {
+      background: none !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    
+    /* 新しいスキャンハイライトを強調 */
+    .scan-highlight::after {
+      border: 2px solid #00d2ff !important;
+      box-shadow: 0 0 20px rgba(0, 210, 255, 0.7) !important;
     }
     
     body { 
