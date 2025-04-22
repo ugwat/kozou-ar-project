@@ -400,44 +400,58 @@
       transition: opacity 0.5s ease;
     }
     
-    /* スキャンハイライト（縦長長方形） */
+    /* スキャンハイライトの修正 - ドットパターン追加 */
     .scan-highlight {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.6);
+      background-color: rgba(0, 0, 0, 0.7);
       z-index: 990;
       pointer-events: none;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.5s ease;
     }
     
-    .scan-highlight::before {
-      content: '';
+    /* スキャン枠のスタイル修正 */
+    .scan-frame-new {
       position: absolute;
       top: 50%;
       left: 50%;
-      width: 200px;
-      height: 300px;
       transform: translate(-50%, -50%);
-      background: transparent;
-      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.6);
+      width: 220px;
+      height: 320px;
+      border: 2px solid #00d2ff;
+      box-shadow: 0 0 20px rgba(0, 210, 255, 0.7);
+      overflow: hidden;
+      z-index: 995;
     }
     
-    /* HUD的な要素 */
-    .scan-highlight::after {
-      content: '';
+    /* ドットパターンの作成 */
+    .dot-pattern {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 210px;
-      height: 310px;
-      transform: translate(-50%, -50%);
-      border: 1px solid #00d2ff;
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.5);
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(circle, #00d2ff 1px, transparent 1px);
+      background-size: 15px 15px;
+      opacity: 0.3;
+    }
+    
+    /* スキャンライン - 赤色に変更 */
+    .scan-line {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(to right, transparent, rgba(255, 50, 50, 0.8), transparent);
+      animation: scan-animation 2s infinite;
+      box-shadow: 0 0 10px rgba(255, 50, 50, 0.7);
+    }
+    
+    @keyframes scan-animation {
+      0% { top: 0; }
+      100% { top: 100%; }
     }
     
     /* スキャンエリアの角マーカー */
@@ -566,12 +580,12 @@
     </div>
   </div>
 
-  <!-- スキャンハイライト -->
+  <!-- スキャンハイライト部分の修正 -->
   <div class="scan-highlight">
-    <div class="scan-corner scan-corner-tl"></div>
-    <div class="scan-corner scan-corner-tr"></div>
-    <div class="scan-corner scan-corner-bl"></div>
-    <div class="scan-corner scan-corner-br"></div>
+    <div class="scan-frame-new">
+      <div class="dot-pattern"></div>
+      <div class="scan-line"></div>
+    </div>
   </div>
 
   <!-- マーカー読み取り後の説明オーバーレイ -->
@@ -774,6 +788,12 @@
       setTimeout(() => {
         scanHighlight.style.opacity = '1';
       }, 100);
+      
+      // 古い四隅の要素を非表示
+      const corners = document.querySelectorAll('.corner, .scan-corner');
+      corners.forEach(corner => {
+        if (corner) corner.style.display = 'none';
+      });
       
       updateDebugStatus("スキャンUI表示完了");
     }
