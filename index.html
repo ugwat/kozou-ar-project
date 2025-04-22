@@ -15,44 +15,6 @@
       box-sizing: border-box;
     }
     
-    /* すべての座標表示を完全に削除 */
-    .coordinates-left,
-    .coordinates-right,
-    .crosshair-h,
-    .crosshair-v,
-    .corner,
-    .target-scanner > .corner,
-    .scan-frame {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
-    }
-    
-    /* 左右のHUDも非表示 */
-    .hud-left,
-    .hud-right {
-      display: none !important;
-    }
-    
-    /* ステータステキストも非表示 */
-    .status-indicator,
-    .bottom-status {
-      display: none !important;
-    }
-    
-    /* スキャンUI部分のみを残す */
-    .main-frame {
-      background: none !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-    
-    /* 新しいスキャンハイライトを強調 */
-    .scan-highlight::after {
-      border: 2px solid #00d2ff !important;
-      box-shadow: 0 0 20px rgba(0, 210, 255, 0.7) !important;
-    }
-    
     body { 
       margin: 0; 
       padding: 0;
@@ -60,7 +22,7 @@
       height: 100%;
       background-color: #000;
       font-family: 'Press Start 2P', cursive;
-      color: #00d2ff; /* HUDっぽい青に変更 */
+      color: #00ff00;
       position: fixed;
       overflow: hidden;
       display: flex;
@@ -85,8 +47,8 @@
     }
     
     .spinner {
-      border: 5px solid rgba(0, 210, 255, 0.1); /* 青に変更 */
-      border-top: 5px solid #00d2ff; /* 青に変更 */
+      border: 5px solid rgba(0, 255, 0, 0.1);
+      border-top: 5px solid #00ff00;
       border-radius: 50%;
       width: 50px;
       height: 50px;
@@ -101,30 +63,22 @@
     
     /* レトロスタイルのメイン画面 */
     #retro-start-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      color: #fff;
-      font-family: 'Press Start 2P', cursive;
-      text-align: center;
-      padding: 20px;
-      box-sizing: border-box;
+      width: 90%;
+      max-width: 500px;
+      height: 90%;
+      max-height: 90vh;
+      display: none;
+      position: relative;
+      perspective: 2000px;
+      z-index: 999;
     }
     
-    /* 外枠 - 3D変形とグロー効果 - ふわふわ動き追加 */
+    /* 外枠 - 3D変形とグロー効果 */
     .retro-frame {
       width: 100%;
       height: 100%;
-      border: 3px solid #00d2ff; /* 青に変更 */
-      box-shadow: 0 0 30px rgba(0, 210, 255, 0.9), inset 0 0 25px rgba(0, 210, 255, 0.6); /* 青に変更 */
+      border: 3px solid #00ff00;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.7), inset 0 0 20px rgba(0, 255, 0, 0.4);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -134,19 +88,6 @@
       transform-style: preserve-3d;
       background-color: rgba(0, 0, 0, 0.8);
       transform-origin: center center;
-      animation: frame-float 6s ease-in-out infinite; /* 枠自体のふわふわ動き */
-    }
-    
-    /* 枠のふわふわ浮遊アニメーション */
-    @keyframes frame-float {
-      0%, 100% { 
-        transform: rotateX(15deg) rotateY(-2deg) rotateZ(0.5deg) translateY(0);
-        box-shadow: 0 0 30px rgba(0, 210, 255, 0.9), inset 0 0 25px rgba(0, 210, 255, 0.6); /* 青に変更 */
-      }
-      50% { 
-        transform: rotateX(14deg) rotateY(-1.5deg) rotateZ(0.3deg) translateY(-10px);
-        box-shadow: 0 0 35px rgba(0, 210, 255, 1), inset 0 0 30px rgba(0, 210, 255, 0.7); /* 青に変更 */
-      }
     }
     
     /* 浮遊効果の強化 - 下部の光の反射 */
@@ -157,7 +98,7 @@
       left: 10%;
       right: 10%;
       height: 15px;
-      background: radial-gradient(ellipse at center, rgba(0, 210, 255, 0.6) 0%, rgba(0, 210, 255, 0) 70%); /* 青に変更 */
+      background: radial-gradient(ellipse at center, rgba(0, 255, 0, 0.6) 0%, rgba(0, 255, 0, 0) 70%);
       filter: blur(5px);
       opacity: 0.7;
       transform: rotateX(-60deg) scaleY(0.2);
@@ -165,7 +106,7 @@
       pointer-events: none;
     }
     
-    /* スキャンラインアニメーション - グロー効果強化 */
+    /* スキャンラインアニメーション */
     .retro-frame::after {
       content: '';
       position: absolute;
@@ -173,11 +114,11 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: linear-gradient(to right, transparent, rgba(0, 210, 255, 0.8), transparent); /* 青に変更 */
+      background: linear-gradient(to right, transparent, rgba(0, 255, 0, 0.7), transparent);
       animation: scanline 3s linear infinite;
       z-index: 10;
       pointer-events: none;
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.8); /* 青に変更 */
+      box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
     }
     
     @keyframes scanline {
@@ -193,12 +134,12 @@
     }
     
     .header-text {
-      color: #00d2ff; /* 青に変更 */
+      color: #00ff00;
       font-size: min(2.5vw, 12px);
       line-height: 1.8;
       overflow: hidden;
       white-space: nowrap;
-      text-shadow: 0 0 10px rgba(0, 210, 255, 0.7); /* 青に変更 */
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     }
     
     /* ロゴ部分 - 位置調整 */
@@ -230,7 +171,7 @@
       bottom: -20px;
       width: 80%;
       transform: translateX(-50%);
-      background: radial-gradient(ellipse at center, rgba(0, 210, 255, 0.1) 0%, transparent 70%); /* 青に変更 */
+      background: radial-gradient(ellipse at center, rgba(255, 0, 255, 0.1) 0%, transparent 70%);
       pointer-events: none;
       z-index: -1;
     }
@@ -239,7 +180,7 @@
       width: 70%;
       max-width: 300px;
       height: auto;
-      filter: drop-shadow(0 0 10px rgba(0, 210, 255, 0.5)) drop-shadow(0 0 15px rgba(0, 210, 255, 0.5)); /* 青に変更 */
+      filter: drop-shadow(0 0 10px rgba(255, 0, 255, 0.5)) drop-shadow(0 0 15px rgba(0, 255, 255, 0.5));
       animation: logo-float 3s ease-in-out infinite;
     }
     
@@ -258,18 +199,18 @@
     .next-step-title {
       font-size: min(4vw, 18px);
       margin-bottom: 2%;
-      text-shadow: 0 0 10px rgba(0, 210, 255, 0.7); /* 青に変更 */
+      text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
     }
     
     .divider {
       width: 100%;
       height: 2px;
-      background: linear-gradient(to right, rgba(0, 210, 255, 0.3), #00d2ff, rgba(0, 210, 255, 0.3)); /* 青に変更 */
+      background: linear-gradient(to right, rgba(0, 255, 0, 0.3), #00ff00, rgba(0, 255, 0, 0.3));
       margin-bottom: 5%;
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.5); /* 青に変更 */
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
     }
     
-    /* 説明部分 - テキストサイズ拡大 */
+    /* 説明部分 */
     .instruction-area {
       display: flex;
       margin-bottom: 7%;
@@ -279,28 +220,27 @@
       width: 20%;
       max-width: 80px;
       aspect-ratio: 1/1;
-      border: 2px solid #00d2ff; /* 青に変更 */
+      border: 2px solid #00ff00;
       display: flex;
       justify-content: center;
       align-items: center;
       margin-right: 4%;
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.5), inset 0 0 10px rgba(0, 210, 255, 0.3); /* 青に変更 */
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 255, 0, 0.3);
     }
     
     .bowl-icon img {
       width: 70%;
       height: 70%;
       object-fit: contain;
-      filter: brightness(1.2) drop-shadow(0 0 5px rgba(0, 210, 255, 0.7)); /* 青に変更 */
+      filter: brightness(1.2) drop-shadow(0 0 5px rgba(0, 255, 0, 0.7));
     }
     
     .instruction-text {
       flex: 1;
       font-family: 'DotGothic16', sans-serif;
-      font-size: min(3.5vw, 16px); /* サイズを大きく調整 */
-      line-height: 1.8;
-      text-shadow: 0 0 5px rgba(0, 210, 255, 0.7); /* 青に変更 */
-      letter-spacing: 0.03em; /* 文字間隔を少し広げる */
+      font-size: min(2.5vw, 12px);
+      line-height: 1.6;
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
     }
     
     /* GOボタン */
@@ -339,14 +279,14 @@
       text-align: center;
       margin-bottom: 2%;
       font-size: min(3.5vw, 16px);
-      text-shadow: 0 0 5px rgba(0, 210, 255, 0.7); /* 青に変更 */
+      text-shadow: 0 0 5px rgba(0, 255, 0, 0.7);
     }
     
     .progress-bar {
       width: 100%;
       height: min(2.5vh, 15px);
-      border: 2px solid #00d2ff; /* 青に変更 */
-      box-shadow: 0 0 15px rgba(0, 210, 255, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.5); /* 青に変更 */
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.5), inset 0 0 10px rgba(0, 0, 0, 0.5);
       position: relative;
       overflow: hidden;
     }
@@ -354,8 +294,8 @@
     .progress-fill {
       height: 100%;
       width: 40%;
-      background-color: #00d2ff; /* 青に変更 */
-      box-shadow: 0 0 20px rgba(0, 210, 255, 0.7); /* 青に変更 */
+      background-color: #00ff00;
+      box-shadow: 0 0 20px rgba(0, 255, 0, 0.7);
       animation: loading 5s infinite linear;
     }
     
@@ -376,6 +316,324 @@
       96.5% { opacity: 0.9; transform: translate(0px, 0px); }
     }
     
+    /* ARスキャナーオーバーレイ */
+    .scanner-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 990;
+      display: none;
+    }
+    
+    .main-frame {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border: 3px solid rgba(0, 162, 255, 0.5);
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    .scanner-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .target-scanner {
+      position: relative;
+      width: 256px;
+      height: 256px;
+    }
+    
+    .corner {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      border-color: rgba(0, 210, 255, 0.8);
+      opacity: 0.8;
+    }
+    
+    .top-left {
+      top: 0;
+      left: 0;
+      border-top: 2px solid;
+      border-left: 2px solid;
+    }
+    
+    .top-right {
+      top: 0;
+      right: 0;
+      border-top: 2px solid;
+      border-right: 2px solid;
+    }
+    
+    .bottom-left {
+      bottom: 0;
+      left: 0;
+      border-bottom: 2px solid;
+      border-left: 2px solid;
+    }
+    
+    .bottom-right {
+      bottom: 0;
+      right: 0;
+      border-bottom: 2px solid;
+      border-right: 2px solid;
+    }
+    
+    .scan-bar {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(to right, 
+        rgba(0, 210, 255, 0) 0%,
+        rgba(0, 210, 255, 0.8) 50%,
+        rgba(0, 210, 255, 0) 100%);
+      opacity: 0.8;
+      animation: scanbar 2s ease-in-out infinite;
+    }
+    
+    @keyframes scanbar {
+      0% {
+        left: -100%;
+        opacity: 0.3;
+      }
+      50% {
+        left: 0;
+        opacity: 0.8;
+      }
+      100% {
+        left: 100%;
+        opacity: 0.3;
+      }
+    }
+    
+    .scan-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100px;
+      height: 100px;
+      border: 1px solid rgba(0, 210, 255, 0.6);
+      box-shadow: 0 0 10px rgba(0, 162, 255, 0.3);
+      opacity: 0.8;
+      animation: pulse-frame 2s infinite;
+    }
+    
+    @keyframes pulse-frame {
+      0% {
+        opacity: 0.6;
+        box-shadow: 0 0 5px rgba(0, 162, 255, 0.3);
+      }
+      50% {
+        opacity: 0.8;
+        box-shadow: 0 0 15px rgba(0, 162, 255, 0.5);
+      }
+      100% {
+        opacity: 0.6;
+        box-shadow: 0 0 5px rgba(0, 162, 255, 0.3);
+      }
+    }
+    
+    .coordinates-left {
+      position: absolute;
+      top: 50%;
+      left: 10px;
+      transform: translateY(-50%);
+      color: #00d2ff;
+      font-size: 10px;
+      opacity: 0.8;
+      text-align: left;
+      height: 100px;
+      overflow: hidden;
+      font-family: 'Press Start 2P', cursive;
+    }
+    
+    .coord-number {
+      font-size: 10px;
+      line-height: 14px;
+      animation: scroll-numbers 3s linear infinite;
+    }
+    
+    .coordinates-right {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+      color: #00d2ff;
+      font-size: 10px;
+      opacity: 0.8;
+      text-align: right;
+      height: 100px;
+      overflow: hidden;
+      font-family: 'Press Start 2P', cursive;
+    }
+    
+    @keyframes scroll-numbers {
+      0% { transform: translateY(-300px); }
+      100% { transform: translateY(300px); }
+    }
+    
+    .crosshair-h {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 48px;
+      height: 2px;
+      background-color: rgba(0, 210, 255, 0.8);
+      opacity: 0.8;
+    }
+    
+    .crosshair-v {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 48px;
+      background-color: rgba(0, 210, 255, 0.8);
+      opacity: 0.8;
+    }
+    
+    .status-indicator {
+      position: absolute;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00d2ff;
+      font-size: 12px;
+      text-align: center;
+      width: 256px;
+      font-family: 'Press Start 2P', cursive;
+    }
+    
+    .status-text {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      animation: pulse-text 2s infinite;
+    }
+    
+    @keyframes pulse-text {
+      0% {
+        opacity: 0.7;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.7;
+      }
+    }
+    
+    .status-bars {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+    }
+    
+    .bar {
+      width: 20px;
+      height: 4px;
+      background-color: rgba(0, 51, 77, 0.8);
+    }
+    
+    .bar.active {
+      background-color: rgba(0, 210, 255, 0.8);
+    }
+    
+    .bottom-status {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #00d2ff;
+      font-size: 12px;
+      text-transform: uppercase;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: 'Press Start 2P', cursive;
+    }
+    
+    .system-name {
+      text-align: center;
+      width: 100%;
+    }
+    
+    .pulse-dot {
+      animation: pulse-dot 2s infinite;
+    }
+    
+    @keyframes pulse-dot {
+      0% {
+        opacity: 0.3;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0.3;
+      }
+    }
+    
+    .instruction {
+      text-align: center;
+      font-size: 10px;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+    
+    .hud-left {
+      position: absolute;
+      top: 25%;
+      left: 16px;
+      color: #00d2ff;
+      font-size: 12px;
+      font-family: 'Press Start 2P', cursive;
+    }
+    
+    .hud-right {
+      position: absolute;
+      top: 25%;
+      right: 16px;
+      color: #00d2ff;
+      font-size: 12px;
+      text-align: right;
+      font-family: 'Press Start 2P', cursive;
+    }
+    
+    .hud-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .hud-dot {
+      width: 4px;
+      height: 4px;
+      background-color: #00d2ff;
+      margin: 0 4px;
+    }
+    
+    .hud-text {
+      font-size: 12px;
+    }
+    
     /* ARコンテナ */
     #ar-container {
       width: 100%;
@@ -385,127 +643,6 @@
       left: 0;
       z-index: 1;
       display: none; /* 最初は非表示 */
-    }
-    
-    /* カスタムスキャンオーバーレイ */
-    #custom-scan-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 990;
-      pointer-events: none;
-    }
-    
-    #custom-scan-overlay.hidden {
-      display: none;
-    }
-    
-    /* スキャン枠 */
-    .scan-frame-new {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 220px;
-      height: 320px;
-      border: 2px solid #00d2ff;
-      box-shadow: 0 0 20px rgba(0, 210, 255, 0.7);
-      overflow: hidden;
-    }
-    
-    /* ドットパターン */
-    .dot-pattern {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: radial-gradient(circle, #00d2ff 1px, transparent 1px);
-      background-size: 15px 15px;
-      opacity: 0.3;
-    }
-    
-    /* 赤いスキャンライン */
-    .scan-line {
-      position: absolute;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: linear-gradient(to right, transparent, rgba(255, 50, 50, 0.8), transparent);
-      animation: scan-animation 2s infinite;
-      box-shadow: 0 0 10px rgba(255, 50, 50, 0.7);
-    }
-    
-    @keyframes scan-animation {
-      0% { top: 0; }
-      100% { top: 100%; }
-    }
-    
-    /* スキャンエリアの角マーカー */
-    .scan-corner {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      border-color: #00d2ff;
-      pointer-events: none;
-      z-index: 991;
-    }
-    
-    .scan-corner-tl {
-      top: calc(50% - 155px);
-      left: calc(50% - 105px);
-      border-top: 2px solid;
-      border-left: 2px solid;
-    }
-    
-    .scan-corner-tr {
-      top: calc(50% - 155px);
-      right: calc(50% - 105px);
-      border-top: 2px solid;
-      border-right: 2px solid;
-    }
-    
-    .scan-corner-bl {
-      bottom: calc(50% - 155px);
-      left: calc(50% - 105px);
-      border-bottom: 2px solid;
-      border-left: 2px solid;
-    }
-    
-    .scan-corner-br {
-      bottom: calc(50% - 155px);
-      right: calc(50% - 105px);
-      border-bottom: 2px solid;
-      border-right: 2px solid;
-    }
-    
-    /* マーカー検出後のオーバーレイ */
-    .explanation-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.7);
-      z-index: 995;
-      display: none;
-      opacity: 0;
-      transition: opacity 0.5s ease;
-    }
-    
-    /* 説明コンテンツ用コンテナ */
-    .explanation-content {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      max-width: 500px;
-      text-align: center;
-      color: #00d2ff;
     }
   </style>
 </head>
@@ -570,23 +707,120 @@
     </div>
   </div>
 
-  <!-- カスタムスキャンオーバーレイ -->
-  <div id="custom-scan-overlay" class="hidden">
-    <div class="scan-frame-new">
-      <div class="dot-pattern"></div>
-      <div class="scan-line"></div>
-    </div>
-  </div>
-
-  <!-- マーカー読み取り後の説明オーバーレイ -->
-  <div class="explanation-overlay">
-    <div class="explanation-content">
-      <!-- まぜそばの説明内容がここに入る -->
-    </div>
-  </div>
-
   <!-- ARスキャナーオーバーレイ -->
-  <div id="scanner-overlay"></div>
+  <div id="futuristic-scanner" class="scanner-overlay">
+    <div class="main-frame">
+      <div class="scanner-container">
+        <div class="target-scanner">
+          <div class="corner top-left"></div>
+          <div class="corner top-right"></div>
+          <div class="corner bottom-left"></div>
+          <div class="corner bottom-right"></div>
+          
+          <div class="scan-bar"></div>
+          <div class="scan-frame"></div>
+          
+          <div class="coordinates-left">
+            <div class="coord-number">
+              X: 0.342<br>
+              Y: 1.092<br>
+              Z: 0.875<br>
+              X: 0.341<br>
+              Y: 1.095<br>
+              Z: 0.873<br>
+              X: 0.339<br>
+              Y: 1.098<br>
+              Z: 0.877<br>
+              X: 0.336<br>
+              Y: 1.102<br>
+              Z: 0.880<br>
+              X: 0.334<br>
+              Y: 1.105<br>
+              Z: 0.883<br>
+            </div>
+          </div>
+          
+          <div class="coordinates-right">
+            <div class="coord-number" style="animation-delay: -1.5s;">
+              A: 42.31<br>
+              B: 18.72<br>
+              C: 29.54<br>
+              A: 42.35<br>
+              B: 18.70<br>
+              C: 29.57<br>
+              A: 42.38<br>
+              B: 18.68<br>
+              C: 29.60<br>
+              A: 42.42<br>
+              B: 18.65<br>
+              C: 29.63<br>
+              A: 42.45<br>
+              B: 18.63<br>
+              C: 29.66<br>
+            </div>
+          </div>
+          
+          <div class="crosshair-h"></div>
+          <div class="crosshair-v"></div>
+        </div>
+      </div>
+      
+      <div class="status-indicator">
+        <div class="status-text">マーカースキャン中</div>
+        <div class="status-bars">
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar active"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </div>
+      
+      <div class="bottom-status">
+        <div class="system-name">
+          KOZOU+ AR システム <span class="pulse-dot">●</span>
+        </div>
+        <div class="instruction">
+          QRコードをフレーム内に収めてください
+        </div>
+      </div>
+    </div>
+    
+    <div class="hud-left">
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">AR.SYS</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">SCAN.v2</div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-dot"></div>
+        <div class="hud-text">MODEL.QR</div>
+      </div>
+    </div>
+    
+    <div class="hud-right">
+      <div class="hud-item">
+        <div class="hud-text">INIT_05</div>
+        <div class="hud-dot"></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-text">CAM_ON</div>
+        <div class="hud-dot"></div>
+      </div>
+      <div class="hud-item">
+        <div class="hud-text" id="tracking-status">SEEK_31%</div>
+        <div class="hud-dot"></div>
+      </div>
+    </div>
+  </div>
 
   <!-- ARコンテンツを動的に追加するためのコンテナ -->
   <div id="ar-container"></div>
@@ -599,10 +833,11 @@
     const debugPanel = document.getElementById('debug-panel');
     const debugStatus = document.getElementById('debug-status');
     const arContainer = document.getElementById('ar-container');
-    const scannerOverlay = document.getElementById('scanner-overlay');
+    const scannerOverlay = document.getElementById('futuristic-scanner');
     const typingText1 = document.getElementById('typing-text1');
     const typingText2 = document.getElementById('typing-text2');
     const retroFrame = document.querySelector('.retro-frame');
+    const trackingStatus = document.getElementById('tracking-status');
     
     // グローバル変数
     let arSceneCreated = false;
@@ -625,6 +860,7 @@
         retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
       });
       
+      // スマホやタブレットでのジャイロセンサー対応
       // スマホやタブレットでのジャイロセンサー対応
       if (window.DeviceOrientationEvent) {
         window.addEventListener('deviceorientation', function(e) {
@@ -795,13 +1031,8 @@
         arScene = sceneEl;
         
         // ターゲット検出イベントリスナー設定
-        targetContainerEl.addEventListener('targetFound', function() {
-          updateDebugStatus("ターゲット検出");
-        });
-        
-        targetContainerEl.addEventListener('targetLost', function() {
-          updateDebugStatus("ターゲットロスト");
-        });
+        targetContainerEl.addEventListener('targetFound', onTargetFound);
+        targetContainerEl.addEventListener('targetLost', onTargetLost);
       });
       
       // エラーハンドリング
@@ -811,7 +1042,47 @@
         // カメラエラー時にスタート画面を再表示
         retroStartScreen.style.display = 'block';
         arContainer.style.display = 'none';
+        scannerOverlay.style.display = 'none';
       });
+    }
+    
+    // ターゲット検出時の処理
+    function onTargetFound() {
+      updateDebugStatus("ターゲット検出");
+      
+      // スキャナーのUI要素を更新
+      const statusText = document.querySelector('.status-text');
+      const statusBars = document.querySelectorAll('.status-bars .bar');
+      
+      if (statusText) statusText.textContent = 'ターゲット認識中';
+      if (trackingStatus) trackingStatus.textContent = 'TRACK_92%';
+      
+      // ステータスバーを更新
+      statusBars.forEach((bar, index) => {
+        if (index < 8) {
+          bar.classList.add('active');
+        }
+      });
+      
+      // フェードアウトアニメーション
+      setTimeout(() => {
+        // スキャナーを徐々に非表示
+        scannerOverlay.style.opacity = '0';
+        scannerOverlay.style.transition = 'opacity 1s ease-out';
+        
+        // アニメーション完了後に完全に非表示
+        setTimeout(() => {
+          scannerOverlay.style.display = 'none';
+        }, 1000);
+      }, 1500);
+    }
+    
+    // ターゲットロスト時の処理
+    function onTargetLost() {
+      updateDebugStatus("ターゲットロスト");
+      
+      // ターゲットを見失った後の処理
+      // 必要に応じてここでスキャナーを再表示するなどの処理を追加
     }
     
     // スタートボタンクリック時の処理
@@ -844,13 +1115,11 @@
     function startARExperience() {
       updateDebugStatus("カメラへのアクセスを要求します");
       
-      // MindARを開始（ここでカメラへのアクセス要求が発生）
-      const mindARSystem = arScene.systems['mindar-image-system'];
-      
-      // カメラ起動前にスキャナーオーバーレイを表示
+      // スキャナーオーバーレイを表示
       scannerOverlay.style.display = 'block';
       
-      // カメラを起動
+      // MindARを開始（ここでカメラへのアクセス要求が発生）
+      const mindARSystem = arScene.systems['mindar-image-system'];
       mindARSystem.start();
       
       // カメラがアクティブになった後のスタイル調整
