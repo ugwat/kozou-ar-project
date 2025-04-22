@@ -723,11 +723,15 @@
       
       updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
       
-      // まずスタート画面を非表示
+      // スタート画面を非表示
       retroStartScreen.style.display = 'none';
       
-      // ARコンテナを表示（スキャナーはまだ表示しない）
+      // ARコンテナを表示（スキャナーはカメラ初期化後に表示）
       arContainer.style.display = 'block';
+      
+      // スキャナーUIを準備するが表示はまだしない
+      scannerOverlay.style.opacity = '1';
+      scannerOverlay.style.display = 'none';
       
       // ARシーンが正常に作成された場合のみカメラを起動
       if (arSceneCreated && arScene) {
@@ -749,36 +753,35 @@
     function startCamera() {
       updateDebugStatus("カメラへのアクセスを要求します");
       
-      // MindARを開始（ここでカメラへのアクセス要求が発生）
-      const mindARSystem = arScene.systems['mindar-image-system'];
-      
-      // カメラ許可が得られたらスキャナーを表示するイベントリスナー
-      arScene.addEventListener('camera-init', function() {
-        updateDebugStatus("カメラ初期化完了");
+      // カメラ許可後のハンドラーを先に設定
+      document.addEventListener('camera-init', function onCameraInit() {
+        // このイベントは一度だけ使用
+        document.removeEventListener('camera-init', onCameraInit);
         
-        // カメラ初期化完了後にスキャナーオーバーレイを表示
+        updateDebugStatus("カメラ初期化完了");
+        console.log("カメラ初期化完了 - スキャナー表示");
+        
+        // スキャナーUIを表示
         scannerOverlay.style.display = 'block';
         
-        // スキャナーのドットパターンが確実に表示されるようにDOM更新を強制
-        const dotPattern = document.querySelector('.dot-pattern');
-        if (dotPattern) {
-          dotPattern.style.display = 'none';
-          setTimeout(() => {
-            dotPattern.style.display = 'block';
-          }, 50);
-        }
-      }, { once: true });
-      
-      // カメラを起動
-      mindARSystem.start();
-      
-      // カメラがアクティブになった後のスタイル調整
-      setTimeout(() => {
-        adjustCanvasStyles();
-        
-        // MindARのデフォルトUIを非表示
+        // MindARのデフォルトUIを非表示に
         hideDefaultMindARUI();
-      }, 500);
+      });
+      
+      // a-sceneのloadedイベントを確認
+      arScene.addEventListener('loaded', function() {
+        console.log("A-Frame シーンがロードされました");
+      });
+      
+      // カメラ開始を遅延させる
+      setTimeout(() => {
+        // MindARを開始（ここでカメラへのアクセス要求が発生）
+        const mindARSystem = arScene.systems['mindar-image-system'];
+        mindARSystem.start();
+        
+        // カメラ表示スタイルを調整
+        setTimeout(adjustCanvasStyles, 500);
+      }, 100);
     }
     
     // MindARのデフォルトUIを非表示にする関数
@@ -819,23 +822,22 @@
       debugPanel.style.display = 'block';
     }
     
-    // MindARのデフォルトUI要素を監視して非表示にする
-    const observer = new MutationObserver(function(mutations) {
+    // デバッグ用：DOM変更を監視して問題を特定
+    const bodyObserver = new MutationObserver(function(mutations) {
       mutations.forEach(function(mutation) {
-        if (mutation.addedNodes) {
-          mutation.addedNodes.forEach(function(node) {
-            if (node.classList && 
-               (node.classList.contains('mindar-ui-scanning') || 
-                node.classList.contains('mindar-ui-loading'))) {
-              node.style.display = 'none';
+        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+          for (let i = 0; i < mutation.addedNodes.length; i++) {
+            const node = mutation.addedNodes[i];
+            if (node.nodeType === 1) { // 要素ノードの場合
+              console.log("新しい要素が追加されました:", node.tagName, node.className);
             }
-          });
+          }
         }
       });
     });
-    
-    // ドキュメント全体の変更を監視
-    observer.observe(document.body, { childList: true, subtree: true });
+
+    // bodyの変更を監視開始
+    bodyObserver.observe(document.body, { childList: true, subtree: true });
   </script>
 </body>
 </html>
