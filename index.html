@@ -601,99 +601,203 @@
       });
     });
     
-    // ARシーンを準備する関数（カメラはまだ起動しない）
-    function prepareARScene() {
-      updateDebugStatus("ARシーンを準備中（カメラはまだ起動しません）...");
+    // ARエクスペリエンスを開始する関数
+    function startARExperience() {
+      if (arStarted) return; // 既に開始している場合は何もしない
+      arStarted = true; // 開始フラグを立てる
+      
+      console.log("ARエクスペリエンス開始");
+      
+      // スタート画面を非表示
+      retroStartScreen.style.display = 'none';
+      
+      // ARコンテナを表示
+      arContainer.style.display = 'block';
+      
+      // ARシーンが作成済みであれば直接開始
+      if (arSceneCreated && arScene) {
+        console.log("既存のARシーンを使用");
+        showScannerAndStartCamera();
+      } else {
+        // ARシーンを新規作成
+        console.log("ARシーンを新規作成");
+        prepareARScene(function() {
+          showScannerAndStartCamera();
+        });
+      }
+    }
+    
+    // スキャナーを表示してカメラを起動
+    function showScannerAndStartCamera() {
+      console.log("スキャナー表示とカメラ起動準備");
+      
+      // スキャナーをまず表示
+      scannerOverlay.style.display = 'block';
+      
+      // 少し遅延してからカメラを起動（UIが表示される時間を確保）
+      setTimeout(() => {
+        startCamera();
+      }, 100);
+    }
+    
+    // カメラを起動する関数
+    function startCamera() {
+      console.log("カメラ起動開始");
+      
+      try {
+        // MindARシステムの取得
+        const mindARSystem = arScene.systems['mindar-image-system'];
+        if (!mindARSystem) {
+          console.error("MindARシステムが見つかりません");
+          return;
+        }
+        
+        console.log("カメラへのアクセスを要求します");
+        
+        // MindARを開始
+        mindARSystem.start();
+        
+        // スタイル調整とUIの非表示化
+        setTimeout(() => {
+          // キャンバスのスタイル調整
+          const canvas = document.querySelector('.a-canvas');
+          if (canvas) {
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+            canvas.style.position = "absolute";
+            canvas.style.top = "0";
+            canvas.style.left = "0";
+            canvas.style.objectFit = "cover";
+            console.log("キャンバススタイル調整完了");
+          }
+          
+          // MindARのデフォルトUIを非表示
+          const elements = document.querySelectorAll('.mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr');
+          elements.forEach(el => {
+            if (el) {
+              el.style.display = 'none';
+              console.log("UI要素を非表示:", el.className);
+            }
+          });
+        }, 500);
+      } catch (error) {
+        console.error("カメラ起動エラー:", error);
+      }
+    }
+    
+    // ARシーンを準備する関数（コールバック付き）
+    function prepareARScene(callback) {
+      console.log("ARシーンを準備中");
       
       if (arSceneCreated) {
-        updateDebugStatus("ARシーンはすでに作成済みです");
+        console.log("ARシーンはすでに作成済み");
+        if (callback) callback();
         return;
       }
       
-      // A-Frameシーンを動的に作成
-      const sceneEl = document.createElement('a-scene');
-      sceneEl.setAttribute('id', 'ar-scene');
-      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
-      sceneEl.setAttribute('color-space', 'sRGB');
-      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
-      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
-      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
-      
-      // 画面サイズに合わせるための属性を追加
-      sceneEl.setAttribute('embedded', '');
-      sceneEl.setAttribute('seamless-tab-navigation', '');
-      
-      // アセット
-      const assetsEl = document.createElement('a-assets');
-      
-      const emblemLogo = document.createElement('img');
-      emblemLogo.setAttribute('id', 'emblem-logo');
-      emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
-      
-      const textLogo = document.createElement('img');
-      textLogo.setAttribute('id', 'text-logo');
-      textLogo.setAttribute('src', 'assets/text-logo.png');
-      
-      assetsEl.appendChild(emblemLogo);
-      assetsEl.appendChild(textLogo);
-      sceneEl.appendChild(assetsEl);
-      
-      // カメラ
-      const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('position', '0 0 0');
-      cameraEl.setAttribute('look-controls', 'enabled: false');
-      sceneEl.appendChild(cameraEl);
-      
-      // ターゲットコンテナ
-      const targetContainerEl = document.createElement('a-entity');
-      targetContainerEl.setAttribute('id', 'target-container');
-      targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
-      
-      // ロゴ表示
-      const logoDisplayEl = document.createElement('a-plane');
-      logoDisplayEl.setAttribute('id', 'logo-display');
-      logoDisplayEl.setAttribute('position', '0 0 0');
-      logoDisplayEl.setAttribute('hologram-effect', '');
-      logoDisplayEl.setAttribute('opening-animation', '');
-      
-      const logoImageEl = document.createElement('a-image');
-      logoImageEl.setAttribute('src', '#emblem-logo');
-      logoImageEl.setAttribute('width', '1');
-      logoImageEl.setAttribute('height', '1');
-      logoImageEl.setAttribute('opacity', '0.9');
-      
-      logoDisplayEl.appendChild(logoImageEl);
-      targetContainerEl.appendChild(logoDisplayEl);
-      sceneEl.appendChild(targetContainerEl);
-      
-      // ARコンテナに追加
-      arContainer.appendChild(sceneEl);
-      
-      // シーンの初期化完了イベントを監視
-      sceneEl.addEventListener('loaded', function() {
-        updateDebugStatus("ARシーン初期化完了（カメラはまだ起動していません）");
-        console.log("A-Frameシーンロード完了");
-        arSceneCreated = true;
-        arScene = sceneEl;
+      try {
+        // A-Frameシーンを動的に作成
+        const sceneEl = document.createElement('a-scene');
+        sceneEl.setAttribute('id', 'ar-scene');
+        sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false;');
+        sceneEl.setAttribute('color-space', 'sRGB');
+        sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
+        sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
+        sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
         
-        // システムが利用可能かチェック
-        const mindARSystem = arScene.systems['mindar-image-system'];
-        if (mindARSystem) {
-          console.log("MindARシステムが見つかりました");
-        } else {
-          console.error("MindARシステムが見つかりません");
-        }
-      });
-      
-      // エラーハンドリング
-      sceneEl.addEventListener('camera-error', function() {
-        updateDebugStatus("カメラエラー: アクセスが拒否されました");
+        // 画面サイズに合わせるための属性を追加
+        sceneEl.setAttribute('embedded', '');
+        sceneEl.setAttribute('seamless-tab-navigation', '');
         
-        // カメラエラー時にスタート画面を再表示
-        retroStartScreen.style.display = 'block';
-        arContainer.style.display = 'none';
-        scannerOverlay.style.display = 'none';
-      });
+        // アセット
+        const assetsEl = document.createElement('a-assets');
+        
+        const emblemLogo = document.createElement('img');
+        emblemLogo.setAttribute('id', 'emblem-logo');
+        emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
+        
+        const textLogo = document.createElement('img');
+        textLogo.setAttribute('id', 'text-logo');
+        textLogo.setAttribute('src', 'assets/text-logo.png');
+        
+        assetsEl.appendChild(emblemLogo);
+        assetsEl.appendChild(textLogo);
+        sceneEl.appendChild(assetsEl);
+        
+        // カメラ
+        const cameraEl = document.createElement('a-camera');
+        cameraEl.setAttribute('position', '0 0 0');
+        cameraEl.setAttribute('look-controls', 'enabled: false');
+        sceneEl.appendChild(cameraEl);
+        
+        // ターゲットコンテナ
+        const targetContainerEl = document.createElement('a-entity');
+        targetContainerEl.setAttribute('id', 'target-container');
+        targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
+        
+        // ロゴ表示
+        const logoDisplayEl = document.createElement('a-plane');
+        logoDisplayEl.setAttribute('id', 'logo-display');
+        logoDisplayEl.setAttribute('position', '0 0 0');
+        logoDisplayEl.setAttribute('hologram-effect', '');
+        logoDisplayEl.setAttribute('opening-animation', '');
+        
+        const logoImageEl = document.createElement('a-image');
+        logoImageEl.setAttribute('src', '#emblem-logo');
+        logoImageEl.setAttribute('width', '1');
+        logoImageEl.setAttribute('height', '1');
+        logoImageEl.setAttribute('opacity', '0.9');
+        
+        logoDisplayEl.appendChild(logoImageEl);
+        targetContainerEl.appendChild(logoDisplayEl);
+        sceneEl.appendChild(targetContainerEl);
+        
+        // ARコンテナに追加
+        arContainer.appendChild(sceneEl);
+        
+        // シーンの初期化完了イベントを監視
+        sceneEl.addEventListener('loaded', function() {
+          console.log("ARシーン初期化完了");
+          arSceneCreated = true;
+          arScene = sceneEl;
+          
+          // ターゲット検出イベントリスナー設定
+          targetContainerEl.addEventListener('targetFound', function() {
+            console.log("ターゲット検出");
+            
+            // ターゲット検出時にスキャナーを徐々に非表示
+            setTimeout(() => {
+              // スキャナーを徐々に非表示
+              scannerOverlay.style.opacity = '0';
+              scannerOverlay.style.transition = 'opacity 1s ease-out';
+              
+              // アニメーション完了後に完全に非表示
+              setTimeout(() => {
+                scannerOverlay.style.display = 'none';
+              }, 1000);
+            }, 500);
+          });
+          
+          if (callback) callback();
+        });
+        
+        // エラーハンドリング
+        sceneEl.addEventListener('error', function(event) {
+          console.error("ARシーンエラー:", event);
+        });
+        
+        sceneEl.addEventListener('camera-error', function() {
+          console.error("カメラエラー: アクセスが拒否されました");
+          
+          // カメラエラー時にスタート画面を再表示
+          retroStartScreen.style.display = 'block';
+          arContainer.style.display = 'none';
+          scannerOverlay.style.display = 'none';
+          arStarted = false; // 開始フラグをリセット
+        });
+      } catch (error) {
+        console.error("ARシーン作成エラー:", error);
+      }
     }
     
     // スタートボタンクリック時の処理
@@ -702,101 +806,6 @@
       e.stopPropagation(); // イベントの伝播を停止
       startARExperience();
     });
-    
-    // ARエクスペリエンスを開始する関数
-    function startARExperience() {
-      if (arStarted) return; // 既に開始している場合は何もしない
-      
-      arStarted = true; // 開始フラグを立てる
-      
-      updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
-      
-      // スタート画面を非表示
-      retroStartScreen.style.display = 'none';
-      
-      // ARコンテナを表示
-      arContainer.style.display = 'block';
-      
-      // ARシーンが正常に作成された場合のみカメラを起動
-      if (arSceneCreated && arScene) {
-        startCamera();
-      } else {
-        // ARシーンがまだ作成されていない場合は作成してから起動
-        prepareARScene();
-        // シーンのロードを待ってから起動
-        const waitForScene = setInterval(() => {
-          if (arSceneCreated && arScene) {
-            clearInterval(waitForScene);
-            startCamera();
-          }
-        }, 100);
-      }
-    }
-    
-    // カメラを起動する関数
-    function startCamera() {
-      updateDebugStatus("カメラへのアクセスを要求します");
-      
-      // MindARのシステムを取得
-      const mindARSystem = arScene.systems['mindar-image-system'];
-      
-      // カメラ許可前に、カメラ初期化完了イベントのリスナーを設定
-      // MindARのイベントエミッターを直接使用
-      mindARSystem.addEventListener("mindar-image-target-found", () => {
-        updateDebugStatus("ターゲット検出");
-      });
-      
-      // important: カメラ起動前にイベントリスナーを追加
-      mindARSystem.addEventListener("mindar-image-start", () => {
-        updateDebugStatus("MindAR開始");
-        
-        // 短い遅延後にスキャナーオーバーレイを表示
-        setTimeout(() => {
-          scannerOverlay.style.display = 'block';
-          hideDefaultMindARUI();
-          updateDebugStatus("スキャナー表示");
-        }, 200);
-      });
-      
-      // カメラを起動
-      mindARSystem.start();
-      
-      // カメラスタイル調整
-      setTimeout(adjustCanvasStyles, 500);
-    }
-    
-    // MindARのデフォルトUIを非表示にする関数
-    function hideDefaultMindARUI() {
-      const mindARUI = document.querySelectorAll('.mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr');
-      mindARUI.forEach(el => {
-        if (el) el.style.display = 'none';
-      });
-    }
-    
-    // カメラキャンバスのスタイルを調整する関数
-    function adjustCanvasStyles() {
-      updateDebugStatus("カメラ表示スタイルを調整中...");
-      
-      // A-Frameのキャンバス要素
-      const canvas = document.querySelector('.a-canvas');
-      if (canvas) {
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "absolute";
-        canvas.style.top = "0";
-        canvas.style.left = "0";
-        canvas.style.objectFit = "cover";
-      } else {
-        updateDebugStatus("キャンバス要素が見つかりません");
-      }
-      
-      // MindARのデフォルトUIを非表示にする（CSSクラスが追加された後に再度チェック）
-      const scanningUI = document.querySelector('.mindar-ui-scanning');
-      if (scanningUI) scanningUI.style.display = 'none';
-      
-      const loadingUI = document.querySelector('.mindar-ui-loading');
-      if (loadingUI) loadingUI.style.display = 'none';
-    }
     
     // デバッグ表示の切り替え（URLに?debug=trueを付けるとデバッグモード）
     if (window.location.search.includes('debug=true')) {
