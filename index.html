@@ -316,8 +316,8 @@
       96.5% { opacity: 0.9; transform: translate(0px, 0px); }
     }
     
-    /* ARスキャナーオーバーレイ */
-    .scanner-overlay {
+    /* スキャナーオーバーレイ - 青いフレームとドットパターン */
+    #scanner-overlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -328,310 +328,46 @@
       display: none;
     }
     
-    .main-frame {
+    /* 青いフレーム */
+    .scanner-frame {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      border: 3px solid rgba(0, 162, 255, 0.5);
-      background-color: rgba(0, 0, 0, 0.2);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 80%;
+      border: 4px solid #00a2ff;
+      box-shadow: 0 0 20px rgba(0, 162, 255, 0.8);
+      background-color: transparent;
+      overflow: hidden;
     }
     
-    .scanner-container {
+    /* ドットパターン */
+    .dot-pattern {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background-image: radial-gradient(circle, rgba(100, 100, 100, 0.4) 1px, transparent 1.5px);
+      background-size: 15px 15px;
+      opacity: 0.5;
     }
     
-    .target-scanner {
-      position: relative;
-      width: 256px;
-      height: 256px;
-    }
-    
-    .corner {
+    /* スキャンライン - 赤い横線 */
+    .scan-line {
       position: absolute;
-      width: 32px;
-      height: 32px;
-      border-color: rgba(0, 210, 255, 0.8);
-      opacity: 0.8;
-    }
-    
-    .top-left {
-      top: 0;
-      left: 0;
-      border-top: 2px solid;
-      border-left: 2px solid;
-    }
-    
-    .top-right {
-      top: 0;
-      right: 0;
-      border-top: 2px solid;
-      border-right: 2px solid;
-    }
-    
-    .bottom-left {
-      bottom: 0;
-      left: 0;
-      border-bottom: 2px solid;
-      border-left: 2px solid;
-    }
-    
-    .bottom-right {
-      bottom: 0;
-      right: 0;
-      border-bottom: 2px solid;
-      border-right: 2px solid;
-    }
-    
-    .scan-bar {
-      position: absolute;
-      top: 50%;
       left: 0;
       width: 100%;
-      height: 4px;
-      background: linear-gradient(to right, 
-        rgba(0, 210, 255, 0) 0%,
-        rgba(0, 210, 255, 0.8) 50%,
-        rgba(0, 210, 255, 0) 100%);
-      opacity: 0.8;
-      animation: scanbar 2s ease-in-out infinite;
-    }
-    
-    @keyframes scanbar {
-      0% {
-        left: -100%;
-        opacity: 0.3;
-      }
-      50% {
-        left: 0;
-        opacity: 0.8;
-      }
-      100% {
-        left: 100%;
-        opacity: 0.3;
-      }
-    }
-    
-    .scan-frame {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100px;
-      height: 100px;
-      border: 1px solid rgba(0, 210, 255, 0.6);
-      box-shadow: 0 0 10px rgba(0, 162, 255, 0.3);
-      opacity: 0.8;
-      animation: pulse-frame 2s infinite;
-    }
-    
-    @keyframes pulse-frame {
-      0% {
-        opacity: 0.6;
-        box-shadow: 0 0 5px rgba(0, 162, 255, 0.3);
-      }
-      50% {
-        opacity: 0.8;
-        box-shadow: 0 0 15px rgba(0, 162, 255, 0.5);
-      }
-      100% {
-        opacity: 0.6;
-        box-shadow: 0 0 5px rgba(0, 162, 255, 0.3);
-      }
-    }
-    
-    .coordinates-left {
-      position: absolute;
-      top: 50%;
-      left: 10px;
-      transform: translateY(-50%);
-      color: #00d2ff;
-      font-size: 10px;
-      opacity: 0.8;
-      text-align: left;
-      height: 100px;
-      overflow: hidden;
-      font-family: 'Press Start 2P', cursive;
-    }
-    
-    .coord-number {
-      font-size: 10px;
-      line-height: 14px;
-      animation: scroll-numbers 3s linear infinite;
-    }
-    
-    .coordinates-right {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      color: #00d2ff;
-      font-size: 10px;
-      opacity: 0.8;
-      text-align: right;
-      height: 100px;
-      overflow: hidden;
-      font-family: 'Press Start 2P', cursive;
-    }
-    
-    @keyframes scroll-numbers {
-      0% { transform: translateY(-300px); }
-      100% { transform: translateY(300px); }
-    }
-    
-    .crosshair-h {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 48px;
       height: 2px;
-      background-color: rgba(0, 210, 255, 0.8);
-      opacity: 0.8;
+      background-color: rgba(255, 0, 0, 0.7);
+      box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+      animation: scan-animation 3s linear infinite;
     }
     
-    .crosshair-v {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 2px;
-      height: 48px;
-      background-color: rgba(0, 210, 255, 0.8);
-      opacity: 0.8;
-    }
-    
-    .status-indicator {
-      position: absolute;
-      top: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #00d2ff;
-      font-size: 12px;
-      text-align: center;
-      width: 256px;
-      font-family: 'Press Start 2P', cursive;
-    }
-    
-    .status-text {
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 4px;
-      animation: pulse-text 2s infinite;
-    }
-    
-    @keyframes pulse-text {
-      0% {
-        opacity: 0.7;
-      }
-      50% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0.7;
-      }
-    }
-    
-    .status-bars {
-      display: flex;
-      justify-content: center;
-      gap: 4px;
-    }
-    
-    .bar {
-      width: 20px;
-      height: 4px;
-      background-color: rgba(0, 51, 77, 0.8);
-    }
-    
-    .bar.active {
-      background-color: rgba(0, 210, 255, 0.8);
-    }
-    
-    .bottom-status {
-      position: absolute;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: #00d2ff;
-      font-size: 12px;
-      text-transform: uppercase;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      font-family: 'Press Start 2P', cursive;
-    }
-    
-    .system-name {
-      text-align: center;
-      width: 100%;
-    }
-    
-    .pulse-dot {
-      animation: pulse-dot 2s infinite;
-    }
-    
-    @keyframes pulse-dot {
-      0% {
-        opacity: 0.3;
-      }
-      50% {
-        opacity: 1;
-      }
-      100% {
-        opacity: 0.3;
-      }
-    }
-    
-    .instruction {
-      text-align: center;
-      font-size: 10px;
-      margin-top: 4px;
-      opacity: 0.8;
-    }
-    
-    .hud-left {
-      position: absolute;
-      top: 25%;
-      left: 16px;
-      color: #00d2ff;
-      font-size: 12px;
-      font-family: 'Press Start 2P', cursive;
-    }
-    
-    .hud-right {
-      position: absolute;
-      top: 25%;
-      right: 16px;
-      color: #00d2ff;
-      font-size: 12px;
-      text-align: right;
-      font-family: 'Press Start 2P', cursive;
-    }
-    
-    .hud-item {
-      display: flex;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    
-    .hud-dot {
-      width: 4px;
-      height: 4px;
-      background-color: #00d2ff;
-      margin: 0 4px;
-    }
-    
-    .hud-text {
-      font-size: 12px;
+    @keyframes scan-animation {
+      0% { top: 20%; }
+      100% { top: 80%; }
     }
     
     /* ARコンテナ */
@@ -643,6 +379,19 @@
       left: 0;
       z-index: 1;
       display: none; /* 最初は非表示 */
+    }
+    
+    /* MindARのデフォルトスキャナーを隠す */
+    .mindar-ui-scanning {
+      display: none !important;
+    }
+    
+    .mindar-ui-loading {
+      display: none !important;
+    }
+    
+    .a-enter-vr {
+      display: none !important;
     }
   </style>
 </head>
@@ -707,118 +456,11 @@
     </div>
   </div>
 
-  <!-- ARスキャナーオーバーレイ -->
-  <div id="futuristic-scanner" class="scanner-overlay">
-    <div class="main-frame">
-      <div class="scanner-container">
-        <div class="target-scanner">
-          <div class="corner top-left"></div>
-          <div class="corner top-right"></div>
-          <div class="corner bottom-left"></div>
-          <div class="corner bottom-right"></div>
-          
-          <div class="scan-bar"></div>
-          <div class="scan-frame"></div>
-          
-          <div class="coordinates-left">
-            <div class="coord-number">
-              X: 0.342<br>
-              Y: 1.092<br>
-              Z: 0.875<br>
-              X: 0.341<br>
-              Y: 1.095<br>
-              Z: 0.873<br>
-              X: 0.339<br>
-              Y: 1.098<br>
-              Z: 0.877<br>
-              X: 0.336<br>
-              Y: 1.102<br>
-              Z: 0.880<br>
-              X: 0.334<br>
-              Y: 1.105<br>
-              Z: 0.883<br>
-            </div>
-          </div>
-          
-          <div class="coordinates-right">
-            <div class="coord-number" style="animation-delay: -1.5s;">
-              A: 42.31<br>
-              B: 18.72<br>
-              C: 29.54<br>
-              A: 42.35<br>
-              B: 18.70<br>
-              C: 29.57<br>
-              A: 42.38<br>
-              B: 18.68<br>
-              C: 29.60<br>
-              A: 42.42<br>
-              B: 18.65<br>
-              C: 29.63<br>
-              A: 42.45<br>
-              B: 18.63<br>
-              C: 29.66<br>
-            </div>
-          </div>
-          
-          <div class="crosshair-h"></div>
-          <div class="crosshair-v"></div>
-        </div>
-      </div>
-      
-      <div class="status-indicator">
-        <div class="status-text">マーカースキャン中</div>
-        <div class="status-bars">
-          <div class="bar active"></div>
-          <div class="bar active"></div>
-          <div class="bar active"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-          <div class="bar"></div>
-        </div>
-      </div>
-      
-      <div class="bottom-status">
-        <div class="system-name">
-          KOZOU+ AR システム <span class="pulse-dot">●</span>
-        </div>
-        <div class="instruction">
-          QRコードをフレーム内に収めてください
-        </div>
-      </div>
-    </div>
-    
-    <div class="hud-left">
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">AR.SYS</div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">SCAN.v2</div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-dot"></div>
-        <div class="hud-text">MODEL.QR</div>
-      </div>
-    </div>
-    
-    <div class="hud-right">
-      <div class="hud-item">
-        <div class="hud-text">INIT_05</div>
-        <div class="hud-dot"></div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-text">CAM_ON</div>
-        <div class="hud-dot"></div>
-      </div>
-      <div class="hud-item">
-        <div class="hud-text" id="tracking-status">SEEK_31%</div>
-        <div class="hud-dot"></div>
-      </div>
+  <!-- カスタムスキャナーオーバーレイ -->
+  <div id="scanner-overlay">
+    <div class="scanner-frame">
+      <div class="dot-pattern"></div>
+      <div class="scan-line"></div>
     </div>
   </div>
 
@@ -833,15 +475,15 @@
     const debugPanel = document.getElementById('debug-panel');
     const debugStatus = document.getElementById('debug-status');
     const arContainer = document.getElementById('ar-container');
-    const scannerOverlay = document.getElementById('futuristic-scanner');
+    const scannerOverlay = document.getElementById('scanner-overlay');
     const typingText1 = document.getElementById('typing-text1');
     const typingText2 = document.getElementById('typing-text2');
     const retroFrame = document.querySelector('.retro-frame');
-    const trackingStatus = document.getElementById('tracking-status');
     
     // グローバル変数
     let arSceneCreated = false;
     let arScene = null;
+    let arStarted = false;
     
     // 3D傾斜効果をマウス/タッチ移動で微調整
     function addTiltEffect() {
@@ -860,7 +502,6 @@
         retroFrame.style.transform = `rotateX(${baseRotateX + yAxis}deg) rotateY(${baseRotateY - xAxis}deg) rotateZ(${baseRotateZ}deg)`;
       });
       
-      // スマホやタブレットでのジャイロセンサー対応
       // スマホやタブレットでのジャイロセンサー対応
       if (window.DeviceOrientationEvent) {
         window.addEventListener('deviceorientation', function(e) {
@@ -1031,8 +672,25 @@
         arScene = sceneEl;
         
         // ターゲット検出イベントリスナー設定
-        targetContainerEl.addEventListener('targetFound', onTargetFound);
-        targetContainerEl.addEventListener('targetLost', onTargetLost);
+        targetContainerEl.addEventListener('targetFound', function() {
+          updateDebugStatus("ターゲット検出");
+          
+          // ターゲット検出時にスキャナーを徐々に非表示
+          setTimeout(() => {
+            // スキャナーを徐々に非表示
+            scannerOverlay.style.opacity = '0';
+            scannerOverlay.style.transition = 'opacity 1s ease-out';
+            
+            // アニメーション完了後に完全に非表示
+            setTimeout(() => {
+              scannerOverlay.style.display = 'none';
+            }, 1000);
+          }, 500);
+        });
+        
+        targetContainerEl.addEventListener('targetLost', function() {
+          updateDebugStatus("ターゲットロスト");
+        });
       });
       
       // エラーハンドリング
@@ -1046,58 +704,27 @@
       });
     }
     
-    // ターゲット検出時の処理
-    function onTargetFound() {
-      updateDebugStatus("ターゲット検出");
-      
-      // スキャナーのUI要素を更新
-      const statusText = document.querySelector('.status-text');
-      const statusBars = document.querySelectorAll('.status-bars .bar');
-      
-      if (statusText) statusText.textContent = 'ターゲット認識中';
-      if (trackingStatus) trackingStatus.textContent = 'TRACK_92%';
-      
-      // ステータスバーを更新
-      statusBars.forEach((bar, index) => {
-        if (index < 8) {
-          bar.classList.add('active');
-        }
-      });
-      
-      // フェードアウトアニメーション
-      setTimeout(() => {
-        // スキャナーを徐々に非表示
-        scannerOverlay.style.opacity = '0';
-        scannerOverlay.style.transition = 'opacity 1s ease-out';
-        
-        // アニメーション完了後に完全に非表示
-        setTimeout(() => {
-          scannerOverlay.style.display = 'none';
-        }, 1000);
-      }, 1500);
-    }
-    
-    // ターゲットロスト時の処理
-    function onTargetLost() {
-      updateDebugStatus("ターゲットロスト");
-      
-      // ターゲットを見失った後の処理
-      // 必要に応じてここでスキャナーを再表示するなどの処理を追加
-    }
-    
     // スタートボタンクリック時の処理
-    startButton.addEventListener('click', function() {
+    startButton.addEventListener('click', startARExperience);
+    
+    // ARエクスペリエンスを開始する関数
+    function startARExperience() {
+      if (arStarted) return; // 既に開始している場合は何もしない
+      
+      arStarted = true; // 開始フラグを立てる
+      
       updateDebugStatus("ARエクスペリエンス開始ボタンがクリックされました");
       
       // スタート画面を非表示
       retroStartScreen.style.display = 'none';
       
-      // ARコンテナを表示
+      // ARコンテナとスキャナーを表示
       arContainer.style.display = 'block';
+      scannerOverlay.style.display = 'block';
       
       // ARシーンが正常に作成された場合のみカメラを起動
       if (arSceneCreated && arScene) {
-        startARExperience();
+        startCamera();
       } else {
         // ARシーンがまだ作成されていない場合は作成してから起動
         prepareARScene();
@@ -1105,26 +732,30 @@
         const waitForScene = setInterval(() => {
           if (arSceneCreated && arScene) {
             clearInterval(waitForScene);
-            startARExperience();
+            startCamera();
           }
         }, 100);
       }
-    });
+    }
     
-    // ARエクスペリエンスを開始する関数
-    function startARExperience() {
+    // カメラを起動する関数
+    function startCamera() {
       updateDebugStatus("カメラへのアクセスを要求します");
-      
-      // スキャナーオーバーレイを表示
-      scannerOverlay.style.display = 'block';
       
       // MindARを開始（ここでカメラへのアクセス要求が発生）
       const mindARSystem = arScene.systems['mindar-image-system'];
       mindARSystem.start();
       
       // カメラがアクティブになった後のスタイル調整
-      setTimeout(() => {
+     // カメラがアクティブになった後のスタイル調整
+     setTimeout(() => {
         adjustCanvasStyles();
+        
+        // MindARのデフォルトUIを非表示
+        const mindARUI = document.querySelectorAll('.mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr');
+        mindARUI.forEach(el => {
+          if (el) el.style.display = 'none';
+        });
       }, 500);
     }
     
@@ -1144,12 +775,37 @@
       } else {
         updateDebugStatus("キャンバス要素が見つかりません");
       }
+      
+      // MindARのデフォルトUIを非表示にする（CSSクラスが追加された後に再度チェック）
+      const scanningUI = document.querySelector('.mindar-ui-scanning');
+      if (scanningUI) scanningUI.style.display = 'none';
+      
+      const loadingUI = document.querySelector('.mindar-ui-loading');
+      if (loadingUI) loadingUI.style.display = 'none';
     }
     
     // デバッグ表示の切り替え（URLに?debug=trueを付けるとデバッグモード）
     if (window.location.search.includes('debug=true')) {
       debugPanel.style.display = 'block';
     }
+    
+    // MindARのデフォルトUI要素を監視して非表示にする
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes) {
+          mutation.addedNodes.forEach(function(node) {
+            if (node.classList && 
+               (node.classList.contains('mindar-ui-scanning') || 
+                node.classList.contains('mindar-ui-loading'))) {
+              node.style.display = 'none';
+            }
+          });
+        }
+      });
+    });
+    
+    // ドキュメント全体の変更を監視
+    observer.observe(document.body, { childList: true, subtree: true });
   </script>
 </body>
 </html>
