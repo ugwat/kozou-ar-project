@@ -672,29 +672,17 @@
       // シーンの初期化完了イベントを監視
       sceneEl.addEventListener('loaded', function() {
         updateDebugStatus("ARシーン初期化完了（カメラはまだ起動していません）");
+        console.log("A-Frameシーンロード完了");
         arSceneCreated = true;
         arScene = sceneEl;
         
-        // ターゲット検出イベントリスナー設定
-        targetContainerEl.addEventListener('targetFound', function() {
-          updateDebugStatus("ターゲット検出");
-          
-          // ターゲット検出時にスキャナーを徐々に非表示
-          setTimeout(() => {
-            // スキャナーを徐々に非表示
-            scannerOverlay.style.opacity = '0';
-            scannerOverlay.style.transition = 'opacity 1s ease-out';
-            
-            // アニメーション完了後に完全に非表示
-            setTimeout(() => {
-              scannerOverlay.style.display = 'none';
-            }, 1000);
-          }, 500);
-        });
-        
-        targetContainerEl.addEventListener('targetLost', function() {
-          updateDebugStatus("ターゲットロスト");
-        });
+        // システムが利用可能かチェック
+        const mindARSystem = arScene.systems['mindar-image-system'];
+        if (mindARSystem) {
+          console.log("MindARシステムが見つかりました");
+        } else {
+          console.error("MindARシステムが見つかりません");
+        }
       });
       
       // エラーハンドリング
@@ -726,12 +714,8 @@
       // スタート画面を非表示
       retroStartScreen.style.display = 'none';
       
-      // ARコンテナを表示（スキャナーはカメラ初期化後に表示）
+      // ARコンテナを表示
       arContainer.style.display = 'block';
-      
-      // スキャナーUIを準備するが表示はまだしない
-      scannerOverlay.style.opacity = '1';
-      scannerOverlay.style.display = 'none';
       
       // ARシーンが正常に作成された場合のみカメラを起動
       if (arSceneCreated && arScene) {
@@ -753,35 +737,32 @@
     function startCamera() {
       updateDebugStatus("カメラへのアクセスを要求します");
       
-      // カメラ許可後のハンドラーを先に設定
-      document.addEventListener('camera-init', function onCameraInit() {
-        // このイベントは一度だけ使用
-        document.removeEventListener('camera-init', onCameraInit);
-        
-        updateDebugStatus("カメラ初期化完了");
-        console.log("カメラ初期化完了 - スキャナー表示");
-        
-        // スキャナーUIを表示
-        scannerOverlay.style.display = 'block';
-        
-        // MindARのデフォルトUIを非表示に
-        hideDefaultMindARUI();
+      // MindARのシステムを取得
+      const mindARSystem = arScene.systems['mindar-image-system'];
+      
+      // カメラ許可前に、カメラ初期化完了イベントのリスナーを設定
+      // MindARのイベントエミッターを直接使用
+      mindARSystem.addEventListener("mindar-image-target-found", () => {
+        updateDebugStatus("ターゲット検出");
       });
       
-      // a-sceneのloadedイベントを確認
-      arScene.addEventListener('loaded', function() {
-        console.log("A-Frame シーンがロードされました");
+      // important: カメラ起動前にイベントリスナーを追加
+      mindARSystem.addEventListener("mindar-image-start", () => {
+        updateDebugStatus("MindAR開始");
+        
+        // 短い遅延後にスキャナーオーバーレイを表示
+        setTimeout(() => {
+          scannerOverlay.style.display = 'block';
+          hideDefaultMindARUI();
+          updateDebugStatus("スキャナー表示");
+        }, 200);
       });
       
-      // カメラ開始を遅延させる
-      setTimeout(() => {
-        // MindARを開始（ここでカメラへのアクセス要求が発生）
-        const mindARSystem = arScene.systems['mindar-image-system'];
-        mindARSystem.start();
-        
-        // カメラ表示スタイルを調整
-        setTimeout(adjustCanvasStyles, 500);
-      }, 100);
+      // カメラを起動
+      mindARSystem.start();
+      
+      // カメラスタイル調整
+      setTimeout(adjustCanvasStyles, 500);
     }
     
     // MindARのデフォルトUIを非表示にする関数
