@@ -309,10 +309,10 @@
       assetsEl.appendChild(emblemLogo);
       sceneEl.appendChild(assetsEl);
       
-      // カメラ
+      // カメラ - ここでlook-controlsを有効化
       const cameraEl = document.createElement('a-camera');
       cameraEl.setAttribute('position', '0 0 0');
-      cameraEl.setAttribute('look-controls', 'enabled: false');
+      cameraEl.setAttribute('look-controls', 'enabled: true'); // ジャイロスコープによる視点変更を有効化
       sceneEl.appendChild(cameraEl);
       
       // ターゲットコンテナ
@@ -499,14 +499,20 @@
     
     // カードを作成
     function createCards() {
+      // 360度空間内にカードを配置
+      const radius = 3; // カードの配置半径（大きくすると「窓」効果が強まる）
+      
       stepsData.forEach((step, index) => {
         const card = document.createElement('div');
         card.className = 'hud-card';
         card.id = `card-${index}`;
         card.style.zIndex = 1000 - index;
+        
+        // 初期位置（画面中央）
         card.style.top = '50%';
         card.style.left = '50%';
         card.style.transform = 'translate(-50%, -50%) scale(0.9)';
+        card.style.opacity = '0'; // 初期状態では非表示
         
         const title = document.createElement('div');
         title.className = 'card-title';
@@ -530,27 +536,41 @@
     // カードを扇状に展開
     function expandCards() {
       const cards = document.querySelectorAll('.hud-card');
-      const centerX = window.innerWidth / 2;
-      const centerY = window.innerHeight / 2;
-      const radius = Math.min(window.innerWidth, window.innerHeight) * 0.3;
+      
+      // 360度空間に配置するための角度計算
+      const angleStep = (Math.PI * 2) / cards.length; // 360度をカード数で分割
+      const radius = Math.min(window.innerWidth, window.innerHeight) * 1.5; // 配置半径を大きくして窓効果を強化
       
       cards.forEach((card, index) => {
-        // カードの数に基づいて角度を計算
-        const angle = (index / cards.length) * Math.PI * 0.5 - Math.PI * 0.25;
-        const x = centerX + radius * Math.cos(angle) - card.offsetWidth / 2;
-        const y = centerY + radius * Math.sin(angle) - card.offsetHeight / 2;
-        const z = 100 - index * 20;
+        // 各カードの角度位置を計算（全周囲に配置）
+        const angle = index * angleStep;
         
-        // カードを配置
-        card.style.transform = `translate(${x}px, ${y}px) rotateY(${-angle * 30}deg) scale(0.9)`;
-        card.style.left = '0';
-        card.style.top = '0';
+        // 3D空間内の座標を計算
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius * 0.2; // Y軸方向は少し抑える
+        const z = -Math.sin(angle) * radius;
+        
+        // カード位置を設定 - 画面外にも配置できるよう修正
+        const posX = 50 + (Math.cos(angle) * 30); // 中心から30%の範囲で配置（画面外も含む）
+        const posY = 50 + (Math.sin(angle) * 15);
+        
+        // カードのスタイルを設定
+        card.style.position = 'absolute';
+        card.style.left = `${posX}%`;
+        card.style.top = `${posY}%`;
+        
+        // 3D変換でカードを空間に配置
+        card.style.transform = `translate(-50%, -50%) rotateY(${angle * 57.3}deg) translateZ(${-z}px) scale(0.8)`;
+        card.style.transformOrigin = 'center center';
+        card.style.transformStyle = 'preserve-3d';
+        card.style.transition = 'all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
         card.style.opacity = '1';
         
-        // アニメーションでイージングを適用
-        card.style.transition = 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        // 画面外のカードは薄く表示
+        const isVisible = posX > 0 && posX < 100 && posY > 0 && posY < 100;
+        card.style.opacity = isVisible ? '1' : '0.2';
         
-        // 遅延を追加してカードが順番に展開
+        // アニメーションでイージングを適用
         setTimeout(() => {
           card.classList.add('active');
         }, index * 150);
@@ -563,6 +583,41 @@
       
       // スワイプ操作を設定
       setupSwipeInteraction();
+      
+      // 視線誘導のためのガイド要素を追加
+      addViewportGuides();
+    }
+    
+    // 視線誘導のためのガイドを追加
+    function addViewportGuides() {
+      // 左右の視線誘導アロー
+      const directions = ['left', 'right'];
+      directions.forEach(dir => {
+        const arrow = document.createElement('div');
+        arrow.className = `viewport-guide ${dir}`;
+        arrow.innerHTML = dir === 'left' ? '←' : '→';
+        arrow.style.position = 'absolute';
+        arrow.style.top = '50%';
+        arrow.style.left = dir === 'left' ? '5%' : '95%';
+        arrow.style.transform = 'translateY(-50%)';
+        arrow.style.color = '#00c8ff';
+        arrow.style.fontSize = '24px';
+        arrow.style.textShadow = '0 0 10px rgba(0, 200, 255, 0.8)';
+        arrow.style.opacity = '0.7';
+        arrow.style.animation = 'pulse 2s infinite ease-in-out';
+        cardsContainer.appendChild(arrow);
+      });
+      
+      // CSSアニメーションを追加
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes pulse {
+          0% { opacity: 0.3; transform: translateY(-50%) scale(1); }
+          50% { opacity: 0.8; transform: translateY(-50%) scale(1.2); }
+          100% { opacity: 0.3; transform: translateY(-50%) scale(1); }
+        }
+      `;
+      document.head.appendChild(style);
     }
     
     // カードをフォーカス
@@ -573,21 +628,38 @@
       cards.forEach((card, i) => {
         if (i === index) {
           // フォーカスされたカード
-          card.style.transform = 'translate(-50%, -50%) scale(1.1)';
+          card.style.transform = 'translate(-50%, -50%) scale(1.1) rotateY(0deg)';
           card.style.left = '50%';
           card.style.top = '50%';
           card.style.zIndex = '1000';
           card.style.opacity = '1';
         } else {
-          // 非フォーカスカード
-          const offset = i < index ? -70 : 70;
-          card.style.transform = `translate(calc(-50% + ${offset}%), -50%) scale(0.7)`;
+          // 非フォーカスカード - 360度空間に沿って配置
+          const isLeft = i < index;
+          const offset = isLeft ? -70 : 70;
+          const rotateY = isLeft ? -30 : 30; // 3D回転で奥行き感を出す
+          
+          card.style.transform = `translate(calc(-50% + ${offset}%), -50%) scale(0.7) rotateY(${rotateY}deg) translateZ(-200px)`;
           card.style.left = '50%';
           card.style.top = '50%';
           card.style.zIndex = '900';
-          card.style.opacity = '0.6';
+          card.style.opacity = isLeft ? '0.4' : '0.4'; // 左右どちらも少し薄く
         }
       });
+      
+      // 視線誘導アローの表示/非表示
+      updateViewportGuides(index, cards.length);
+    }
+    
+    // 視線誘導アローの表示/非表示を更新
+    function updateViewportGuides(currentIndex, totalCards) {
+      const leftArrow = document.querySelector('.viewport-guide.left');
+      const rightArrow = document.querySelector('.viewport-guide.right');
+      
+      if (leftArrow && rightArrow) {
+        leftArrow.style.display = currentIndex > 0 ? 'block' : 'none';
+        rightArrow.style.display = currentIndex < totalCards - 1 ? 'block' : 'none';
+      }
     }
     
     // スワイプ操作を設定
