@@ -108,16 +108,28 @@
       display: none;
     }
     
-    /* パーティクルエフェクト用のスタイル */
-    .particle {
+    /* カメラのスタイル */
+    #camera-view {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 10;
+    }
+    
+    /* 浮かぶ粒子のスタイル */
+    .floating-particle {
       position: absolute;
       width: 10px;
       height: 10px;
-      background-color: #00ffff;
       border-radius: 50%;
+      background-color: #00c8ff;
+      box-shadow: 0 0 10px #00ffff;
       opacity: 0.7;
       pointer-events: none;
-      z-index: 2;
+      z-index: 20;
     }
   </style>
 </head>
@@ -131,11 +143,17 @@
     <!-- カードはJavaScriptで動的に生成されます -->
   </div>
 
-  <div id="ar-container"></div>
+  <div id="ar-container">
+    <!-- カメラビューがここに配置されます -->
+  </div>
 
   <script>
-    // ジャイロスコープを使った360度ビュー - 修正版
-
+    // グローバル変数
+    let lastBeta = 0;
+    let lastGamma = 0;
+    let activeCardIndex = 0;
+    
+    // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
       
@@ -163,7 +181,7 @@
       });
     });
 
-    // 360度ビューの初期化（A-Frameを使わないバージョン）
+    // 360度ビューの初期化（シンプルなカメラとジャイロスコープを使用）
     function init360View() {
       console.log("360度ビュー初期化開始");
       
@@ -173,19 +191,10 @@
       
       // ビデオ要素の作成
       const video = document.createElement('video');
+      video.id = 'camera-view';
       video.setAttribute('autoplay', '');
       video.setAttribute('playsinline', '');
-      video.style.width = '100%';
-      video.style.height = '100%';
-      video.style.objectFit = 'cover';
-      video.style.position = 'absolute';
-      video.style.top = '0';
-      video.style.left = '0';
-      video.style.zIndex = '1';
       arContainer.appendChild(video);
-      
-      // パーティクルエフェクトを追加
-      createParticles();
       
       // カメラアクセス
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -196,6 +205,7 @@
             // カメラが起動したらカードを表示
             setTimeout(() => {
               create360Cards();
+              createFloatingParticles();
             }, 1000);
           };
         })
@@ -206,45 +216,25 @@
       
       // ジャイロスコープイベントリスナーを設定
       window.addEventListener('deviceorientation', handleOrientation);
-    }
-
-    // パーティクルエフェクトを作成
-    function createParticles() {
-      const arContainer = document.getElementById('ar-container');
       
-      for (let i = 0; i < 15; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        
-        // ランダムな位置に配置
-        const x = Math.random() * 100;
-        const y = Math.random() * 100;
-        particle.style.left = `${x}%`;
-        particle.style.top = `${y}%`;
-        
-        // アニメーション設定
-        particle.style.animation = `float ${2 + Math.random() * 3}s ease-in-out infinite alternate`;
-        
-        arContainer.appendChild(particle);
+      // デバイスのジャイロスコープ許可を要求（iOSの場合）
+      if (typeof DeviceOrientationEvent !== 'undefined' && 
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then(response => {
+            if (response === 'granted') {
+              window.addEventListener('deviceorientation', handleOrientation);
+            } else {
+              alert('ジャイロスコープへのアクセスが拒否されました。端末を傾けた際のカード移動機能が制限されます。');
+            }
+          })
+          .catch(console.error);
       }
-      
-      // アニメーションのキーフレームを追加
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes float {
-          0% { transform: translate(0, 0); }
-          100% { transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px); }
-        }
-      `;
-      document.head.appendChild(style);
     }
 
     // デバイスの向きを処理
-    let lastBeta = 0;
-    let lastGamma = 0;
-
     function handleOrientation(event) {
-      // デバイスの向き（ベータは上下の傾き、ガンマは左右の傾き）
+      // デバイスの向き
       const beta = event.beta;  // -180〜180の範囲（デバイスの前後の傾き）
       const gamma = event.gamma; // -90〜90の範囲（デバイスの左右の傾き）
       
@@ -254,12 +244,18 @@
       // 値の変化が小さすぎる場合は無視（ノイズ対策）
       if (Math.abs(beta - lastBeta) < 0.5 && Math.abs(gamma - lastGamma) < 0.5) return;
       
-      // 前回の値を更新
-      lastBeta = beta;
-      lastGamma = gamma;
+      // 値を平滑化（急激な変化を抑える）
+      lastBeta = lastBeta * 0.8 + beta * 0.2;
+      lastGamma = lastGamma * 0.8 + gamma * 0.2;
       
       // カードの位置を更新
-      updateCardsPosition(beta, gamma);
+      updateCardsPosition(lastBeta, lastGamma);
+      
+      // デバッグパネルの更新
+      const debugPanel = document.getElementById('debug-panel');
+      if (debugPanel) {
+        debugPanel.textContent = `Beta: ${Math.round(lastBeta)}°, Gamma: ${Math.round(lastGamma)}°`;
+      }
     }
 
     // カードの位置を更新
@@ -267,32 +263,45 @@
       const cards = document.querySelectorAll('.hud-card');
       
       // ガンマの値を0〜360の範囲に変換（左右の向き）
+      // 値が-90〜90なので、180度加えて0〜360にする
       const normalizedGamma = ((gamma + 90) / 180) * 360;
       
+      // 現在表示中のカードのインデックスを計算
+      const currentCardIndex = Math.floor((normalizedGamma / 360) * cards.length);
+      
       cards.forEach((card, index) => {
-        // カードの角度位置（360度を均等に分割）
-        const cardAngle = (index / cards.length) * 360;
+        // 各カードの理想的な表示位置（角度）
+        const cardIdealAngle = (index / cards.length) * 360;
         
-        // デバイスの向きとカードの角度の差を計算
-        let angleDiff = Math.abs(normalizedGamma - cardAngle);
-        if (angleDiff > 180) angleDiff = 360 - angleDiff;
+        // 現在向いている方向と理想的な角度の差
+        let angleDiff = normalizedGamma - cardIdealAngle;
         
-        // 角度の差が小さいほど、カードは画面中央に近づく
-        const visibilityFactor = 1 - (angleDiff / 180);
+        // 角度の差を-180〜180の範囲に正規化
+        while (angleDiff > 180) angleDiff -= 360;
+        while (angleDiff < -180) angleDiff += 360;
         
-        if (visibilityFactor > 0.2) {
-          // カードが見える範囲内
-          const scale = 0.5 + visibilityFactor * 0.5; // スケールを調整
-          const opacity = visibilityFactor;
+        // 角度の差の絶対値
+        const absAngleDiff = Math.abs(angleDiff);
+        
+        // カードを表示する範囲を設定
+        const viewThreshold = 45; // 45度以内なら表示
+        
+        if (absAngleDiff < viewThreshold) {
+          // 表示範囲内：角度差に基づいて位置とスケールを調整
+          const visibility = 1 - (absAngleDiff / viewThreshold);
           
-          // カードの中心からの距離を計算
-          const offsetX = (0.5 - visibilityFactor) * 100 * (cardAngle > normalizedGamma ? 1 : -1);
+          // X位置のオフセット（-50〜50%）
+          const offsetX = (angleDiff / viewThreshold) * 50;
           
-          card.style.transform = `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`;
-          card.style.opacity = opacity.toString();
+          // カードのスタイルを設定
           card.style.display = 'flex';
+          card.style.opacity = visibility.toString();
+          card.style.left = '50%';
+          card.style.top = '50%';
+          card.style.transform = `translate(calc(-50% + ${offsetX}%), -50%) scale(${0.7 + visibility * 0.3})`;
+          card.style.zIndex = (1000 - Math.floor(absAngleDiff)).toString(); // 中央に近いほど前面に
         } else {
-          // カードが見えない範囲
+          // 表示範囲外：非表示
           card.style.display = 'none';
         }
       });
@@ -301,6 +310,7 @@
     // 360度空間にカードを表示
     function create360Cards() {
       const cardsContainer = document.getElementById('cards-container');
+      cardsContainer.innerHTML = ''; // 既存のカードをクリア
       cardsContainer.style.display = 'block';
       
       // サンプルのステップデータ
@@ -342,12 +352,13 @@
         card.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
         card.style.padding = '20px';
         card.style.color = 'white';
-        card.style.display = 'flex';
+        card.style.display = 'none'; // 初期状態では非表示
         card.style.flexDirection = 'column';
         card.style.justifyContent = 'center';
         card.style.alignItems = 'center';
         card.style.transition = 'all 0.3s ease-out';
-        card.style.opacity = '0'; // 初期状態では非表示
+        card.style.opacity = '0';
+        card.style.zIndex = '900';
         
         // コンテンツ
         const title = document.createElement('div');
@@ -371,13 +382,71 @@
         card.appendChild(title);
         card.appendChild(content);
         cardsContainer.appendChild(card);
+        
+        // 位置情報を表示（デバッグ用）
+        const debugInfo = document.createElement('div');
+        debugInfo.style.position = 'absolute';
+        debugInfo.style.bottom = '5px';
+        debugInfo.style.right = '5px';
+        debugInfo.style.fontSize = '10px';
+        debugInfo.style.color = '#00ffff';
+        debugInfo.textContent = `Card ${index}: ${(index / stepsData.length) * 360}°`;
+        card.appendChild(debugInfo);
       });
       
       // 視線誘導のガイド追加
       addViewGuides();
       
+      // デバッグ情報の表示領域を追加
+      const debugPanel = document.createElement('div');
+      debugPanel.style.position = 'fixed';
+      debugPanel.style.top = '10px';
+      debugPanel.style.right = '10px';
+      debugPanel.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+      debugPanel.style.color = '#00ffff';
+      debugPanel.style.padding = '5px';
+      debugPanel.style.fontSize = '12px';
+      debugPanel.style.zIndex = '1100';
+      debugPanel.id = 'debug-panel';
+      document.body.appendChild(debugPanel);
+      
       // 初期位置を設定
       updateCardsPosition(0, 0);
+    }
+    
+    // 空間に浮かぶ粒子を作成
+    function createFloatingParticles() {
+      const arContainer = document.getElementById('ar-container');
+      
+      // 粒子を複数作成
+      for (let i = 0; i < 20; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'floating-particle';
+        
+        // ランダムな位置
+        const left = Math.random() * 100;
+        const top = Math.random() * 100;
+        const size = 5 + Math.random() * 10;
+        
+        particle.style.left = `${left}%`;
+        particle.style.top = `${top}%`;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.opacity = (0.3 + Math.random() * 0.4).toString();
+        
+        // アニメーション
+        particle.style.transition = 'all 3s ease-in-out';
+        
+        arContainer.appendChild(particle);
+        
+        // ふわふわと動くアニメーション
+        setInterval(() => {
+          const newLeft = left + (Math.random() * 10 - 5);
+          const newTop = top + (Math.random() * 10 - 5);
+          particle.style.left = `${newLeft}%`;
+          particle.style.top = `${newTop}%`;
+        }, 3000 + Math.random() * 2000);
+      }
     }
 
     // 視線誘導ガイドを追加
