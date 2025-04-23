@@ -182,18 +182,28 @@
       sceneEl.setAttribute('embedded', '');
       sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
       
-      // 重要: arjs属性を追加してカメラ映像を背景に
-      sceneEl.setAttribute('arjs', 'sourceType: webcam; debugUIEnabled: false;');
+      // デバッグUIを無効化
+      sceneEl.setAttribute('debug', 'false');
       
-      // ジャイロスコープを有効にしたカメラ
+      // 背景設定を修正
+      sceneEl.setAttribute('renderer', 'antialias: true; alpha: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true;');
+      document.body.style.backgroundColor = 'transparent';
+      
+      // カメラ設定を詳細に指定
       const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('look-controls', 'enabled: true'); // ジャイロスコープによる視点変更を有効化
-      cameraEl.setAttribute('wasd-controls', 'enabled: false'); // キーボード操作を無効化
+      cameraEl.setAttribute('position', '0 1.6 0');
+      cameraEl.setAttribute('look-controls', 'enabled: true; reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: true');
+      cameraEl.setAttribute('wasd-controls', 'enabled: false');
+      cameraEl.setAttribute('fov', '80'); // 視野角を広めに設定
+      
+      // カメラの初期化完了イベントを監視
+      cameraEl.addEventListener('camera-set-active', () => {
+        console.log('カメラがアクティブになりました');
+      });
+      
       sceneEl.appendChild(cameraEl);
       
-      // 注意: 背景のskyは使用しない（カメラ映像を背景とするため）
-      
-      // 空間内に浮かぶ粒子（これは保持）
+      // 空間内に浮かぶ粒子
       for (let i = 0; i < 15; i++) {
         const particleEl = document.createElement('a-sphere');
         particleEl.setAttribute('radius', '0.05');
@@ -222,11 +232,21 @@
       // ARコンテナに追加
       arContainer.appendChild(sceneEl);
       
-      // カメラが初期化されたらカードを表示
-      sceneEl.addEventListener('camera-set-active', () => {
+      // シーンの読み込み完了時のイベント
+      sceneEl.addEventListener('loaded', () => {
+        console.log('シーンが読み込まれました');
         setTimeout(() => {
-          createARCards(sceneEl); // A-Frameエンティティとしてカードを作成
+          createARCards(sceneEl);
         }, 1000);
+      });
+      
+      // エラーハンドリング
+      sceneEl.addEventListener('renderstart', () => {
+        console.log('レンダリングが開始されました');
+      });
+      
+      sceneEl.addEventListener('rendererror', (event) => {
+        console.error('レンダリングエラー:', event);
       });
     }
 
