@@ -3,8 +3,6 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>KOZOU+ 360° Experience</title>
-  <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
   <style>
     * {
@@ -77,7 +75,7 @@
       padding: 20px;
       color: white;
       transform-style: preserve-3d;
-      transition: all 0.5s ease-out;
+      transition: all 0.3s ease-out;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -110,20 +108,16 @@
       display: none;
     }
     
-    /* A-Frameのキャンバスを背面に下げる */
-    .a-canvas {
-      position: absolute !important;
-      top: 0;
-      left: 0;
-      width: 100% !important;
-      height: 100% !important;
-      object-fit: cover;
-      z-index: 10;
-    }
-    
-    /* AR.jsのUIを非表示 */
-    .a-enter-vr, .a-enter-ar {
-      display: none !important;
+    /* パーティクルエフェクト用のスタイル */
+    .particle {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #00ffff;
+      border-radius: 50%;
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 2;
     }
   </style>
 </head>
@@ -140,14 +134,13 @@
   <div id="ar-container"></div>
 
   <script>
-    // ジャイロスコープを活用した360度ビューのサンプル - 修正版
+    // ジャイロスコープを使った360度ビュー - 修正版
 
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
       
       // 読み込み画面を表示
       const loadingScreen = document.getElementById('loading-screen');
-      const arContainer = document.getElementById('ar-container');
       
       // ボタンを追加してユーザーが明示的にARを開始できるようにする
       const startButton = document.createElement('button');
@@ -166,92 +159,150 @@
       // ボタンクリックでARを開始
       startButton.addEventListener('click', () => {
         loadingScreen.style.display = 'none';
-        initAR();
+        init360View();
       });
     });
 
-    // ARの初期化
-    function initAR() {
-      console.log("AR初期化開始");
+    // 360度ビューの初期化（A-Frameを使わないバージョン）
+    function init360View() {
+      console.log("360度ビュー初期化開始");
       
+      // ARコンテナ
       const arContainer = document.getElementById('ar-container');
       arContainer.style.display = 'block';
       
-      // A-Frameシーンを作成
-      const sceneEl = document.createElement('a-scene');
-      sceneEl.setAttribute('embedded', '');
-      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
+      // ビデオ要素の作成
+      const video = document.createElement('video');
+      video.setAttribute('autoplay', '');
+      video.setAttribute('playsinline', '');
+      video.style.width = '100%';
+      video.style.height = '100%';
+      video.style.objectFit = 'cover';
+      video.style.position = 'absolute';
+      video.style.top = '0';
+      video.style.left = '0';
+      video.style.zIndex = '1';
+      arContainer.appendChild(video);
       
-      // デバッグUIを無効化
-      sceneEl.setAttribute('debug', 'false');
+      // パーティクルエフェクトを追加
+      createParticles();
       
-      // 背景設定を修正
-      sceneEl.setAttribute('renderer', 'antialias: true; alpha: true; colorManagement: true; sortObjects: true; physicallyCorrectLights: true;');
-      document.body.style.backgroundColor = 'transparent';
+      // カメラアクセス
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+          video.srcObject = stream;
+          video.onloadedmetadata = function(e) {
+            video.play();
+            // カメラが起動したらカードを表示
+            setTimeout(() => {
+              create360Cards();
+            }, 1000);
+          };
+        })
+        .catch(function(err) {
+          console.error("カメラエラー: ", err);
+          alert("カメラへのアクセスが拒否されました");
+        });
       
-      // カメラ設定を詳細に指定
-      const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('position', '0 1.6 0');
-      cameraEl.setAttribute('look-controls', 'enabled: true; reverseMouseDrag: false; touchEnabled: true; magicWindowTrackingEnabled: true');
-      cameraEl.setAttribute('wasd-controls', 'enabled: false');
-      cameraEl.setAttribute('fov', '80'); // 視野角を広めに設定
+      // ジャイロスコープイベントリスナーを設定
+      window.addEventListener('deviceorientation', handleOrientation);
+    }
+
+    // パーティクルエフェクトを作成
+    function createParticles() {
+      const arContainer = document.getElementById('ar-container');
       
-      // カメラの初期化完了イベントを監視
-      cameraEl.addEventListener('camera-set-active', () => {
-        console.log('カメラがアクティブになりました');
-      });
-      
-      sceneEl.appendChild(cameraEl);
-      
-      // 空間内に浮かぶ粒子
       for (let i = 0; i < 15; i++) {
-        const particleEl = document.createElement('a-sphere');
-        particleEl.setAttribute('radius', '0.05');
-        particleEl.setAttribute('color', '#00ffff');
-        particleEl.setAttribute('opacity', '0.7');
-        particleEl.setAttribute('position', {
-          x: (Math.random() - 0.5) * 10,
-          y: (Math.random() - 0.5) * 5 + 1.5,
-          z: (Math.random() - 0.5) * 10
-        });
-        particleEl.setAttribute('animation', {
-          property: 'position',
-          dir: 'alternate',
-          dur: 2000 + Math.random() * 3000,
-          easing: 'easeInOutSine',
-          loop: true,
-          to: {
-            x: (Math.random() - 0.5) * 10,
-            y: (Math.random() - 0.5) * 5 + 1.5,
-            z: (Math.random() - 0.5) * 10
-          }
-        });
-        sceneEl.appendChild(particleEl);
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        
+        // ランダムな位置に配置
+        const x = Math.random() * 100;
+        const y = Math.random() * 100;
+        particle.style.left = `${x}%`;
+        particle.style.top = `${y}%`;
+        
+        // アニメーション設定
+        particle.style.animation = `float ${2 + Math.random() * 3}s ease-in-out infinite alternate`;
+        
+        arContainer.appendChild(particle);
       }
       
-      // ARコンテナに追加
-      arContainer.appendChild(sceneEl);
+      // アニメーションのキーフレームを追加
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes float {
+          0% { transform: translate(0, 0); }
+          100% { transform: translate(${Math.random() * 100 - 50}px, ${Math.random() * 100 - 50}px); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // デバイスの向きを処理
+    let lastBeta = 0;
+    let lastGamma = 0;
+
+    function handleOrientation(event) {
+      // デバイスの向き（ベータは上下の傾き、ガンマは左右の傾き）
+      const beta = event.beta;  // -180〜180の範囲（デバイスの前後の傾き）
+      const gamma = event.gamma; // -90〜90の範囲（デバイスの左右の傾き）
       
-      // シーンの読み込み完了時のイベント
-      sceneEl.addEventListener('loaded', () => {
-        console.log('シーンが読み込まれました');
-        setTimeout(() => {
-          createARCards(sceneEl);
-        }, 1000);
-      });
+      // 値が取得できない場合は終了
+      if (beta === null || gamma === null) return;
       
-      // エラーハンドリング
-      sceneEl.addEventListener('renderstart', () => {
-        console.log('レンダリングが開始されました');
-      });
+      // 値の変化が小さすぎる場合は無視（ノイズ対策）
+      if (Math.abs(beta - lastBeta) < 0.5 && Math.abs(gamma - lastGamma) < 0.5) return;
       
-      sceneEl.addEventListener('rendererror', (event) => {
-        console.error('レンダリングエラー:', event);
+      // 前回の値を更新
+      lastBeta = beta;
+      lastGamma = gamma;
+      
+      // カードの位置を更新
+      updateCardsPosition(beta, gamma);
+    }
+
+    // カードの位置を更新
+    function updateCardsPosition(beta, gamma) {
+      const cards = document.querySelectorAll('.hud-card');
+      
+      // ガンマの値を0〜360の範囲に変換（左右の向き）
+      const normalizedGamma = ((gamma + 90) / 180) * 360;
+      
+      cards.forEach((card, index) => {
+        // カードの角度位置（360度を均等に分割）
+        const cardAngle = (index / cards.length) * 360;
+        
+        // デバイスの向きとカードの角度の差を計算
+        let angleDiff = Math.abs(normalizedGamma - cardAngle);
+        if (angleDiff > 180) angleDiff = 360 - angleDiff;
+        
+        // 角度の差が小さいほど、カードは画面中央に近づく
+        const visibilityFactor = 1 - (angleDiff / 180);
+        
+        if (visibilityFactor > 0.2) {
+          // カードが見える範囲内
+          const scale = 0.5 + visibilityFactor * 0.5; // スケールを調整
+          const opacity = visibilityFactor;
+          
+          // カードの中心からの距離を計算
+          const offsetX = (0.5 - visibilityFactor) * 100 * (cardAngle > normalizedGamma ? 1 : -1);
+          
+          card.style.transform = `translate(calc(-50% + ${offsetX}%), -50%) scale(${scale})`;
+          card.style.opacity = opacity.toString();
+          card.style.display = 'flex';
+        } else {
+          // カードが見えない範囲
+          card.style.display = 'none';
+        }
       });
     }
 
-    // 360度空間にA-Frameエンティティとしてカードを表示
-    function createARCards(sceneEl) {
+    // 360度空間にカードを表示
+    function create360Cards() {
+      const cardsContainer = document.getElementById('cards-container');
+      cardsContainer.style.display = 'block';
+      
       // サンプルのステップデータ
       const stepsData = [
         {
@@ -272,75 +323,61 @@
         }
       ];
       
-      // 中央のコンテナエンティティ
-      const cardContainerEl = document.createElement('a-entity');
-      cardContainerEl.setAttribute('position', '0 0 -4'); // カメラから少し離れた位置に配置
-      
-      // 各カードをA-Frameエンティティとして作成
+      // カードを作成
       stepsData.forEach((step, index) => {
-        // 360度周囲に配置するための角度計算
-        const angle = (index / stepsData.length) * Math.PI * 2;
-        const radius = 4; // 配置半径
+        const card = document.createElement('div');
+        card.className = 'hud-card';
+        card.id = `card-${index}`;
         
-        // 3D空間内の座標を計算
-        const x = Math.sin(angle) * radius;
-        const y = 0.5; // 少し上に配置
-        const z = Math.cos(angle) * radius;
+        // デザインスタイル
+        card.style.position = 'absolute';
+        card.style.width = '300px';
+        card.style.height = '200px';
+        card.style.left = '50%';
+        card.style.top = '50%';
+        card.style.transform = 'translate(-50%, -50%)';
+        card.style.backgroundColor = 'rgba(0, 20, 40, 0.5)';
+        card.style.border = '2px solid #00c8ff';
+        card.style.borderRadius = '10px';
+        card.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
+        card.style.padding = '20px';
+        card.style.color = 'white';
+        card.style.display = 'flex';
+        card.style.flexDirection = 'column';
+        card.style.justifyContent = 'center';
+        card.style.alignItems = 'center';
+        card.style.transition = 'all 0.3s ease-out';
+        card.style.opacity = '0'; // 初期状態では非表示
         
-        // カードのエンティティを作成
-        const cardEl = document.createElement('a-entity');
-        cardEl.setAttribute('id', `card-${index}`);
-        cardEl.setAttribute('position', `${x} ${y} ${z}`);
-        // カードは常にカメラの方を向くように設定
-        cardEl.setAttribute('look-at', '[camera]');
+        // コンテンツ
+        const title = document.createElement('div');
+        title.className = 'card-title';
+        title.textContent = step.title;
+        title.style.color = '#00c8ff';
+        title.style.fontSize = '16px';
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '10px';
+        title.style.textAlign = 'center';
         
-        // カードの背景パネル
-        const panelEl = document.createElement('a-plane');
-        panelEl.setAttribute('width', '2');
-        panelEl.setAttribute('height', '1.2');
-        panelEl.setAttribute('color', '#001133');
-        panelEl.setAttribute('opacity', '0.7');
-        panelEl.setAttribute('side', 'double');
+        const content = document.createElement('div');
+        content.className = 'card-content';
+        content.textContent = step.content;
+        content.style.color = '#ffffff';
+        content.style.fontFamily = "'DotGothic16', sans-serif";
+        content.style.fontSize = '14px';
+        content.style.textAlign = 'center';
+        content.style.lineHeight = '1.5';
         
-        // カードの枠線（ホログラム風）
-        const borderEl = document.createElement('a-plane');
-        borderEl.setAttribute('width', '2.05');
-        borderEl.setAttribute('height', '1.25');
-        borderEl.setAttribute('color', '#00c8ff');
-        borderEl.setAttribute('opacity', '0.5');
-        borderEl.setAttribute('position', '0 0 -0.01');
-        
-        // タイトルテキスト
-        const titleEl = document.createElement('a-text');
-        titleEl.setAttribute('value', step.title);
-        titleEl.setAttribute('align', 'center');
-        titleEl.setAttribute('color', '#00c8ff');
-        titleEl.setAttribute('width', '4');
-        titleEl.setAttribute('position', '0 0.4 0.01');
-        
-        // コンテンツテキスト
-        const contentEl = document.createElement('a-text');
-        contentEl.setAttribute('value', step.content);
-        contentEl.setAttribute('align', 'center');
-        contentEl.setAttribute('color', 'white');
-        contentEl.setAttribute('width', '3');
-        contentEl.setAttribute('position', '0 0 0.01');
-        
-        // 要素をカードエンティティに追加
-        cardEl.appendChild(panelEl);
-        cardEl.appendChild(borderEl);
-        cardEl.appendChild(titleEl);
-        cardEl.appendChild(contentEl);
-        
-        // カードをコンテナに追加
-        cardContainerEl.appendChild(cardEl);
+        card.appendChild(title);
+        card.appendChild(content);
+        cardsContainer.appendChild(card);
       });
-      
-      // コンテナをシーンに追加
-      sceneEl.appendChild(cardContainerEl);
       
       // 視線誘導のガイド追加
       addViewGuides();
+      
+      // 初期位置を設定
+      updateCardsPosition(0, 0);
     }
 
     // 視線誘導ガイドを追加
