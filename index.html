@@ -2,11 +2,8 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>KOZOU+ AR Experience</title>
+  <title>KOZOU+ 360° Experience</title>
   <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.0/dist/mindar-image-aframe.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
   <style>
     * {
@@ -57,59 +54,6 @@
       100% { transform: rotate(360deg); }
     }
     
-    #scanner-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 990;
-      display: none;
-      background-color: rgba(0, 0, 0, 0.7);
-    }
-    
-    .scanner-frame {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 70%;
-      height: 85%;
-      border: 4px solid #00c8ff;
-      box-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
-      overflow: hidden;
-    }
-    
-    .dot-pattern {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-image: radial-gradient(circle, rgba(100, 100, 100, 0.4) 1px, transparent 1.5px) !important;
-      background-size: 15px 15px !important;
-      background-repeat: repeat !important;
-      opacity: 0.5;
-      z-index: 1;
-    }
-    
-    .scan-line {
-      position: absolute;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background-color: rgba(255, 0, 0, 0.7);
-      box-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
-      animation: scan-animation 3s linear infinite;
-      z-index: 2;
-    }
-    
-    @keyframes scan-animation {
-      0% { top: 20%; }
-      100% { top: 80%; }
-    }
-    
     #cards-container {
       position: fixed;
       width: 100%;
@@ -123,34 +67,28 @@
     
     .hud-card {
       position: absolute;
-      width: 80%;
-      height: 40%;
-      background-color: rgba(0, 50, 100, 0.2);
+      width: 300px;
+      height: 200px;
+      background-color: rgba(0, 20, 40, 0.5);
       border: 2px solid #00c8ff;
       border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.5), inset 0 0 10px rgba(0, 200, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
+      padding: 20px;
+      color: white;
       transform-style: preserve-3d;
-      transform: translateZ(0);
       transition: all 0.5s ease-out;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 20px;
-      opacity: 0;
-      pointer-events: none;
-    }
-    
-    .hud-card.active {
-      opacity: 1;
-      pointer-events: auto;
     }
     
     .card-title {
       color: #00c8ff;
-      font-size: 18px;
-      margin-bottom: 15px;
-      text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      text-align: center;
     }
     
     .card-content {
@@ -159,19 +97,6 @@
       font-size: 14px;
       text-align: center;
       line-height: 1.5;
-    }
-    
-    #light-beam {
-      position: fixed;
-      width: 100px;
-      height: 0;
-      left: 50%;
-      bottom: 0;
-      transform: translateX(-50%);
-      background: linear-gradient(to top, rgba(0, 200, 255, 0.1), rgba(0, 200, 255, 0.5));
-      box-shadow: 0 0 30px rgba(0, 200, 255, 0.8);
-      z-index: 994;
-      display: none;
     }
     
     #ar-container {
@@ -184,10 +109,6 @@
       display: none;
     }
     
-    .mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr {
-      display: none !important;
-    }
-    
     /* A-Frameのキャンバスを背面に下げる */
     .a-canvas {
       position: absolute !important;
@@ -196,7 +117,7 @@
       width: 100% !important;
       height: 100% !important;
       object-fit: cover;
-      z-index: 10; /* Scannerより下にする */
+      z-index: 10;
     }
   </style>
 </head>
@@ -205,15 +126,6 @@
     <div class="spinner"></div>
     <div>読み込み中...</div>
   </div>
-
-  <div id="scanner-overlay">
-    <div class="scanner-frame">
-      <div class="dot-pattern"></div>
-      <div class="scan-line"></div>
-    </div>
-  </div>
-  
-  <div id="light-beam"></div>
   
   <div id="cards-container">
     <!-- カードはJavaScriptで動的に生成されます -->
@@ -222,298 +134,152 @@
   <div id="ar-container"></div>
 
   <script>
-    // 要素の参照
-    const loadingScreen = document.getElementById('loading-screen');
-    const scannerOverlay = document.getElementById('scanner-overlay');
-    const arContainer = document.getElementById('ar-container');
-    const lightBeam = document.getElementById('light-beam');
-    const cardsContainer = document.getElementById('cards-container');
-    
-    // グローバル変数
-    let arScene = null;
-    let arSceneCreated = false;
-    let arStarted = false;
-    let targetFound = false;
-    let particleSystem = null;
-    let activeCardIndex = 0;
-    
-    // 食べ方のステップデータ
-    const stepsData = [
-      {
-        title: "STEP 1: 混ぜる前の状態",
-        content: "まずは美しく盛り付けられたまぜそばの状態を確認しましょう。トッピングの配置を覚えておくと良いでしょう。"
-      },
-      {
-        title: "STEP 2: よく混ぜる",
-        content: "箸を使って、底から全体をしっかりと混ぜます。タレと具材が均一になるまで混ぜるのがポイントです。"
-      },
-      {
-        title: "STEP 3: 最初の一口",
-        content: "よく混ぜたら、まずは麺とタレの味わいを楽しみましょう。香りと旨味が口いっぱいに広がります。"
-      },
-      {
-        title: "STEP 4: 追いニンニク",
-        content: "途中で用意されたニンニクを加えると、また違った味わいを楽しめます。好みに合わせて調整しましょう。"
-      }
-    ];
-    
-    // AR起動処理
+    // ジャイロスコープを活用した360度ビューのサンプル
+
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
       
-      // リソースの読み込みシミュレーション
-      setTimeout(() => {
+      // 読み込み画面を表示
+      const loadingScreen = document.getElementById('loading-screen');
+      const arContainer = document.getElementById('ar-container');
+      
+      // ボタンを追加してユーザーが明示的にARを開始できるようにする
+      const startButton = document.createElement('button');
+      startButton.textContent = 'AR体験を開始';
+      startButton.style.padding = '15px 30px';
+      startButton.style.backgroundColor = '#00a2ff';
+      startButton.style.color = 'white';
+      startButton.style.border = 'none';
+      startButton.style.borderRadius = '5px';
+      startButton.style.fontSize = '18px';
+      startButton.style.cursor = 'pointer';
+      startButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.5)';
+      
+      loadingScreen.appendChild(startButton);
+      
+      // ボタンクリックでARを開始
+      startButton.addEventListener('click', () => {
         loadingScreen.style.display = 'none';
         initAR();
-      }, 1500);
+      });
     });
-    
+
     // ARの初期化
     function initAR() {
       console.log("AR初期化開始");
       
-      // ARコンテナを表示
+      const arContainer = document.getElementById('ar-container');
       arContainer.style.display = 'block';
       
-      // ARシーンの作成
-      createARScene();
-    }
-    
-    // ARシーンを作成
-    function createARScene() {
-      if (arSceneCreated) return;
-      
-      // A-Frameシーンを動的に作成
+      // A-Frameシーンを作成
       const sceneEl = document.createElement('a-scene');
-      sceneEl.setAttribute('id', 'ar-scene');
-      sceneEl.setAttribute('mindar-image', 'imageTargetSrc: ./targets.mind; autoStart: false; uiLoading: no; uiScanning: no');
-      sceneEl.setAttribute('color-space', 'sRGB');
-      sceneEl.setAttribute('renderer', 'colorManagement: true; physicallyCorrectLights');
-      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
-      sceneEl.setAttribute('device-orientation-permission-ui', 'enabled: false');
-      
-      // 画面サイズに合わせるための属性を追加
       sceneEl.setAttribute('embedded', '');
-      sceneEl.setAttribute('seamless-tab-navigation', '');
+      sceneEl.setAttribute('vr-mode-ui', 'enabled: false');
       
-      // カスタムコンポーネント登録
-      registerComponents();
-      
-      // アセット
-      const assetsEl = document.createElement('a-assets');
-      
-      const emblemLogo = document.createElement('img');
-      emblemLogo.setAttribute('id', 'emblem-logo');
-      emblemLogo.setAttribute('src', 'assets/emblem-logo.png');
-      
-      assetsEl.appendChild(emblemLogo);
-      sceneEl.appendChild(assetsEl);
-      
-      // カメラ - ここでlook-controlsを有効化
+      // ジャイロスコープを有効にしたカメラ
       const cameraEl = document.createElement('a-camera');
-      cameraEl.setAttribute('position', '0 0 0');
       cameraEl.setAttribute('look-controls', 'enabled: true'); // ジャイロスコープによる視点変更を有効化
       sceneEl.appendChild(cameraEl);
       
-      // ターゲットコンテナ
-      const targetContainerEl = document.createElement('a-entity');
-      targetContainerEl.setAttribute('id', 'target-container');
-      targetContainerEl.setAttribute('mindar-image-target', 'targetIndex: 0');
-      
-      // 粒子システムコンテナ
-      const particleContainer = document.createElement('a-entity');
-      particleContainer.setAttribute('id', 'particle-container');
-      particleContainer.setAttribute('position', '0 0 0');
-      particleContainer.setAttribute('particle-system', '');
-      
-      // ロゴ表示（初期は非表示）
-      const logoDisplayEl = document.createElement('a-plane');
-      logoDisplayEl.setAttribute('id', 'logo-display');
-      logoDisplayEl.setAttribute('position', '0 0 0');
-      logoDisplayEl.setAttribute('material', 'src: #emblem-logo; transparent: true; opacity: 0');
-      logoDisplayEl.setAttribute('width', '1');
-      logoDisplayEl.setAttribute('height', '1');
-      logoDisplayEl.setAttribute('hologram-effect', '');
-      
-      targetContainerEl.appendChild(particleContainer);
-      targetContainerEl.appendChild(logoDisplayEl);
-      sceneEl.appendChild(targetContainerEl);
+      // 360度空間に要素を配置
+      createSpaceElements(sceneEl);
       
       // ARコンテナに追加
       arContainer.appendChild(sceneEl);
       
-      // シーンの初期化完了イベントを監視
-      sceneEl.addEventListener('loaded', function() {
-        console.log("ARシーン初期化完了");
-        arSceneCreated = true;
-        arScene = sceneEl;
-        
-        // ターゲット検出イベントリスナー設定
-        targetContainerEl.addEventListener('targetFound', onTargetFound);
-        targetContainerEl.addEventListener('targetLost', onTargetLost);
-        
-        // カメラ初期化イベント
-        sceneEl.addEventListener('camera-init', onCameraInit);
-        
-        // カメラ起動
-        startCamera();
-      });
-      
-      // エラーハンドリング
-      sceneEl.addEventListener('camera-error', function() {
-        console.error("カメラエラー: アクセスが拒否されました");
-        loadingScreen.style.display = 'flex';
-        loadingScreen.innerHTML = '<div>カメラへのアクセスが拒否されました</div>';
+      // カメラが初期化されたらカードを表示
+      sceneEl.addEventListener('camera-set-active', () => {
+        setTimeout(() => {
+          create360Cards();
+        }, 1000);
       });
     }
-    
-    // カメラが初期化されたとき
-    function onCameraInit() {
-      console.log("カメラ初期化完了");
+
+    // 空間に要素を配置
+    function createSpaceElements(sceneEl) {
+      // 背景を空間に
+      const skyEl = document.createElement('a-sky');
+      skyEl.setAttribute('color', '#001133');
+      skyEl.setAttribute('opacity', '0.7');
+      sceneEl.appendChild(skyEl);
       
-      // スキャナーオーバーレイを表示
-      scannerOverlay.style.display = 'block';
+      // 地面のグリッド
+      const gridEl = document.createElement('a-grid');
+      gridEl.setAttribute('width', '20');
+      gridEl.setAttribute('height', '20');
+      gridEl.setAttribute('color', '#00a2ff');
+      sceneEl.appendChild(gridEl);
       
-      // MindARのデフォルトUIを非表示
-      hideDefaultMindARUI();
-    }
-    
-    // ターゲットが検出されたとき
-    function onTargetFound() {
-      console.log("ターゲット検出");
-      if (targetFound) return;
-      targetFound = true;
-      
-      // スキャナーを非表示
-      scannerOverlay.style.opacity = '0';
-      scannerOverlay.style.transition = 'opacity 0.5s ease-out';
-      
-      setTimeout(() => {
-        scannerOverlay.style.display = 'none';
-        
-        // 粒子化エフェクトを開始
-        startParticleEffect();
-      }, 500);
-    }
-    
-    // ターゲットを見失ったとき
-    function onTargetLost() {
-      if (!targetFound) return;
-      console.log("ターゲットロスト");
-      // カードUIが表示されている場合は、残しておく
-    }
-    
-    // カメラを起動
-    function startCamera() {
-      console.log("カメラ起動");
-      
-      // MindARを開始
-      const mindARSystem = arScene.systems['mindar-image-system'];
-      mindARSystem.start();
-      
-      // カメラ表示のスタイル調整
-      setTimeout(adjustCanvasStyles, 500);
-    }
-    
-    // キャンバススタイルを調整
-    function adjustCanvasStyles() {
-      const canvas = document.querySelector('.a-canvas');
-      if (canvas) {
-        canvas.style.width = "100%";
-        canvas.style.height = "100%";
-        canvas.style.position = "absolute";
-        canvas.style.top = "0";
-        canvas.style.left = "0";
-        canvas.style.objectFit = "cover";
-        canvas.style.zIndex = "10"; // Scannerより低く設定
+      // 空間内に浮かぶ粒子
+      for (let i = 0; i < 20; i++) {
+        const particleEl = document.createElement('a-sphere');
+        particleEl.setAttribute('radius', '0.05');
+        particleEl.setAttribute('color', '#00ffff');
+        particleEl.setAttribute('opacity', '0.7');
+        particleEl.setAttribute('position', {
+          x: (Math.random() - 0.5) * 10,
+          y: (Math.random() - 0.5) * 5 + 1.5,
+          z: (Math.random() - 0.5) * 10
+        });
+        particleEl.setAttribute('animation', {
+          property: 'position',
+          dir: 'alternate',
+          dur: 2000 + Math.random() * 3000,
+          easing: 'easeInOutSine',
+          loop: true,
+          to: {
+            x: (Math.random() - 0.5) * 10,
+            y: (Math.random() - 0.5) * 5 + 1.5,
+            z: (Math.random() - 0.5) * 10
+          }
+        });
+        sceneEl.appendChild(particleEl);
       }
     }
-    
-    // MindARのデフォルトUIを非表示
-    function hideDefaultMindARUI() {
-      const elements = document.querySelectorAll('.mindar-ui-scanning, .mindar-ui-loading, .a-enter-vr');
-      elements.forEach(el => {
-        if (el) el.style.display = 'none';
-      });
-    }
-    
-    // 粒子化エフェクトを開始
-    function startParticleEffect() {
-      console.log("粒子化エフェクト開始");
-      
-      // 粒子システムを取得
-      const particleEntity = document.getElementById('particle-container');
-      
-      // 粒子アニメーションの完了を待つ
-      setTimeout(() => {
-        // ロゴを徐々に表示
-        const logoEntity = document.getElementById('logo-display');
-        logoEntity.setAttribute('animation', {
-          property: 'material.opacity',
-          from: 0,
-          to: 1,
-          dur: 1000,
-          easing: 'easeOutCubic'
-        });
-        
-        // ロゴが表示された後、ライトビームエフェクトを開始
-        setTimeout(startLightBeamEffect, 1500);
-      }, 2000);
-    }
-    
-    // ライトビームエフェクトを開始
-    function startLightBeamEffect() {
-      console.log("ライトビーム開始");
-      
-      // ライトビームを表示
-      lightBeam.style.display = 'block';
-      
-      // ビームが上昇するアニメーション
-      let height = 0;
-      const beamInterval = setInterval(() => {
-        height += 10;
-        lightBeam.style.height = height + 'px';
-        
-        if (height >= window.innerHeight) {
-          clearInterval(beamInterval);
-          
-          // ビームが完全に伸びたら、カードを表示
-          setTimeout(showCards, 500);
-        }
-      }, 20);
-    }
-    
-    // カードを表示
-    function showCards() {
-      console.log("カード表示");
-      
-      // カードコンテナを表示
+
+    // 360度空間にカードを表示
+    function create360Cards() {
+      const cardsContainer = document.getElementById('cards-container');
       cardsContainer.style.display = 'block';
       
-      // カードを作成
-      createCards();
+      // サンプルのステップデータ
+      const stepsData = [
+        {
+          title: "STEP 1: 混ぜる前の状態",
+          content: "まずは美しく盛り付けられたまぜそばの状態を確認しましょう。トッピングの配置を覚えておくと良いでしょう。"
+        },
+        {
+          title: "STEP 2: よく混ぜる",
+          content: "箸を使って、底から全体をしっかりと混ぜます。タレと具材が均一になるまで混ぜるのがポイントです。"
+        },
+        {
+          title: "STEP 3: 最初の一口",
+          content: "よく混ぜたら、まずは麺とタレの味わいを楽しみましょう。香りと旨味が口いっぱいに広がります。"
+        },
+        {
+          title: "STEP 4: 追いニンニク",
+          content: "途中で用意されたニンニクを加えると、また違った味わいを楽しめます。好みに合わせて調整しましょう。"
+        }
+      ];
       
-      // カードを展開
-      setTimeout(expandCards, 500);
-    }
-    
-    // カードを作成
-    function createCards() {
-      // 360度空間内にカードを配置
-      const radius = 3; // カードの配置半径（大きくすると「窓」効果が強まる）
-      
+      // 360度空間にカードを作成
       stepsData.forEach((step, index) => {
         const card = document.createElement('div');
         card.className = 'hud-card';
         card.id = `card-${index}`;
-        card.style.zIndex = 1000 - index;
         
-        // 初期位置（画面中央）
-        card.style.top = '50%';
-        card.style.left = '50%';
-        card.style.transform = 'translate(-50%, -50%) scale(0.9)';
-        card.style.opacity = '0'; // 初期状態では非表示
+        // 3D空間内の位置を計算（カードを円形に配置）
+        const angle = (index / stepsData.length) * Math.PI * 2;
         
+        // カードの位置
+        const x = 50 + Math.cos(angle) * 70; // 大きく離して配置（画面外も含む）
+        const y = 50 + Math.sin(angle) * 30;
+        
+        card.style.left = `${x}%`;
+        card.style.top = `${y}%`;
+        card.style.transform = `translate(-50%, -50%) rotateY(${angle * 57.3}deg) translateZ(-500px)`;
+        
+        // コンテンツ
         const title = document.createElement('div');
         title.className = 'card-title';
         title.textContent = step.title;
@@ -525,280 +291,35 @@
         card.appendChild(title);
         card.appendChild(content);
         cardsContainer.appendChild(card);
-        
-        // タップイベントを追加
-        card.addEventListener('click', () => {
-          focusCard(index);
-        });
       });
+      
+      // 視線誘導のガイド追加
+      addViewGuides();
     }
-    
-    // カードを扇状に展開
-    function expandCards() {
-      const cards = document.querySelectorAll('.hud-card');
+
+    // 視線誘導ガイドを追加
+    function addViewGuides() {
+      const guideContainer = document.createElement('div');
+      guideContainer.style.position = 'fixed';
+      guideContainer.style.bottom = '20px';
+      guideContainer.style.left = '0';
+      guideContainer.style.width = '100%';
+      guideContainer.style.textAlign = 'center';
+      guideContainer.style.color = '#00c8ff';
+      guideContainer.style.fontSize = '14px';
+      guideContainer.style.zIndex = '1010';
+      guideContainer.innerHTML = '端末を動かして360°空間を探索してください';
       
-      // 360度空間に配置するための角度計算
-      const angleStep = (Math.PI * 2) / cards.length; // 360度をカード数で分割
-      const radius = Math.min(window.innerWidth, window.innerHeight) * 1.5; // 配置半径を大きくして窓効果を強化
+      // 方向指示器
+      const directions = ['←', '↑', '→', '↓'];
+      const directionEl = document.createElement('div');
+      directionEl.style.marginTop = '10px';
+      directionEl.style.fontSize = '24px';
+      directionEl.style.letterSpacing = '15px';
+      directionEl.textContent = directions.join('');
       
-      cards.forEach((card, index) => {
-        // 各カードの角度位置を計算（全周囲に配置）
-        const angle = index * angleStep;
-        
-        // 3D空間内の座標を計算
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius * 0.2; // Y軸方向は少し抑える
-        const z = -Math.sin(angle) * radius;
-        
-        // カード位置を設定 - 画面外にも配置できるよう修正
-        const posX = 50 + (Math.cos(angle) * 30); // 中心から30%の範囲で配置（画面外も含む）
-        const posY = 50 + (Math.sin(angle) * 15);
-        
-        // カードのスタイルを設定
-        card.style.position = 'absolute';
-        card.style.left = `${posX}%`;
-        card.style.top = `${posY}%`;
-        
-        // 3D変換でカードを空間に配置
-        card.style.transform = `translate(-50%, -50%) rotateY(${angle * 57.3}deg) translateZ(${-z}px) scale(0.8)`;
-        card.style.transformOrigin = 'center center';
-        card.style.transformStyle = 'preserve-3d';
-        card.style.transition = 'all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-        card.style.opacity = '1';
-        
-        // 画面外のカードは薄く表示
-        const isVisible = posX > 0 && posX < 100 && posY > 0 && posY < 100;
-        card.style.opacity = isVisible ? '1' : '0.2';
-        
-        // アニメーションでイージングを適用
-        setTimeout(() => {
-          card.classList.add('active');
-        }, index * 150);
-      });
-      
-      // 最初のカードをフォーカス
-      setTimeout(() => {
-        focusCard(0);
-      }, cards.length * 150 + 500);
-      
-      // スワイプ操作を設定
-      setupSwipeInteraction();
-      
-      // 視線誘導のためのガイド要素を追加
-      addViewportGuides();
-    }
-    
-    // 視線誘導のためのガイドを追加
-    function addViewportGuides() {
-      // 左右の視線誘導アロー
-      const directions = ['left', 'right'];
-      directions.forEach(dir => {
-        const arrow = document.createElement('div');
-        arrow.className = `viewport-guide ${dir}`;
-        arrow.innerHTML = dir === 'left' ? '←' : '→';
-        arrow.style.position = 'absolute';
-        arrow.style.top = '50%';
-        arrow.style.left = dir === 'left' ? '5%' : '95%';
-        arrow.style.transform = 'translateY(-50%)';
-        arrow.style.color = '#00c8ff';
-        arrow.style.fontSize = '24px';
-        arrow.style.textShadow = '0 0 10px rgba(0, 200, 255, 0.8)';
-        arrow.style.opacity = '0.7';
-        arrow.style.animation = 'pulse 2s infinite ease-in-out';
-        cardsContainer.appendChild(arrow);
-      });
-      
-      // CSSアニメーションを追加
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes pulse {
-          0% { opacity: 0.3; transform: translateY(-50%) scale(1); }
-          50% { opacity: 0.8; transform: translateY(-50%) scale(1.2); }
-          100% { opacity: 0.3; transform: translateY(-50%) scale(1); }
-        }
-      `;
-      document.head.appendChild(style);
-    }
-    
-    // カードをフォーカス
-    function focusCard(index) {
-      const cards = document.querySelectorAll('.hud-card');
-      activeCardIndex = index;
-      
-      cards.forEach((card, i) => {
-        if (i === index) {
-          // フォーカスされたカード
-          card.style.transform = 'translate(-50%, -50%) scale(1.1) rotateY(0deg)';
-          card.style.left = '50%';
-          card.style.top = '50%';
-          card.style.zIndex = '1000';
-          card.style.opacity = '1';
-        } else {
-          // 非フォーカスカード - 360度空間に沿って配置
-          const isLeft = i < index;
-          const offset = isLeft ? -70 : 70;
-          const rotateY = isLeft ? -30 : 30; // 3D回転で奥行き感を出す
-          
-          card.style.transform = `translate(calc(-50% + ${offset}%), -50%) scale(0.7) rotateY(${rotateY}deg) translateZ(-200px)`;
-          card.style.left = '50%';
-          card.style.top = '50%';
-          card.style.zIndex = '900';
-          card.style.opacity = isLeft ? '0.4' : '0.4'; // 左右どちらも少し薄く
-        }
-      });
-      
-      // 視線誘導アローの表示/非表示
-      updateViewportGuides(index, cards.length);
-    }
-    
-    // 視線誘導アローの表示/非表示を更新
-    function updateViewportGuides(currentIndex, totalCards) {
-      const leftArrow = document.querySelector('.viewport-guide.left');
-      const rightArrow = document.querySelector('.viewport-guide.right');
-      
-      if (leftArrow && rightArrow) {
-        leftArrow.style.display = currentIndex > 0 ? 'block' : 'none';
-        rightArrow.style.display = currentIndex < totalCards - 1 ? 'block' : 'none';
-      }
-    }
-    
-    // スワイプ操作を設定
-    function setupSwipeInteraction() {
-      const hammer = new Hammer(cardsContainer);
-      hammer.on('swipeleft', () => {
-        if (activeCardIndex < stepsData.length - 1) {
-          focusCard(activeCardIndex + 1);
-        }
-      });
-      
-      hammer.on('swiperight', () => {
-        if (activeCardIndex > 0) {
-          focusCard(activeCardIndex - 1);
-        }
-      });
-    }
-    
-    // カスタムA-Frameコンポーネントの登録
-    function registerComponents() {
-      // ホログラムエフェクトコンポーネント
-      AFRAME.registerComponent('hologram-effect', {
-        schema: {
-          color: { type: 'color', default: '#00c8ff' },
-          glowIntensity: { type: 'number', default: 0.5 }
-        },
-        
-        init: function() {
-          this.el.setAttribute('material', {
-            color: this.data.color,
-            emissive: this.data.color,
-            emissiveIntensity: this.data.glowIntensity,
-            transparent: true,
-            opacity: 0.9,
-            side: 'double'
-          });
-          
-          this.addScanlineEffect();
-        },
-        
-        addScanlineEffect: function() {
-          // スキャンラインエフェクトのアニメーション
-          const scanline = document.createElement('a-plane');
-          scanline.setAttribute('width', 1.1);
-          scanline.setAttribute('height', 0.02);
-          scanline.setAttribute('material', 'color: #ffffff; opacity: 0.3; transparent: true');
-          scanline.setAttribute('animation', {
-            property: 'position.y',
-            from: -0.6,
-            to: 0.6,
-            dur: 2000,
-            loop: true,
-            easing: 'linear'
-          });
-          
-          this.el.appendChild(scanline);
-        }
-      });
-      
-      // 粒子システムコンポーネント
-      AFRAME.registerComponent('particle-system', {
-        init: function() {
-          // Three.jsで粒子システムを作成
-          const scene = this.el.sceneEl.object3D;
-          const particleCount = 1000;
-          
-          // 粒子のジオメトリとマテリアル
-          const particles = new THREE.BufferGeometry();
-          const positions = new Float32Array(particleCount * 3);
-          const colors = new Float32Array(particleCount * 3);
-          
-          const color = new THREE.Color();
-          
-          for (let i = 0; i < particleCount; i++) {
-            // ランダムな位置（球状に分布）
-            const radius = Math.random() * 2;
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(2 * Math.random() - 1);
-            
-            positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-            positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
-            positions[i * 3 + 2] = radius * Math.cos(phi);
-            
-            // 青からシアンのグラデーション
-            color.setHSL(0.55 + Math.random() * 0.1, 1.0, 0.5 + Math.random() * 0.3);
-            colors[i * 3] = color.r;
-            colors[i * 3 + 1] = color.g;
-            colors[i * 3 + 2] = color.b;
-          }
-          
-          particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-          particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-          
-          const material = new THREE.PointsMaterial({
-            size: 0.05,
-            vertexColors: true,
-            transparent: true,
-            opacity: 0.8,
-            blending: THREE.AdditiveBlending,
-            depthTest: false
-          });
-          
-          this.particleSystem = new THREE.Points(particles, material);
-          this.el.object3D.add(this.particleSystem);
-          
-          // アニメーション
-          this.time = 0;
-          this.animateParticles = this.animateParticles.bind(this);
-          this.el.sceneEl.addEventListener('render', this.animateParticles);
-        },
-        
-        animateParticles: function() {
-          this.time += 0.01;
-          
-          // 粒子の位置をアニメーション
-          const positions = this.particleSystem.geometry.attributes.position.array;
-          
-          for (let i = 0; i < positions.length; i += 3) {
-            // 粒子が中心に集まるアニメーション
-            positions[i] *= 0.99;
-            positions[i + 1] *= 0.99;
-            positions[i + 2] *= 0.99;
-            
-            // 少しゆらぎを加える
-            positions[i] += Math.sin(this.time + i) * 0.003;
-            positions[i + 1] += Math.cos(this.time + i) * 0.003;
-            positions[i + 2] += Math.sin(this.time * 0.5 + i) * 0.003;
-          }
-          
-          this.particleSystem.geometry.attributes.position.needsUpdate = true;
-        },
-        
-        remove: function() {
-          this.el.sceneEl.removeEventListener('render', this.animateParticles);
-          this.el.object3D.remove(this.particleSystem);
-          this.particleSystem.geometry.dispose();
-          this.particleSystem.material.dispose();
-        }
-      });
+      guideContainer.appendChild(directionEl);
+      document.body.appendChild(guideContainer);
     }
   </script>
 </body>
