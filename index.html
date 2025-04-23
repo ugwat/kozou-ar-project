@@ -73,32 +73,6 @@
       z-index: 10;
     }
     
-    #ramen-container {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 20;
-    }
-    
-    #ramen-image {
-      width: 70%;
-      max-width: 300px;
-      position: absolute;
-      top: 30%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      animation: float 3s ease-in-out infinite;
-    }
-    
-    @keyframes float {
-      0% { transform: translate(-50%, -50%) translateY(0px); }
-      50% { transform: translate(-50%, -50%) translateY(-10px); }
-      100% { transform: translate(-50%, -50%) translateY(0px); }
-    }
-    
     #cards-container {
       position: absolute;
       width: 100%;
@@ -157,26 +131,21 @@
       z-index: 30;
     }
     
-    .circle-indicator {
+    #ramen-container {
       position: absolute;
-      bottom: 5px;
+      top: 30%;
       left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 8px;
-      z-index: 50;
+      transform: translate(-50%, -50%);
+      width: 70%;
+      max-width: 300px;
+      z-index: 20;
+      animation: float 3s ease-in-out infinite;
     }
     
-    .circle-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: rgba(0, 200, 255, 0.3);
-      border: 1px solid rgba(0, 200, 255, 0.8);
-    }
-    
-    .circle-dot.active {
-      background-color: rgba(0, 200, 255, 0.8);
+    @keyframes float {
+      0% { transform: translate(-50%, -50%) translateY(0px); }
+      50% { transform: translate(-50%, -50%) translateY(-10px); }
+      100% { transform: translate(-50%, -50%) translateY(0px); }
     }
   </style>
 </head>
@@ -190,9 +159,9 @@
   <div id="ar-container">
     <video id="camera-view" autoplay playsinline></video>
     
-    <!-- ラーメン画像 -->
+    <!-- ラーメン画像 - 正しいパス -->
     <div id="ramen-container">
-      <img id="ramen-image" src="./ramen_3d.png" alt="KOZOU+ まぜそば">
+      <img src="./assets/ramen_3d.png" alt="KOZOU+ まぜそば" style="width: 100%; height: auto;">
     </div>
     
     <!-- HUD要素 -->
@@ -233,6 +202,43 @@
         document.getElementById('loading-screen').style.display = 'none';
         initAR();
       });
+      
+      // 画像の読み込みエラーハンドリング
+      const ramenImg = document.querySelector('#ramen-container img');
+      ramenImg.onerror = function() {
+        console.error('画像読み込みエラー：', ramenImg.src);
+        // 他のパスを試す
+        const paths = [
+          'assets/ramen_3d.png',
+          '/assets/ramen_3d.png',
+          '../assets/ramen_3d.png',
+          'ramen_3d.png'
+        ];
+        
+        function tryNextPath(index) {
+          if (index >= paths.length) {
+            console.error('全てのパスで画像を読み込めませんでした');
+            return;
+          }
+          
+          console.log(`パスを試しています: ${paths[index]}`);
+          ramenImg.src = paths[index];
+        }
+        
+        // 最初の代替パスを試す
+        tryNextPath(0);
+        
+        // 画像が読み込めたときのハンドラー
+        ramenImg.onload = function() {
+          console.log('画像が読み込めました: ', ramenImg.src);
+        };
+        
+        // 次のパスが失敗した場合のハンドラー
+        let pathIndex = 1;
+        ramenImg.onerror = function() {
+          tryNextPath(pathIndex++);
+        };
+      };
     });
     
     // ARの初期化
@@ -241,17 +247,6 @@
       
       // ARコンテナを表示
       document.getElementById('ar-container').style.display = 'block';
-      
-      // ラーメン画像プリロード確認
-      const ramenImage = document.getElementById('ramen-image');
-      ramenImage.onload = function() {
-        console.log("ラーメン画像読み込み完了");
-      };
-      ramenImage.onerror = function() {
-        console.error("ラーメン画像の読み込みに失敗しました");
-        // 画像パスを別の可能性で試す
-        ramenImage.src = "ramen_3d.png"; // ./ なしで試す
-      };
       
       // カメラを起動
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -266,7 +261,7 @@
         })
         .catch(function(err) {
           console.error("カメラエラー:", err);
-          alert("カメラへのアクセスが拒否されました");
+          console.log("カメラは使用できませんが、デモモードで続行します");
           
           // カメラがなくてもカードは表示
           createCards();
