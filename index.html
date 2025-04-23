@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>KOZOU+ 360° Experience</title>
+  <title>KOZOU+ AR Experience</title>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
   <style>
     * {
@@ -75,7 +75,7 @@
       padding: 20px;
       color: white;
       transform-style: preserve-3d;
-      transition: all 0.3s ease-out;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -108,7 +108,6 @@
       display: none;
     }
     
-    /* カメラのスタイル */
     #camera-view {
       position: absolute;
       top: 0;
@@ -119,17 +118,132 @@
       z-index: 10;
     }
     
-    /* 浮かぶ粒子のスタイル */
-    .floating-particle {
+    #ramen-container {
       position: absolute;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background-color: #00c8ff;
-      box-shadow: 0 0 10px #00ffff;
-      opacity: 0.7;
-      pointer-events: none;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       z-index: 20;
+      perspective: 1000px;
+    }
+    
+    #ramen-image {
+      width: 60%;
+      max-width: 450px;
+      transform: translateY(0px);
+      animation: float 3s ease-in-out infinite;
+      filter: drop-shadow(0 10px 15px rgba(0, 200, 255, 0.3));
+    }
+    
+    @keyframes float {
+      0% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-15px) scale(1.02); }
+      100% { transform: translateY(0px) scale(1); }
+    }
+    
+    .circle-indicator {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 1000;
+    }
+    
+    .circle-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: rgba(0, 200, 255, 0.3);
+      border: 1px solid rgba(0, 200, 255, 0.8);
+      transition: all 0.3s ease;
+    }
+    
+    .circle-dot.active {
+      background-color: rgba(0, 200, 255, 0.8);
+      transform: scale(1.2);
+    }
+    
+    .swipe-indicator {
+      position: absolute;
+      top: 50%;
+      width: 30px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: rgba(0, 200, 255, 0.8);
+      font-size: 24px;
+      opacity: 0.7;
+      z-index: 1000;
+      animation: pulse 1.5s infinite ease-in-out;
+      pointer-events: none;
+    }
+    
+    .swipe-left {
+      left: 20px;
+      transform: translateY(-50%);
+    }
+    
+    .swipe-right {
+      right: 20px;
+      transform: translateY(-50%);
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.3; transform: translateY(-50%) scale(1); }
+      50% { opacity: 0.8; transform: translateY(-50%) scale(1.2); }
+      100% { opacity: 0.3; transform: translateY(-50%) scale(1); }
+    }
+    
+    .particle {
+      position: absolute;
+      background-color: rgba(0, 200, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 15;
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+      opacity: 0.7;
+    }
+    
+    #hud-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 30;
+    }
+    
+    .hud-element {
+      position: absolute;
+      border: 1px solid rgba(0, 200, 255, 0.5);
+      background-color: rgba(0, 10, 30, 0.2);
+      color: #00c8ff;
+      font-size: 10px;
+      padding: 5px;
+      border-radius: 5px;
+      pointer-events: none;
+    }
+    
+    .scanner-line {
+      position: absolute;
+      height: 2px;
+      background: linear-gradient(to right, rgba(0, 200, 255, 0), rgba(0, 200, 255, 0.8), rgba(0, 200, 255, 0));
+      width: 100%;
+      top: 50%;
+      animation: scan 3s linear infinite;
+      z-index: 25;
+    }
+    
+    @keyframes scan {
+      0% { top: 20%; opacity: 0.8; }
+      50% { opacity: 0.2; }
+      100% { top: 80%; opacity: 0.8; }
     }
   </style>
 </head>
@@ -144,14 +258,56 @@
   </div>
 
   <div id="ar-container">
-    <!-- カメラビューがここに配置されます -->
+    <!-- カメラビュー -->
+    <video id="camera-view" autoplay playsinline></video>
+    
+    <!-- ラーメン画像コンテナ -->
+    <div id="ramen-container">
+      <img id="ramen-image" src="ramen_3d.png" alt="KOZOU+ まぜそば">
+    </div>
+    
+    <!-- スキャンライン効果 -->
+    <div class="scanner-line"></div>
+    
+    <!-- HUDオーバーレイ -->
+    <div id="hud-overlay"></div>
+    
+    <!-- スワイプインジケーター -->
+    <div class="swipe-indicator swipe-left">←</div>
+    <div class="swipe-indicator swipe-right">→</div>
+    
+    <!-- ステップインジケーター -->
+    <div class="circle-indicator">
+      <!-- JavaScriptでドットが生成されます -->
+    </div>
   </div>
 
   <script>
     // グローバル変数
-    let lastBeta = 0;
-    let lastGamma = 0;
     let activeCardIndex = 0;
+    let startX = 0;
+    let currentX = 0;
+    let isSwiping = false;
+    
+    // ステップデータ
+    const stepsData = [
+      {
+        title: "STEP 1: 混ぜる前の状態",
+        content: "まずは美しく盛り付けられたまぜそばの状態を確認しましょう。トッピングの配置を覚えておくと良いでしょう。"
+      },
+      {
+        title: "STEP 2: よく混ぜる",
+        content: "箸を使って、底から全体をしっかりと混ぜます。タレと具材が均一になるまで混ぜるのがポイントです。"
+      },
+      {
+        title: "STEP 3: 最初の一口",
+        content: "よく混ぜたら、まずは麺とタレの味わいを楽しみましょう。香りと旨味が口いっぱいに広がります。"
+      },
+      {
+        title: "STEP 4: 追いニンニク",
+        content: "途中で用意されたニンニクを加えると、また違った味わいを楽しめます。好みに合わせて調整しましょう。"
+      }
+    ];
     
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
@@ -177,301 +333,421 @@
       // ボタンクリックでARを開始
       startButton.addEventListener('click', () => {
         loadingScreen.style.display = 'none';
-        init360View();
+        initAR();
       });
     });
 
-    // 360度ビューの初期化（シンプルなカメラとジャイロスコープを使用）
-    function init360View() {
-      console.log("360度ビュー初期化開始");
+    // ARの初期化
+    function initAR() {
+      console.log("AR初期化開始");
       
       // ARコンテナ
       const arContainer = document.getElementById('ar-container');
       arContainer.style.display = 'block';
       
-      // ビデオ要素の作成
-      const video = document.createElement('video');
-      video.id = 'camera-view';
-      video.setAttribute('autoplay', '');
-      video.setAttribute('playsinline', '');
-      arContainer.appendChild(video);
+      // カメラビュー
+      const cameraView = document.getElementById('camera-view');
       
       // カメラアクセス
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(function(stream) {
-          video.srcObject = stream;
-          video.onloadedmetadata = function(e) {
-            video.play();
-            // カメラが起動したらカードを表示
-            setTimeout(() => {
-              create360Cards();
-              createFloatingParticles();
-            }, 1000);
-          };
+          cameraView.srcObject = stream;
+          // カメラが起動したらUIを初期化
+          setTimeout(() => {
+            initializeUI();
+            createHUDElements();
+            createParticles();
+          }, 1000);
         })
         .catch(function(err) {
           console.error("カメラエラー: ", err);
           alert("カメラへのアクセスが拒否されました");
         });
       
-      // ジャイロスコープイベントリスナーを設定
-      window.addEventListener('deviceorientation', handleOrientation);
-      
-      // デバイスのジャイロスコープ許可を要求（iOSの場合）
-      if (typeof DeviceOrientationEvent !== 'undefined' && 
-          typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-          .then(response => {
-            if (response === 'granted') {
-              window.addEventListener('deviceorientation', handleOrientation);
-            } else {
-              alert('ジャイロスコープへのアクセスが拒否されました。端末を傾けた際のカード移動機能が制限されます。');
-            }
-          })
-          .catch(console.error);
-      }
+      // スワイプイベント
+      setupSwipeEvents();
     }
-
-    // デバイスの向きを処理
-    function handleOrientation(event) {
-      // デバイスの向き
-      const beta = event.beta;  // -180〜180の範囲（デバイスの前後の傾き）
-      const gamma = event.gamma; // -90〜90の範囲（デバイスの左右の傾き）
+    
+    // UIの初期化
+    function initializeUI() {
+      // カードを作成
+      createCards();
       
-      // 値が取得できない場合は終了
-      if (beta === null || gamma === null) return;
+      // インジケーターを追加
+      addStepIndicators();
       
-      // 値の変化が小さすぎる場合は無視（ノイズ対策）
-      if (Math.abs(beta - lastBeta) < 0.5 && Math.abs(gamma - lastGamma) < 0.5) return;
-      
-      // 値を平滑化（急激な変化を抑える）
-      lastBeta = lastBeta * 0.8 + beta * 0.2;
-      lastGamma = lastGamma * 0.8 + gamma * 0.2;
-      
-      // カードの位置を更新
-      updateCardsPosition(lastBeta, lastGamma);
-      
-      // デバッグパネルの更新
-      const debugPanel = document.getElementById('debug-panel');
-      if (debugPanel) {
-        debugPanel.textContent = `Beta: ${Math.round(lastBeta)}°, Gamma: ${Math.round(lastGamma)}°`;
-      }
+      // 最初のカードをアクティブに
+      updateCardPosition();
     }
-
-    // カードの位置を更新
-    function updateCardsPosition(beta, gamma) {
-      const cards = document.querySelectorAll('.hud-card');
-      
-      // ガンマの値を0〜360の範囲に変換（左右の向き）
-      // 値が-90〜90なので、180度加えて0〜360にする
-      const normalizedGamma = ((gamma + 90) / 180) * 360;
-      
-      // 現在表示中のカードのインデックスを計算
-      const currentCardIndex = Math.floor((normalizedGamma / 360) * cards.length);
-      
-      cards.forEach((card, index) => {
-        // 各カードの理想的な表示位置（角度）
-        const cardIdealAngle = (index / cards.length) * 360;
-        
-        // 現在向いている方向と理想的な角度の差
-        let angleDiff = normalizedGamma - cardIdealAngle;
-        
-        // 角度の差を-180〜180の範囲に正規化
-        while (angleDiff > 180) angleDiff -= 360;
-        while (angleDiff < -180) angleDiff += 360;
-        
-        // 角度の差の絶対値
-        const absAngleDiff = Math.abs(angleDiff);
-        
-        // カードを表示する範囲を設定
-        const viewThreshold = 45; // 45度以内なら表示
-        
-        if (absAngleDiff < viewThreshold) {
-          // 表示範囲内：角度差に基づいて位置とスケールを調整
-          const visibility = 1 - (absAngleDiff / viewThreshold);
-          
-          // X位置のオフセット（-50〜50%）
-          const offsetX = (angleDiff / viewThreshold) * 50;
-          
-          // カードのスタイルを設定
-          card.style.display = 'flex';
-          card.style.opacity = visibility.toString();
-          card.style.left = '50%';
-          card.style.top = '50%';
-          card.style.transform = `translate(calc(-50% + ${offsetX}%), -50%) scale(${0.7 + visibility * 0.3})`;
-          card.style.zIndex = (1000 - Math.floor(absAngleDiff)).toString(); // 中央に近いほど前面に
-        } else {
-          // 表示範囲外：非表示
-          card.style.display = 'none';
-        }
-      });
-    }
-
-    // 360度空間にカードを表示
-    function create360Cards() {
+    
+    // カードを作成
+    function createCards() {
       const cardsContainer = document.getElementById('cards-container');
-      cardsContainer.innerHTML = ''; // 既存のカードをクリア
+      cardsContainer.innerHTML = '';
       cardsContainer.style.display = 'block';
       
-      // サンプルのステップデータ
-      const stepsData = [
-        {
-          title: "STEP 1: 混ぜる前の状態",
-          content: "まずは美しく盛り付けられたまぜそばの状態を確認しましょう。トッピングの配置を覚えておくと良いでしょう。"
-        },
-        {
-          title: "STEP 2: よく混ぜる",
-          content: "箸を使って、底から全体をしっかりと混ぜます。タレと具材が均一になるまで混ぜるのがポイントです。"
-        },
-        {
-          title: "STEP 3: 最初の一口",
-          content: "よく混ぜたら、まずは麺とタレの味わいを楽しみましょう。香りと旨味が口いっぱいに広がります。"
-        },
-        {
-          title: "STEP 4: 追いニンニク",
-          content: "途中で用意されたニンニクを加えると、また違った味わいを楽しめます。好みに合わせて調整しましょう。"
-        }
-      ];
-      
-      // カードを作成
       stepsData.forEach((step, index) => {
         const card = document.createElement('div');
         card.className = 'hud-card';
         card.id = `card-${index}`;
         
-        // デザインスタイル
-        card.style.position = 'absolute';
-        card.style.width = '300px';
-        card.style.height = '200px';
-        card.style.left = '50%';
-        card.style.top = '50%';
-        card.style.transform = 'translate(-50%, -50%)';
-        card.style.backgroundColor = 'rgba(0, 20, 40, 0.5)';
-        card.style.border = '2px solid #00c8ff';
-        card.style.borderRadius = '10px';
-        card.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
-        card.style.padding = '20px';
-        card.style.color = 'white';
-        card.style.display = 'none'; // 初期状態では非表示
-        card.style.flexDirection = 'column';
-        card.style.justifyContent = 'center';
-        card.style.alignItems = 'center';
-        card.style.transition = 'all 0.3s ease-out';
-        card.style.opacity = '0';
-        card.style.zIndex = '900';
+        // 初期位置と表示状態
+        card.style.opacity = index === activeCardIndex ? '1' : '0';
+        card.style.transform = getCardTransform(index);
+        card.style.zIndex = 1000 - Math.abs(index - activeCardIndex);
         
         // コンテンツ
         const title = document.createElement('div');
         title.className = 'card-title';
         title.textContent = step.title;
-        title.style.color = '#00c8ff';
-        title.style.fontSize = '16px';
-        title.style.fontWeight = 'bold';
-        title.style.marginBottom = '10px';
-        title.style.textAlign = 'center';
         
         const content = document.createElement('div');
         content.className = 'card-content';
         content.textContent = step.content;
-        content.style.color = '#ffffff';
-        content.style.fontFamily = "'DotGothic16', sans-serif";
-        content.style.fontSize = '14px';
-        content.style.textAlign = 'center';
-        content.style.lineHeight = '1.5';
         
         card.appendChild(title);
         card.appendChild(content);
         cardsContainer.appendChild(card);
-        
-        // 位置情報を表示（デバッグ用）
-        const debugInfo = document.createElement('div');
-        debugInfo.style.position = 'absolute';
-        debugInfo.style.bottom = '5px';
-        debugInfo.style.right = '5px';
-        debugInfo.style.fontSize = '10px';
-        debugInfo.style.color = '#00ffff';
-        debugInfo.textContent = `Card ${index}: ${(index / stepsData.length) * 360}°`;
-        card.appendChild(debugInfo);
       });
-      
-      // 視線誘導のガイド追加
-      addViewGuides();
-      
-      // デバッグ情報の表示領域を追加
-      const debugPanel = document.createElement('div');
-      debugPanel.style.position = 'fixed';
-      debugPanel.style.top = '10px';
-      debugPanel.style.right = '10px';
-      debugPanel.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-      debugPanel.style.color = '#00ffff';
-      debugPanel.style.padding = '5px';
-      debugPanel.style.fontSize = '12px';
-      debugPanel.style.zIndex = '1100';
-      debugPanel.id = 'debug-panel';
-      document.body.appendChild(debugPanel);
-      
-      // 初期位置を設定
-      updateCardsPosition(0, 0);
     }
     
-    // 空間に浮かぶ粒子を作成
-    function createFloatingParticles() {
+    // カードの位置を計算
+    function getCardTransform(index) {
+      const diff = index - activeCardIndex;
+      
+      if (diff === 0) {
+        // アクティブカード
+        return 'translate(-50%, -50%) scale(1)';
+      } else if (diff > 0) {
+        // 右側のカード
+        return `translate(calc(-50% + ${100 + diff * 30}%), -50%) scale(0.8) rotateY(-10deg)`;
+      } else {
+        // 左側のカード
+        return `translate(calc(-50% - ${100 + Math.abs(diff) * 30}%), -50%) scale(0.8) rotateY(10deg)`;
+      }
+    }
+    
+    // スワイプイベントのセットアップ
+    function setupSwipeEvents() {
+      const cardsContainer = document.getElementById('cards-container');
+      const ramenContainer = document.getElementById('ramen-container');
+      
+      // タッチイベント
+      document.addEventListener('touchstart', handleTouchStart, false);
+      document.addEventListener('touchmove', handleTouchMove, false);
+      document.addEventListener('touchend', handleTouchEnd, false);
+      
+      // マウスイベント（デスクトップ用）
+      document.addEventListener('mousedown', handleMouseDown, false);
+      document.addEventListener('mousemove', handleMouseMove, false);
+      document.addEventListener('mouseup', handleMouseUp, false);
+    }
+    
+    // タッチイベントハンドラー
+    function handleTouchStart(event) {
+      startX = event.touches[0].clientX;
+      isSwiping = true;
+    }
+    
+    function handleTouchMove(event) {
+      if (!isSwiping) return;
+      
+      currentX = event.touches[0].clientX;
+      const diffX = currentX - startX;
+      
+      // スワイプ中の視覚効果
+      updateSwipingEffect(diffX);
+    }
+    
+    function handleTouchEnd(event) {
+      if (!isSwiping) return;
+      
+      const diffX = currentX - startX;
+      finishSwipe(diffX);
+      
+      isSwiping = false;
+    }
+    
+    // マウスイベントハンドラー
+    function handleMouseDown(event) {
+      startX = event.clientX;
+      isSwiping = true;
+    }
+    
+    function handleMouseMove(event) {
+      if (!isSwiping) return;
+      
+      currentX = event.clientX;
+      const diffX = currentX - startX;
+      
+      // スワイプ中の視覚効果
+      updateSwipingEffect(diffX);
+    }
+    
+    function handleMouseUp(event) {
+      if (!isSwiping) return;
+      
+      const diffX = currentX - startX;
+      finishSwipe(diffX);
+      
+      isSwiping = false;
+    }
+    
+    // スワイプ中の視覚効果
+    function updateSwipingEffect(diffX) {
+      // 少し動かす効果
+      const ramenImage = document.getElementById('ramen-image');
+      ramenImage.style.transform = `translateX(${diffX * 0.1}px) translateY(0px)`;
+      
+      // カード移動の予備動作
+      const cards = document.querySelectorAll('.hud-card');
+      cards.forEach((card, index) => {
+        const baseTransform = getCardTransform(index);
+        const translateX = diffX * 0.3;
+        card.style.transform = baseTransform.replace('translate', `translateX(${translateX}px) translate`);
+      });
+    }
+    
+    // スワイプ完了時の処理
+    function finishSwipe(diffX) {
+      // スワイプの閾値
+      const threshold = window.innerWidth * 0.15;
+      
+      if (diffX > threshold && activeCardIndex > 0) {
+        // 右スワイプ：前のカード
+        activeCardIndex--;
+        addSwipeParticles('right');
+      } else if (diffX < -threshold && activeCardIndex < stepsData.length - 1) {
+        // 左スワイプ：次のカード
+        activeCardIndex++;
+        addSwipeParticles('left');
+      }
+      
+      // カードの位置を更新
+      updateCardPosition();
+      
+      // ラーメン画像を元の位置に戻す
+      const ramenImage = document.getElementById('ramen-image');
+      ramenImage.style.transform = '';
+      
+      // インジケーター更新
+      updateStepIndicators();
+    }
+    
+    // カードの位置を更新
+    function updateCardPosition() {
+      const cards = document.querySelectorAll('.hud-card');
+      
+      cards.forEach((card, index) => {
+        const diff = index - activeCardIndex;
+        
+        // カードのスタイルを更新
+        card.style.opacity = diff === 0 ? '1' : (Math.abs(diff) <= 1 ? '0.5' : '0');
+        card.style.transform = getCardTransform(index);
+        card.style.zIndex = 1000 - Math.abs(diff);
+        
+        // 表示範囲外のカードは非表示
+        card.style.display = Math.abs(diff) <= 2 ? 'flex' : 'none';
+      });
+      
+      // スワイプインジケーターの表示/非表示
+      updateSwipeIndicators();
+    }
+    
+    // スワイプインジケーターの更新
+    function updateSwipeIndicators() {
+      const leftIndicator = document.querySelector('.swipe-left');
+      const rightIndicator = document.querySelector('.swipe-right');
+      
+      leftIndicator.style.display = activeCardIndex > 0 ? 'flex' : 'none';
+      rightIndicator.style.display = activeCardIndex < stepsData.length - 1 ? 'flex' : 'none';
+    }
+    
+    // ステップインジケーターを追加
+    function addStepIndicators() {
+      const indicatorContainer = document.querySelector('.circle-indicator');
+      indicatorContainer.innerHTML = '';
+      
+      stepsData.forEach((step, index) => {
+        const dot = document.createElement('div');
+        dot.className = 'circle-dot';
+        if (index === activeCardIndex) {
+          dot.classList.add('active');
+        }
+        
+        indicatorContainer.appendChild(dot);
+      });
+    }
+    
+    // ステップインジケーターを更新
+    function updateStepIndicators() {
+      const dots = document.querySelectorAll('.circle-dot');
+      
+      dots.forEach((dot, index) => {
+        if (index === activeCardIndex) {
+          dot.classList.add('active');
+        } else {
+          dot.classList.remove('active');
+        }
+      });
+    }
+    
+    // HUD要素を作成
+    function createHUDElements() {
+      const hudOverlay = document.getElementById('hud-overlay');
+      
+      // 四隅にHUD要素追加
+      const corners = [
+        { top: '20px', left: '20px', text: 'KOZOU+ AR SYSTEM v1.0' },
+        { top: '20px', right: '20px', text: `STEP ${activeCardIndex + 1}/4` },
+        { bottom: '70px', left: '20px', text: 'SCAN COMPLETE' },
+        { bottom: '70px', right: '20px', text: 'ANALYZING...' }
+      ];
+      
+      corners.forEach(pos => {
+        const elem = document.createElement('div');
+        elem.className = 'hud-element';
+        
+        // 位置設定
+        Object.keys(pos).forEach(key => {
+          if (key !== 'text') {
+            elem.style[key] = pos[key];
+          }
+        });
+        
+        elem.textContent = pos.text;
+        hudOverlay.appendChild(elem);
+        
+        // ステップ表示用の特別な要素
+        if (pos.right === '20px' && pos.top === '20px') {
+          elem.id = 'step-indicator';
+        }
+      });
+    }
+    
+    // 粒子を作成
+    function createParticles() {
       const arContainer = document.getElementById('ar-container');
       
-      // 粒子を複数作成
+      for (let i = 0; i < 30; i++) {
+        createParticle(arContainer);
+      }
+    }
+    
+    // 個別の粒子を作成
+    function createParticle(container) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      
+      // ランダムなサイズと位置
+      const size = 2 + Math.random() * 5;
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      
+      particle.style.width = `${size}px`;
+      particle.style.height = `${size}px`;
+      particle.style.left = `${x}%`;
+      particle.style.top = `${y}%`;
+      particle.style.opacity = 0.3 + Math.random() * 0.5;
+      
+      container.appendChild(particle);
+      
+      // アニメーション
+      animateParticle(particle);
+    }
+    
+    // 粒子をアニメーション
+    function animateParticle(particle) {
+      const duration = 3000 + Math.random() * 4000;
+      
+      // 最初の位置を保存
+      const initX = parseFloat(particle.style.left);
+      const initY = parseFloat(particle.style.top);
+      
+      // アニメーション関数
+      function move() {
+        // 新しい位置
+        const newX = initX + (Math.random() * 10 - 5);
+        const newY = initY + (Math.random() * 10 - 5);
+        
+        // スタイル更新
+        particle.style.left = `${newX}%`;
+        particle.style.top = `${newY}%`;
+        
+        // 透明度をランダムに変更
+        particle.style.opacity = (0.3 + Math.random() * 0.5).toString();
+        
+        // 次のアニメーションを設定
+        setTimeout(move, duration);
+      }
+      
+      // アニメーション開始
+      setTimeout(move, Math.random() * 1000);
+    }
+    
+    // スワイプ時に粒子エフェクトを追加
+    function addSwipeParticles(direction) {
+      const arContainer = document.getElementById('ar-container');
+      const ramenImage = document.getElementById('ramen-image');
+      
+      // ラーメン画像の位置取得
+      const rect = ramenImage.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      
+      // 20個の粒子生成
       for (let i = 0; i < 20; i++) {
         const particle = document.createElement('div');
-        particle.className = 'floating-particle';
+        particle.className = 'particle';
         
-        // ランダムな位置
-        const left = Math.random() * 100;
-        const top = Math.random() * 100;
-        const size = 5 + Math.random() * 10;
-        
-        particle.style.left = `${left}%`;
-        particle.style.top = `${top}%`;
+        // サイズ設定
+        const size = 3 + Math.random() * 8;
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
-        particle.style.opacity = (0.3 + Math.random() * 0.4).toString();
         
-        // アニメーション
-        particle.style.transition = 'all 3s ease-in-out';
+        // 初期位置（ラーメン画像の中心付近）
+        particle.style.left = `${centerX + (Math.random() * 100 - 50)}px`;
+        particle.style.top = `${centerY + (Math.random() * 100 - 50)}px`;
+        
+        // 明るさ強調
+        particle.style.opacity = '1';
+        particle.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.8)';
         
         arContainer.appendChild(particle);
         
-        // ふわふわと動くアニメーション
-        setInterval(() => {
-          const newLeft = left + (Math.random() * 10 - 5);
-          const newTop = top + (Math.random() * 10 - 5);
-          particle.style.left = `${newLeft}%`;
-          particle.style.top = `${newTop}%`;
-        }, 3000 + Math.random() * 2000);
+        // 飛散アニメーション
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 10 + Math.random() * 20;
+        const directionMod = direction === 'left' ? -1 : 1;
+        
+        const destX = centerX + Math.cos(angle) * speed * 20 * directionMod;
+        const destY = centerY + Math.sin(angle) * speed * 10;
+        
+        // アニメーション
+        particle.animate(
+          [
+            { left: `${particle.style.left}`, top: `${particle.style.top}`, opacity: 1 },
+            { left: `${destX}px`, top: `${destY}px`, opacity: 0 }
+          ],
+          {
+            duration: 800 + Math.random() * 600,
+            easing: 'cubic-bezier(0.11, 0.5, 0.5, 0.97)'
+          }
+        );
+        
+        // アニメーション終了後に要素を削除
+        setTimeout(() => {
+          if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+          }
+        }, 1400);
       }
-    }
-
-    // 視線誘導ガイドを追加
-    function addViewGuides() {
-      const guideContainer = document.createElement('div');
-      guideContainer.style.position = 'fixed';
-      guideContainer.style.bottom = '20px';
-      guideContainer.style.left = '0';
-      guideContainer.style.width = '100%';
-      guideContainer.style.textAlign = 'center';
-      guideContainer.style.color = '#00c8ff';
-      guideContainer.style.fontSize = '14px';
-      guideContainer.style.zIndex = '1010';
-      guideContainer.innerHTML = '端末を動かして360°空間を探索してください';
       
-      // 方向指示器
-      const directions = ['←', '↑', '→', '↓'];
-      const directionEl = document.createElement('div');
-      directionEl.style.marginTop = '10px';
-      directionEl.style.fontSize = '24px';
-      directionEl.style.letterSpacing = '15px';
-      directionEl.textContent = directions.join('');
-      
-      guideContainer.appendChild(directionEl);
-      document.body.appendChild(guideContainer);
+      // ステップインジケーター更新
+      const stepIndicator = document.getElementById('step-indicator');
+      if (stepIndicator) {
+        stepIndicator.textContent = `STEP ${activeCardIndex + 1}/4`;
+      }
     }
   </script>
 </body>
