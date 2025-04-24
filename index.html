@@ -114,44 +114,36 @@
     }
     
     .base-layer {
-      background-image: url('base.png');
+      background-image: url('./assets/base.png');
       background-size: cover;
       background-position: center;
     }
     
     .title-layer {
-      background-image: url('title1.png');
+      background-image: url('./assets/title1.png');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: top center;
     }
     
-    .osusume-layer {
-      background-image: url('osusume.png');
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-    
     .step-layer {
-      background-image: url('step.png');
+      background-image: url('./assets/step.png');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
     }
     
     .line-layer {
-      background-image: url('line.png');
+      background-image: url('./assets/line.png');
       background-size: contain;
       background-repeat: no-repeat;
       background-position: center;
     }
     
     .waku-layer {
-      background-image: url('1waku.png');
+      background-image: url('./assets/1waku.png');
       background-size: cover;
       background-position: center;
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
     }
     
     .card-content {
@@ -190,43 +182,8 @@
     }
     
     #card-1 {
-      left: calc(50% - 190px);
+      left: calc(50% - 90px);
       top: calc(50% - 140px);
-    }
-    
-    #card-2 {
-      left: calc(50% - 60px);
-      top: calc(50% - 140px);
-    }
-    
-    #card-3 {
-      left: calc(50% + 70px);
-      top: calc(50% - 140px);
-    }
-    
-    #card-4 {
-      left: calc(50% - 125px);
-      top: calc(50% + 70px);
-    }
-    
-    @keyframes glow {
-      0% { box-shadow: 0 0 10px rgba(0, 200, 255, 0.7); }
-      50% { box-shadow: 0 0 20px rgba(0, 200, 255, 1); }
-      100% { box-shadow: 0 0 10px rgba(0, 200, 255, 0.7); }
-    }
-    
-    .hud-element {
-      position: absolute;
-      border: 1px solid rgba(0, 200, 255, 0.7);
-      background-color: rgba(0, 10, 30, 0.2);
-      color: #00c8ff;
-      font-size: 10px;
-      padding: 5px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      z-index: 30;
-      font-family: 'Press Start 2P', cursive;
     }
   </style>
 </head>
@@ -240,16 +197,7 @@
   <div id="ar-container">
     <video id="camera-view" autoplay playsinline></video>
     
-    <!-- ラーメン画像 -->
-    <div id="ramen-container">
-      <img src="./assets/ramen_3d.png" alt="KOZOU+ まぜそば" style="width: 100%; height: auto;">
-    </div>
-    
-    <!-- HUD要素 -->
-    <div class="hud-element" style="top: 20px; left: 20px;">KOZOU+ AR</div>
-    <div class="hud-element" style="top: 20px; right: 20px;">MIXING GUIDE</div>
-    
-    <!-- カード一覧 -->
+    <!-- カード一覧（ステップ1のみ） -->
     <div id="cards-container">
       <div id="card-1" class="card">
         <div class="card-inner">
@@ -269,62 +217,49 @@
           </div>
         </div>
       </div>
-      
-      <div id="card-2" class="card">
-        <div class="card-inner">
-          <div class="card-layer base-layer"></div>
-          <div class="card-layer title-layer"></div>
-          <div class="card-layer step-layer"></div>
-          <div class="card-layer line-layer"></div>
-          <div class="card-layer waku-layer"></div>
-          <div class="card-layer osusume-layer"></div>
-          <div class="card-content">
-            箸で底から全体を<br>
-            しっかりと混ぜ合わせます。<br>
-            タレと具材が均一になるまで。
-          </div>
-        </div>
-      </div>
-      
-      <div id="card-3" class="card">
-        <div class="card-inner">
-          <div class="card-layer base-layer"></div>
-          <div class="card-layer title-layer"></div>
-          <div class="card-layer step-layer"></div>
-          <div class="card-layer line-layer"></div>
-          <div class="card-layer waku-layer"></div>
-          <div class="card-content">
-            よく混ぜたら、<br>
-            まずは麺とタレの味わいを<br>
-            楽しみましょう。
-          </div>
-        </div>
-      </div>
-      
-      <div id="card-4" class="card">
-        <div class="card-inner">
-          <div class="card-layer base-layer"></div>
-          <div class="card-layer title-layer"></div>
-          <div class="card-layer step-layer"></div>
-          <div class="card-layer line-layer"></div>
-          <div class="card-layer waku-layer"></div>
-          <div class="card-content">
-            途中で用意された<br>
-            ニンニクを加えると、<br>
-            また違った味わいを楽しめます。
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
   <script>
-    // グローバル変数
-    let isGyroAvailable = false;
-    
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
+      
+      // 画像の読み込みを検証
+      const imagePaths = [
+        './assets/base.png',
+        './assets/title1.png',
+        './assets/step.png',
+        './assets/line.png',
+        './assets/1waku.png'
+      ];
+      
+      imagePaths.forEach(path => {
+        const img = new Image();
+        img.onload = function() {
+          console.log(`画像の読み込みに成功: ${path}`);
+        };
+        img.onerror = function() {
+          console.error(`画像の読み込みに失敗: ${path}`);
+          // 代替パスを試す
+          const altPath = path.replace('./assets/', '');
+          console.log(`代替パスを試します: ${altPath}`);
+          
+          const altImg = new Image();
+          altImg.onload = function() {
+            console.log(`代替パスで読み込み成功: ${altPath}`);
+            // 成功したパスに更新
+            document.querySelectorAll(`[style*="${path}"]`).forEach(el => {
+              el.style.backgroundImage = el.style.backgroundImage.replace(path, altPath);
+            });
+          };
+          altImg.onerror = function() {
+            console.error(`代替パスでも読み込み失敗: ${altPath}`);
+          };
+          altImg.src = altPath;
+        };
+        img.src = path;
+      });
       
       // 開始ボタンのイベント設定
       document.getElementById('start-button').addEventListener('click', function() {
@@ -343,7 +278,6 @@
               .then(response => {
                 if (response === 'granted') {
                   window.addEventListener('deviceorientation', handleOrientation);
-                  isGyroAvailable = true;
                 }
               })
               .catch(console.error);
@@ -351,7 +285,6 @@
         } else {
           // その他のデバイスの場合
           window.addEventListener('deviceorientation', handleOrientation);
-          isGyroAvailable = true;
         }
       } else {
         console.log("DeviceOrientationEventをサポートしていません");
@@ -395,26 +328,22 @@
     
     // カードの登場アニメーション
     function animateCardsIn() {
-      const cards = document.querySelectorAll('.card');
+      const card = document.getElementById('card-1');
       
-      cards.forEach((card, index) => {
-        // 初期状態を設定
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px) scale(0.9)';
-        card.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1.0)';
-        
-        // タイミングをずらして表示
-        setTimeout(() => {
-          card.style.opacity = '1';
-          card.style.transform = 'translateY(0) scale(1)';
-        }, 200 * index);
-      });
+      // 初期状態を設定
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(20px) scale(0.9)';
+      card.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1.0)';
+      
+      // 表示アニメーション
+      setTimeout(() => {
+        card.style.opacity = '1';
+        card.style.transform = 'translateY(0) scale(1)';
+      }, 200);
     }
     
     // デバイスの向きを処理
     function handleOrientation(event) {
-      if (!isGyroAvailable) return;
-      
       const beta = event.beta; // 前後の傾き (-180〜180)
       const gamma = event.gamma; // 左右の傾き (-90〜90)
       
@@ -427,9 +356,6 @@
     
     // マウス移動を処理（デスクトップ用）
     function handleMouseMove(event) {
-      // ジャイロが利用可能な場合はスキップ
-      if (isGyroAvailable) return;
-      
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       
@@ -443,9 +369,6 @@
     
     // タッチ移動を処理（モバイル用）
     function handleTouchMove(event) {
-      // ジャイロが利用可能な場合はスキップ
-      if (isGyroAvailable) return;
-      
       // タッチ位置を取得
       const touch = event.touches[0];
       const windowWidth = window.innerWidth;
@@ -466,38 +389,27 @@
       horizontalTilt = Math.max(-maxTilt, Math.min(maxTilt, horizontalTilt));
       verticalTilt = Math.max(-maxTilt, Math.min(maxTilt, verticalTilt));
       
-      // ラーメン画像に適用
-      const ramenContainer = document.getElementById('ramen-container');
-      ramenContainer.style.transform = `translate(calc(-50% + ${horizontalTilt * 0.5}px), calc(-50% + ${verticalTilt * 0.5}px))`;
+      // カードのレイヤーに効果を適用
+      const card = document.getElementById('card-1');
+      const cardInner = card.querySelector('.card-inner');
       
-      // 各カードレイヤーに効果を適用
-      document.querySelectorAll('.card').forEach((card, index) => {
-        // カードの動きを計算（カードごとに異なる動きを適用）
-        const cardX = horizontalTilt * (0.2 + (index * 0.05));
-        const cardY = verticalTilt * (0.2 + (index * 0.05));
-        
-        // カード全体の移動
-        card.style.transform = `translate(${cardX}px, ${cardY}px)`;
-        
-        // レイヤーごとに異なる移動速度を適用
-        const layers = card.querySelectorAll('.card-layer');
-        layers.forEach((layer, layerIndex) => {
-          const depthFactor = 0.03 * (layerIndex + 1);
-          layer.style.transform = `translate(${horizontalTilt * depthFactor}px, ${verticalTilt * depthFactor}px)`;
-        });
-        
-        // テキストコンテンツの移動（より強い効果）
-        const content = card.querySelector('.card-content');
-        if (content) {
-          content.style.transform = `translate(${horizontalTilt * 0.1}px, ${verticalTilt * 0.1}px)`;
-        }
-        
-        // 注釈テキストの移動（弱い効果）
-        const note = card.querySelector('.card-note');
-        if (note) {
-          note.style.transform = `translate(${horizontalTilt * 0.05}px, ${verticalTilt * 0.05}px)`;
-        }
+      // カード全体の移動（軽い効果）
+      card.style.transform = `translate(${horizontalTilt * 0.2}px, ${verticalTilt * 0.2}px)`;
+      
+      // レイヤーごとに異なる移動速度を適用
+      const layers = cardInner.querySelectorAll('.card-layer');
+      layers.forEach((layer, index) => {
+        const depthFactor = 0.05 * (index + 1); // レイヤーによって異なる深度
+        layer.style.transform = `translate(${horizontalTilt * depthFactor}px, ${verticalTilt * depthFactor}px)`;
       });
+      
+      // テキストコンテンツの移動（より強い効果）
+      const content = cardInner.querySelector('.card-content');
+      content.style.transform = `translate(${horizontalTilt * 0.1}px, ${verticalTilt * 0.1}px)`;
+      
+      // 注釈テキストの移動（弱い効果）
+      const note = cardInner.querySelector('.card-note');
+      note.style.transform = `translate(${horizontalTilt * 0.05}px, ${verticalTilt * 0.05}px)`;
     }
   </script>
 </body>
