@@ -66,243 +66,105 @@
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: 20;
+      overflow: visible;
     }
     
-    /* カード本体 */
-    .card-bg {
+    .card-layer {
       position: absolute;
       width: 100%;
       height: 100%;
-      background-color: #073a52;
-      border-radius: 15px;
-      border: 2px solid #00c8ff;
-      overflow: hidden;
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
     }
     
-    /* 上部の青いボーダーライン */
-    .top-border {
-      position: absolute;
-      top: 0;
-      left: 0;
+    .base-layer {
+      background-image: url('base.png');
+      z-index: 1;
+    }
+    
+    .waku-layer {
+      background-image: url('1waku.png');
+      z-index: 2;
+    }
+    
+    .step-layer {
+      background-image: url('step.png');
+      z-index: 3;
+      top: -5%;
+      left: -7%;
+      width: 110%;
+      height: 110%;
+    }
+    
+    .title-layer {
+      background-image: url('title1.png');
+      z-index: 3;
+      top: 5%;
       width: 100%;
-      height: 2px;
-      background-color: #00c8ff;
-      box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+      height: 30%;
     }
     
-    /* 底部の青いボーダーライン */
-    .bottom-border {
-      position: absolute;
-      bottom: 0;
-      left: 0;
+    .line-layer {
+      background-image: url('line.png');
+      z-index: 3;
+      top: 70%;
       width: 100%;
-      height: 2px;
-      background-color: #00c8ff;
-      box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+      height: 10%;
     }
     
-    /* STEP円 */
-    .step-circle {
-      position: absolute;
-      width: 90px;
-      height: 90px;
-      top: 30px;
-      left: 20px;
-      background-color: #ff0000;
-      border-radius: 50%;
-      border: 2px solid #00c8ff;
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    /* STEP テキスト */
-    .step-text {
-      position: absolute;
-      transform: rotate(-90deg);
-      top: 32px;
-      left: -10px;
-      color: white;
-      font-size: 14px;
-      font-weight: 900;
-      text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
-    }
-    
-    /* STEP 数字 */
-    .step-number {
-      color: white;
-      font-size: 50px;
-      font-weight: 900;
-      margin-left: 18px;
-      text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
-    }
-    
-    /* 横の青いライン */
-    .blue-line {
-      position: absolute;
-      top: 75px;
-      left: 120px;
-      width: 170px;
-      height: 2px;
-      background-color: #00c8ff;
-      box-shadow: 0 0 5px rgba(0, 200, 255, 0.7);
-    }
-    
-    /* タイトルテキスト */
-    .title-text {
-      position: absolute;
-      top: 120px;
+    .osusume-layer {
+      background-image: url('osusume.png');
+      z-index: 3;
+      top: 50%;
       width: 100%;
-      text-align: center;
-      color: white;
-      font-size: 28px;
-      font-weight: 900;
-      line-height: 1.3;
-      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+      height: 10%;
+      display: none; /* STEP1では非表示 */
     }
     
-    /* おすすめの混ぜ回数 */
-    .osusume-box {
+    .card-content {
       position: absolute;
-      top: 250px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 5px 20px;
-      border-radius: 20px;
-      background-color: rgba(0, 20, 40, 0.7);
-      border: 1px solid #00c8ff;
-      color: white;
-      font-size: 14px;
+      width: 80%;
+      left: 10%;
+      top: 35%;
+      color: #ffffff;
       font-weight: 700;
-      text-shadow: 0 0 5px rgba(0, 200, 255, 0.5);
+      text-align: center;
+      font-size: 16px;
+      line-height: 1.7;
+      z-index: 4;
     }
     
-    /* 数字12 */
+    .card-note {
+      position: absolute;
+      width: 80%;
+      left: 10%;
+      bottom: 10%;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.6;
+      z-index: 4;
+    }
+    
     .number-12 {
       position: absolute;
-      top: 290px;
+      top: 55%;
       width: 100%;
       text-align: center;
       color: #ff3333;
       font-size: 100px;
       font-weight: 900;
       text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-    }
-    
-    /* 斜めラインのパターン */
-    .line-pattern {
-      position: absolute;
-      top: 400px;
-      width: 100%;
-      height: 20px;
-      background-image: repeating-linear-gradient(
-        -45deg,
-        rgba(255, 255, 255, 0.5),
-        rgba(255, 255, 255, 0.5) 3px,
-        transparent 3px,
-        transparent 15px
-      );
-    }
-    
-    /* 説明テキスト */
-    .card-content {
-      position: absolute;
-      top: 220px;
-      width: 90%;
-      left: 5%;
-      text-align: center;
-      color: white;
-      font-size: 16px;
-      font-weight: 700;
-      line-height: 1.7;
-    }
-    
-    /* 下部の注釈 */
-    .card-note {
-      position: absolute;
-      bottom: 30px;
-      width: 90%;
-      left: 5%;
-      text-align: center;
-      color: white;
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1.6;
-    }
-    
-    /* カードの角の装飾 */
-    .card-corner {
-      position: absolute;
-      width: 15px;
-      height: 15px;
-      border: 2px solid #00c8ff;
-    }
-    
-    .corner-top-left {
-      top: 0;
-      left: 0;
-      border-right: none;
-      border-bottom: none;
-      border-top-left-radius: 10px;
-    }
-    
-    .corner-top-right {
-      top: 0;
-      right: 0;
-      border-left: none;
-      border-bottom: none;
-      border-top-right-radius: 10px;
-    }
-    
-    .corner-bottom-left {
-      bottom: 0;
-      left: 0;
-      border-right: none;
-      border-top: none;
-      border-bottom-left-radius: 10px;
-    }
-    
-    .corner-bottom-right {
-      bottom: 0;
-      right: 0;
-      border-left: none;
-      border-top: none;
-      border-bottom-right-radius: 10px;
-    }
-    
-    /* サイドの凹み */
-    .side-indent {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-    }
-    
-    .indent-right-top {
-      top: 100px;
-      right: 0;
-      border-top: 2px solid #00c8ff;
-      border-bottom: 2px solid #00c8ff;
-      border-left: 2px solid #00c8ff;
-      border-top-left-radius: 5px;
-      border-bottom-left-radius: 5px;
-    }
-    
-    .indent-left-bottom {
-      bottom: 150px;
-      left: 0;
-      border-top: 2px solid #00c8ff;
-      border-bottom: 2px solid #00c8ff;
-      border-right: 2px solid #00c8ff;
-      border-top-right-radius: 5px;
-      border-bottom-right-radius: 5px;
+      z-index: 4;
+      display: none; /* STEP1では非表示 */
     }
   </style>
 </head>
 <body>
   <div id="loading-screen">
-    <div class="spinner"></div>
+    <div style="border: 5px solid rgba(0, 200, 255, 0.1); border-top: 5px solid #00c8ff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
     <div>読み込み中...</div>
     <button id="start-button" style="margin-top: 20px; padding: 15px 30px; background-color: #00a2ff; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);">AR体験を開始</button>
   </div>
@@ -312,59 +174,57 @@
     
     <!-- カード -->
     <div class="card">
-      <!-- カード背景 -->
-      <div class="card-bg">
-        <!-- ボーダー -->
-        <div class="top-border"></div>
-        <div class="bottom-border"></div>
-        
-        <!-- 角の装飾 -->
-        <div class="card-corner corner-top-left"></div>
-        <div class="card-corner corner-top-right"></div>
-        <div class="card-corner corner-bottom-left"></div>
-        <div class="card-corner corner-bottom-right"></div>
-        
-        <!-- サイドの凹み -->
-        <div class="side-indent indent-right-top"></div>
-        <div class="side-indent indent-left-bottom"></div>
-        
-        <!-- STEP円 -->
-        <div class="step-circle">
-          <span class="step-text">STEP</span>
-          <span class="step-number">1</span>
-        </div>
-        
-        <!-- 青いライン -->
-        <div class="blue-line"></div>
-        
-        <!-- タイトル -->
-        <div class="title-text">底の方から<br>しっかり混ぜる！</div>
-        
-        <!-- おすすめの混ぜ回数 (ステップ2のみ表示) -->
-        <div class="osusume-box" style="display: none;">おすすめの混ぜ回数</div>
-        <div class="number-12" style="display: none;">12</div>
-        <div class="line-pattern" style="display: none;"></div>
-        
-        <!-- カードコンテンツ -->
-        <div class="card-content">
-          底に旨みの詰まったタレが<br>
-          沈んでいるので、<br>
-          しっかり混ぜましょう。
-        </div>
-        
-        <!-- 下部の注釈 -->
-        <div class="card-note">
-          汁が跳ねやすいので、紙エプロンが必要な方は<br>
-          スタッフにお申し付けください。
-        </div>
+      <!-- 画像レイヤー -->
+      <div class="card-layer base-layer"></div>
+      <div class="card-layer waku-layer"></div>
+      <div class="card-layer step-layer"></div>
+      <div class="card-layer title-layer"></div>
+      <div class="card-layer line-layer"></div>
+      <div class="card-layer osusume-layer"></div>
+      
+      <!-- コンテンツ -->
+      <div class="number-12">12</div>
+      <div class="card-content">
+        底に旨みの詰まったタレが<br>
+        沈んでいるので、<br>
+        しっかり混ぜましょう。
+      </div>
+      <div class="card-note">
+        汁が跳ねやすいので、紙エプロンが必要な方は<br>
+        スタッフにお申し付けください。
       </div>
     </div>
   </div>
 
   <script>
+    // スピンアニメーション用のスタイル
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(style);
+    
+    // 画像の読み込み確認
+    function preloadImages() {
+      const images = ['base.png', '1waku.png', 'step.png', 'title1.png', 'line.png', 'osusume.png'];
+      
+      images.forEach(src => {
+        const img = new Image();
+        img.onload = () => console.log(`画像読み込み成功: ${src}`);
+        img.onerror = () => console.error(`画像読み込み失敗: ${src}`);
+        img.src = src;
+      });
+    }
+    
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
+      
+      // 画像のプリロード
+      preloadImages();
       
       // 開始ボタンのイベント設定
       document.getElementById('start-button').addEventListener('click', function() {
