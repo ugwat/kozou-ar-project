@@ -3,7 +3,7 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>KOZOU+ AR Experience</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=DotGothic16&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@700;900&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -17,8 +17,8 @@
       width: 100%; 
       height: 100%;
       background-color: #000;
-      font-family: 'Press Start 2P', cursive;
-      color: #00c8ff;
+      font-family: 'Noto Sans JP', sans-serif;
+      color: #ffffff;
       position: fixed;
       overflow: hidden;
     }
@@ -73,64 +73,6 @@
       z-index: 10;
     }
     
-    #cards-container {
-      position: absolute;
-      width: 100%;
-      bottom: 20px;
-      left: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow-x: auto;
-      padding: 0 10px;
-      z-index: 30;
-    }
-    
-    .hud-card {
-      flex: 0 0 auto;
-      width: 200px;
-      height: 150px;
-      background-color: rgba(0, 20, 40, 0.5);
-      border: 2px solid #00c8ff;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);
-      padding: 12px;
-      margin: 0 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .card-title {
-      color: #00c8ff;
-      font-size: 10px;
-      font-weight: bold;
-      margin-bottom: 8px;
-      text-align: center;
-    }
-    
-    .card-content {
-      color: #ffffff;
-      font-family: 'DotGothic16', sans-serif;
-      font-size: 9px;
-      text-align: center;
-      line-height: 1.5;
-    }
-    
-    .hud-element {
-      position: absolute;
-      border: 1px solid rgba(0, 200, 255, 0.7);
-      background-color: rgba(0, 10, 30, 0.2);
-      color: #00c8ff;
-      font-size: 10px;
-      padding: 5px 8px;
-      border-radius: 4px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      z-index: 30;
-    }
-    
     #ramen-container {
       position: absolute;
       top: 30%;
@@ -147,6 +89,145 @@
       50% { transform: translate(-50%, -50%) translateY(-10px); }
       100% { transform: translate(-50%, -50%) translateY(0px); }
     }
+    
+    .card {
+      position: absolute;
+      width: 180px;
+      height: 280px;
+      perspective: 1000px;
+      z-index: 30;
+    }
+    
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.6s;
+    }
+    
+    .card-layer {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+    }
+    
+    .base-layer {
+      background-image: url('base.png');
+      background-size: cover;
+      background-position: center;
+    }
+    
+    .title-layer {
+      background-image: url('title1.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: top center;
+    }
+    
+    .osusume-layer {
+      background-image: url('osusume.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    .step-layer {
+      background-image: url('step.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    .line-layer {
+      background-image: url('line.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    .waku-layer {
+      background-image: url('1waku.png');
+      background-size: cover;
+      background-position: center;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+    }
+    
+    .card-content {
+      position: absolute;
+      width: 80%;
+      left: 10%;
+      top: 35%;
+      color: #ffffff;
+      font-weight: 900;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.5;
+      text-shadow: 0 0 5px rgba(0, 200, 255, 0.7);
+    }
+    
+    .card-note {
+      position: absolute;
+      width: 80%;
+      left: 10%;
+      bottom: 10%;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+      font-size: 9px;
+      line-height: 1.5;
+    }
+    
+    #cards-container {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+    }
+    
+    #card-1 {
+      left: calc(50% - 190px);
+      top: calc(50% - 140px);
+    }
+    
+    #card-2 {
+      left: calc(50% - 60px);
+      top: calc(50% - 140px);
+    }
+    
+    #card-3 {
+      left: calc(50% + 70px);
+      top: calc(50% - 140px);
+    }
+    
+    #card-4 {
+      left: calc(50% - 125px);
+      top: calc(50% + 70px);
+    }
+    
+    @keyframes glow {
+      0% { box-shadow: 0 0 10px rgba(0, 200, 255, 0.7); }
+      50% { box-shadow: 0 0 20px rgba(0, 200, 255, 1); }
+      100% { box-shadow: 0 0 10px rgba(0, 200, 255, 0.7); }
+    }
+    
+    .hud-element {
+      position: absolute;
+      border: 1px solid rgba(0, 200, 255, 0.7);
+      background-color: rgba(0, 10, 30, 0.2);
+      color: #00c8ff;
+      font-size: 10px;
+      padding: 5px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      z-index: 30;
+      font-family: 'Press Start 2P', cursive;
+    }
   </style>
 </head>
 <body>
@@ -159,39 +240,87 @@
   <div id="ar-container">
     <video id="camera-view" autoplay playsinline></video>
     
-    <!-- ラーメン画像 - 正しいパス -->
+    <!-- ラーメン画像 -->
     <div id="ramen-container">
       <img src="./assets/ramen_3d.png" alt="KOZOU+ まぜそば" style="width: 100%; height: auto;">
     </div>
     
     <!-- HUD要素 -->
     <div class="hud-element" style="top: 20px; left: 20px;">KOZOU+ AR</div>
-    <div class="hud-element" style="top: 20px; right: 20px;">STEP GUIDE</div>
+    <div class="hud-element" style="top: 20px; right: 20px;">MIXING GUIDE</div>
     
     <!-- カード一覧 -->
-    <div id="cards-container"></div>
+    <div id="cards-container">
+      <div id="card-1" class="card">
+        <div class="card-inner">
+          <div class="card-layer base-layer"></div>
+          <div class="card-layer title-layer"></div>
+          <div class="card-layer step-layer"></div>
+          <div class="card-layer line-layer"></div>
+          <div class="card-layer waku-layer"></div>
+          <div class="card-content">
+            底に旨みの詰まったタレが<br>
+            沈んでいるので、<br>
+            しっかり混ぜましょう。
+          </div>
+          <div class="card-note">
+            汁が跳ねやすいので、紙エプロンが必要な方は<br>
+            スタッフにお申し付けください。
+          </div>
+        </div>
+      </div>
+      
+      <div id="card-2" class="card">
+        <div class="card-inner">
+          <div class="card-layer base-layer"></div>
+          <div class="card-layer title-layer"></div>
+          <div class="card-layer step-layer"></div>
+          <div class="card-layer line-layer"></div>
+          <div class="card-layer waku-layer"></div>
+          <div class="card-layer osusume-layer"></div>
+          <div class="card-content">
+            箸で底から全体を<br>
+            しっかりと混ぜ合わせます。<br>
+            タレと具材が均一になるまで。
+          </div>
+        </div>
+      </div>
+      
+      <div id="card-3" class="card">
+        <div class="card-inner">
+          <div class="card-layer base-layer"></div>
+          <div class="card-layer title-layer"></div>
+          <div class="card-layer step-layer"></div>
+          <div class="card-layer line-layer"></div>
+          <div class="card-layer waku-layer"></div>
+          <div class="card-content">
+            よく混ぜたら、<br>
+            まずは麺とタレの味わいを<br>
+            楽しみましょう。
+          </div>
+        </div>
+      </div>
+      
+      <div id="card-4" class="card">
+        <div class="card-inner">
+          <div class="card-layer base-layer"></div>
+          <div class="card-layer title-layer"></div>
+          <div class="card-layer step-layer"></div>
+          <div class="card-layer line-layer"></div>
+          <div class="card-layer waku-layer"></div>
+          <div class="card-content">
+            途中で用意された<br>
+            ニンニクを加えると、<br>
+            また違った味わいを楽しめます。
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    // ステップデータ
-    const stepsData = [
-      {
-        title: "STEP 1: 混ぜる前の状態",
-        content: "まずは美しく盛り付けられたまぜそばの状態を確認しましょう。トッピングの配置を覚えておくと良いでしょう。"
-      },
-      {
-        title: "STEP 2: よく混ぜる",
-        content: "箸を使って、底から全体をしっかりと混ぜます。タレと具材が均一になるまで混ぜるのがポイントです。"
-      },
-      {
-        title: "STEP 3: 最初の一口",
-        content: "よく混ぜたら、まずは麺とタレの味わいを楽しみましょう。香りと旨味が口いっぱいに広がります。"
-      },
-      {
-        title: "STEP 4: 追いニンニク",
-        content: "途中で用意されたニンニクを加えると、また違った味わいを楽しめます。好みに合わせて調整しましょう。"
-      }
-    ];
+    // グローバル変数
+    let isGyroAvailable = false;
     
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
@@ -203,42 +332,30 @@
         initAR();
       });
       
-      // 画像の読み込みエラーハンドリング
-      const ramenImg = document.querySelector('#ramen-container img');
-      ramenImg.onerror = function() {
-        console.error('画像読み込みエラー：', ramenImg.src);
-        // 他のパスを試す
-        const paths = [
-          'assets/ramen_3d.png',
-          '/assets/ramen_3d.png',
-          '../assets/ramen_3d.png',
-          'ramen_3d.png'
-        ];
+      // ジャイロセンサーのサポートを確認
+      if (window.DeviceOrientationEvent) {
+        console.log("DeviceOrientationEventをサポートしています");
         
-        function tryNextPath(index) {
-          if (index >= paths.length) {
-            console.error('全てのパスで画像を読み込めませんでした');
-            return;
-          }
-          
-          console.log(`パスを試しています: ${paths[index]}`);
-          ramenImg.src = paths[index];
+        // iOSの場合は許可が必要
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          document.getElementById('start-button').addEventListener('click', function() {
+            DeviceOrientationEvent.requestPermission()
+              .then(response => {
+                if (response === 'granted') {
+                  window.addEventListener('deviceorientation', handleOrientation);
+                  isGyroAvailable = true;
+                }
+              })
+              .catch(console.error);
+          });
+        } else {
+          // その他のデバイスの場合
+          window.addEventListener('deviceorientation', handleOrientation);
+          isGyroAvailable = true;
         }
-        
-        // 最初の代替パスを試す
-        tryNextPath(0);
-        
-        // 画像が読み込めたときのハンドラー
-        ramenImg.onload = function() {
-          console.log('画像が読み込めました: ', ramenImg.src);
-        };
-        
-        // 次のパスが失敗した場合のハンドラー
-        let pathIndex = 1;
-        ramenImg.onerror = function() {
-          tryNextPath(pathIndex++);
-        };
-      };
+      } else {
+        console.log("DeviceOrientationEventをサポートしていません");
+      }
     });
     
     // ARの初期化
@@ -255,39 +372,131 @@
           
           // 初期化
           setTimeout(function() {
-            // カードを作成
-            createCards();
+            // 初期アニメーション
+            animateCardsIn();
           }, 1000);
         })
         .catch(function(err) {
           console.error("カメラエラー:", err);
           console.log("カメラは使用できませんが、デモモードで続行します");
           
-          // カメラがなくてもカードは表示
-          createCards();
+          // カメラなしでも動作
+          setTimeout(function() {
+            animateCardsIn();
+          }, 1000);
         });
+      
+      // パララックス効果のためにマウス移動を監視
+      document.addEventListener('mousemove', handleMouseMove);
+      
+      // タッチデバイス用のイベントリスナー
+      document.addEventListener('touchmove', handleTouchMove);
     }
     
-    // カードを作成
-    function createCards() {
-      const cardContainer = document.getElementById('cards-container');
+    // カードの登場アニメーション
+    function animateCardsIn() {
+      const cards = document.querySelectorAll('.card');
       
-      stepsData.forEach((step, index) => {
-        const card = document.createElement('div');
-        card.className = 'hud-card';
-        card.id = `card-${index}`;
+      cards.forEach((card, index) => {
+        // 初期状態を設定
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(20px) scale(0.9)';
+        card.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1.0)';
         
-        const title = document.createElement('div');
-        title.className = 'card-title';
-        title.textContent = step.title;
+        // タイミングをずらして表示
+        setTimeout(() => {
+          card.style.opacity = '1';
+          card.style.transform = 'translateY(0) scale(1)';
+        }, 200 * index);
+      });
+    }
+    
+    // デバイスの向きを処理
+    function handleOrientation(event) {
+      if (!isGyroAvailable) return;
+      
+      const beta = event.beta; // 前後の傾き (-180〜180)
+      const gamma = event.gamma; // 左右の傾き (-90〜90)
+      
+      // 値が取得できない場合は終了
+      if (beta === null || gamma === null) return;
+      
+      // パララックス効果を適用
+      applyParallaxEffect(gamma, beta);
+    }
+    
+    // マウス移動を処理（デスクトップ用）
+    function handleMouseMove(event) {
+      // ジャイロが利用可能な場合はスキップ
+      if (isGyroAvailable) return;
+      
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      
+      // マウス位置を-20〜20の範囲に変換
+      const mouseX = ((event.clientX / windowWidth) * 40) - 20;
+      const mouseY = ((event.clientY / windowHeight) * 40) - 20;
+      
+      // パララックス効果を適用
+      applyParallaxEffect(mouseX, mouseY);
+    }
+    
+    // タッチ移動を処理（モバイル用）
+    function handleTouchMove(event) {
+      // ジャイロが利用可能な場合はスキップ
+      if (isGyroAvailable) return;
+      
+      // タッチ位置を取得
+      const touch = event.touches[0];
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      
+      // タッチ位置を-20〜20の範囲に変換
+      const touchX = ((touch.clientX / windowWidth) * 40) - 20;
+      const touchY = ((touch.clientY / windowHeight) * 40) - 20;
+      
+      // パララックス効果を適用
+      applyParallaxEffect(touchX, touchY);
+    }
+    
+    // パララックス効果を適用
+    function applyParallaxEffect(horizontalTilt, verticalTilt) {
+      // 値の範囲を制限
+      const maxTilt = 20;
+      horizontalTilt = Math.max(-maxTilt, Math.min(maxTilt, horizontalTilt));
+      verticalTilt = Math.max(-maxTilt, Math.min(maxTilt, verticalTilt));
+      
+      // ラーメン画像に適用
+      const ramenContainer = document.getElementById('ramen-container');
+      ramenContainer.style.transform = `translate(calc(-50% + ${horizontalTilt * 0.5}px), calc(-50% + ${verticalTilt * 0.5}px))`;
+      
+      // 各カードレイヤーに効果を適用
+      document.querySelectorAll('.card').forEach((card, index) => {
+        // カードの動きを計算（カードごとに異なる動きを適用）
+        const cardX = horizontalTilt * (0.2 + (index * 0.05));
+        const cardY = verticalTilt * (0.2 + (index * 0.05));
         
-        const content = document.createElement('div');
-        content.className = 'card-content';
-        content.textContent = step.content;
+        // カード全体の移動
+        card.style.transform = `translate(${cardX}px, ${cardY}px)`;
         
-        card.appendChild(title);
-        card.appendChild(content);
-        cardContainer.appendChild(card);
+        // レイヤーごとに異なる移動速度を適用
+        const layers = card.querySelectorAll('.card-layer');
+        layers.forEach((layer, layerIndex) => {
+          const depthFactor = 0.03 * (layerIndex + 1);
+          layer.style.transform = `translate(${horizontalTilt * depthFactor}px, ${verticalTilt * depthFactor}px)`;
+        });
+        
+        // テキストコンテンツの移動（より強い効果）
+        const content = card.querySelector('.card-content');
+        if (content) {
+          content.style.transform = `translate(${horizontalTilt * 0.1}px, ${verticalTilt * 0.1}px)`;
+        }
+        
+        // 注釈テキストの移動（弱い効果）
+        const note = card.querySelector('.card-note');
+        if (note) {
+          note.style.transform = `translate(${horizontalTilt * 0.05}px, ${verticalTilt * 0.05}px)`;
+        }
       });
     }
   </script>
