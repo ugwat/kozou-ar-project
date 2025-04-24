@@ -79,17 +79,17 @@
     }
     
     .base-layer {
-      background-image: url('base.png');
+      background-image: url('./assets/base.png');
       z-index: 1;
     }
     
     .waku-layer {
-      background-image: url('1waku.png');
+      background-image: url('./assets/1waku.png');
       z-index: 2;
     }
     
     .step-layer {
-      background-image: url('step.png');
+      background-image: url('./assets/step.png');
       z-index: 3;
       top: -5%;
       left: -7%;
@@ -98,7 +98,7 @@
     }
     
     .title-layer {
-      background-image: url('title1.png');
+      background-image: url('./assets/title1.png');
       z-index: 3;
       top: 5%;
       width: 100%;
@@ -106,7 +106,7 @@
     }
     
     .line-layer {
-      background-image: url('line.png');
+      background-image: url('./assets/line.png');
       z-index: 3;
       top: 70%;
       width: 100%;
@@ -114,7 +114,7 @@
     }
     
     .osusume-layer {
-      background-image: url('osusume.png');
+      background-image: url('./assets/osusume.png');
       z-index: 3;
       top: 50%;
       width: 100%;
@@ -209,12 +209,38 @@
     
     // 画像の読み込み確認
     function preloadImages() {
-      const images = ['base.png', '1waku.png', 'step.png', 'title1.png', 'line.png', 'osusume.png'];
+      const images = [
+        './assets/base.png', 
+        './assets/1waku.png', 
+        './assets/step.png', 
+        './assets/title1.png', 
+        './assets/line.png', 
+        './assets/osusume.png'
+      ];
       
       images.forEach(src => {
         const img = new Image();
         img.onload = () => console.log(`画像読み込み成功: ${src}`);
-        img.onerror = () => console.error(`画像読み込み失敗: ${src}`);
+        img.onerror = () => {
+          console.error(`画像読み込み失敗: ${src}`);
+          
+          // 代替パスを試す
+          const altSrc = src.replace('./assets/', 'assets/');
+          console.log(`代替パスを試します: ${altSrc}`);
+          
+          const altImg = new Image();
+          altImg.onload = () => {
+            console.log(`代替パスで読み込み成功: ${altSrc}`);
+            // 対応するCSSを更新
+            const selector = `.${src.split('/').pop().replace('.png', '-layer')}`;
+            const elements = document.querySelectorAll(selector);
+            elements.forEach(el => {
+              el.style.backgroundImage = `url('${altSrc}')`;
+            });
+          };
+          altImg.onerror = () => console.error(`代替パスでも読み込み失敗: ${altSrc}`);
+          altImg.src = altSrc;
+        };
         img.src = src;
       });
     }
