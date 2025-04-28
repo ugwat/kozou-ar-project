@@ -12,8 +12,8 @@
   #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; filter: brightness(0.85); }
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
   .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
-  .card-wrapper { position: absolute; width: 320px; height: 200px; transform-style: preserve-3d; top: 0; left: calc(50% - 160px); transition: transform 0.5s ease-out, opacity 0.5s ease-out; }
-  .card { width: 100%; height: 100%; background: url('./assets/1waku.png') no-repeat center/cover; border-radius: 12px; opacity: 0.9; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 1)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.7)); }
+  .card-wrapper { position: absolute; width: 320px; height: 0; transform-style: preserve-3d; top: 0; left: calc(50% - 160px); transition: transform 0.5s ease-out, opacity 0.5s ease-out, height 1s ease-out; overflow: hidden; }
+  .card { width: 100%; height: 200px; background: url('./assets/1waku.png') no-repeat center/cover; border-radius: 12px; opacity: 0.9; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 1)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.7)); }
   .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); z-index:15; pointer-events:none; }
   @keyframes spin { 0%{transform:rotate(0);} 100%{transform:rotate(360deg);} }
 </style>
@@ -57,9 +57,8 @@ function initAR() {
     .then(stream => {
       document.getElementById('camera-view').srcObject = stream;
       createCards();
-      startSpinAnimation();
     })
-    .catch(() => { createCards(); startSpinAnimation(); });
+    .catch(() => { createCards(); });
 }
 
 function createCards() {
@@ -73,6 +72,7 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
   applyCardPositions(0);
+  growCards();
 }
 
 function applyCardPositions(offset = 0) {
@@ -96,6 +96,33 @@ function applyCardPositions(offset = 0) {
   });
 }
 
+function growCards() {
+  const wrappers = document.querySelectorAll('.card-wrapper');
+  wrappers.forEach((wrapper, index) => {
+    setTimeout(() => {
+      wrapper.style.height = '200px';
+    }, index * 150);
+  });
+
+  setTimeout(startSpinAnimation, wrappers.length * 150 + 800); // 生えたあと回転開始
+}
+
+function startSpinAnimation() {
+  let spins = 0;
+  const total = document.querySelectorAll('.card-wrapper').length;
+  const targetSpins = 3;
+  const spinInterval = setInterval(() => {
+    activeCardIndex = (activeCardIndex + 1) % total;
+    applyCardPositions(0);
+    spins++;
+    if (spins >= targetSpins * total) {
+      clearInterval(spinInterval);
+      isSwipeEnabled = true;
+      setupSwipeEvents();
+    }
+  }, 160); // ゆっくりめ
+}
+
 function setupSwipeEvents() {
   let startX = 0;
   document.addEventListener('touchstart', e => { if (!isSwipeEnabled) return; startX = e.touches[0].clientX; });
@@ -113,22 +140,6 @@ function handleSwipe(diffX) {
     activeCardIndex = (activeCardIndex + 1) % total;
   }
   applyCardPositions(0);
-}
-
-function startSpinAnimation() {
-  let spins = 0;
-  const targetSpins = 5;
-  const total = document.querySelectorAll('.card-wrapper').length;
-  const spinInterval = setInterval(() => {
-    activeCardIndex = (activeCardIndex + 1) % total;
-    applyCardPositions(0);
-    spins++;
-    if (spins >= targetSpins * total) {
-      clearInterval(spinInterval);
-      isSwipeEnabled = true;
-      setupSwipeEvents();
-    }
-  }, 80);
 }
 </script>
 </body>
