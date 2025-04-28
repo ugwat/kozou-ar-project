@@ -13,9 +13,7 @@
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
   .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
   .card-wrapper { position: absolute; width: 320px; height: 200px; transform-style: preserve-3d; top: 0; left: calc(50% - 160px); transition: transform 0.5s ease-out, opacity 0.5s ease-out; }
-  .card { width: 100%; height: 100%; background: url('./assets/1waku.png') no-repeat center/cover; border-radius: 12px; opacity: 0.9;
-    filter: drop-shadow(0 0 20px rgba(0, 255, 255, 1)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.7));
-  }
+  .card { width: 100%; height: 100%; background: url('./assets/1waku.png') no-repeat center/cover; border-radius: 12px; opacity: 0.9; filter: drop-shadow(0 0 20px rgba(0, 255, 255, 1)) drop-shadow(0 0 30px rgba(0, 255, 255, 0.7)); }
   .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); z-index:15; pointer-events:none; }
   @keyframes spin { 0%{transform:rotate(0);} 100%{transform:rotate(360deg);} }
 </style>
@@ -59,8 +57,9 @@ function initAR() {
     .then(stream => {
       document.getElementById('camera-view').srcObject = stream;
       createCards();
+      startSpinAnimation();
     })
-    .catch(() => { createCards(); });
+    .catch(() => { createCards(); startSpinAnimation(); });
 }
 
 function createCards() {
@@ -74,8 +73,6 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
   applyCardPositions(0);
-  isSwipeEnabled = true;
-  setupSwipeEvents();
 }
 
 function applyCardPositions(offset = 0) {
@@ -93,12 +90,7 @@ function applyCardPositions(offset = 0) {
     const scale = 1 - 0.2 * Math.abs(angleRatio);
     const opacity = 1 - 0.3 * Math.abs(angleRatio);
 
-    wrapper.style.transform = `
-      translateX(${x}px)
-      translateZ(${z}px)
-      rotateY(${rotateY}deg)
-      scale(${scale})
-    `;
+    wrapper.style.transform = `translateX(${x}px) translateZ(${z}px) rotateY(${rotateY}deg) scale(${scale})`;
     wrapper.style.opacity = opacity;
     wrapper.style.zIndex = 100 - Math.abs(Math.round(relIndex*10));
   });
@@ -121,6 +113,22 @@ function handleSwipe(diffX) {
     activeCardIndex = (activeCardIndex + 1) % total;
   }
   applyCardPositions(0);
+}
+
+function startSpinAnimation() {
+  let spins = 0;
+  const targetSpins = 5;
+  const total = document.querySelectorAll('.card-wrapper').length;
+  const spinInterval = setInterval(() => {
+    activeCardIndex = (activeCardIndex + 1) % total;
+    applyCardPositions(0);
+    spins++;
+    if (spins >= targetSpins * total) {
+      clearInterval(spinInterval);
+      isSwipeEnabled = true;
+      setupSwipeEvents();
+    }
+  }, 80);
 }
 </script>
 </body>
