@@ -388,7 +388,7 @@
   const reflections = document.querySelectorAll('.card-reflection');
   const cardWrappers = document.querySelectorAll('.card-wrapper');
 
-  const growOrder = []; 
+  const growOrder = [];
   const midIndex = Math.floor(cards.length / 2);
   for (let i = 0; i <= midIndex; i++) {
     growOrder.push(midIndex - i);
@@ -400,24 +400,26 @@
   let delay = 0;
   growOrder.forEach((index, orderIndex) => {
     setTimeout(() => {
-      cards[index].style.height = '200px';    // いきなり高さ成長！
+      // 位置は一切いじらず、高さだけアニメ
+      cards[index].style.height = '200px';
       cards[index].style.opacity = '1';
       reflections[index].style.height = '120px';
 
-      // 成長後にアニメ付与
       setTimeout(() => {
         cards[index].style.animation = 'glowPulse 3s infinite';
         reflections[index].style.animation = 'reflectionGlow 3s infinite';
         cardWrappers[index].classList.add('floating');
 
+        // 最後のカードが成長完了したら
         if (orderIndex === growOrder.length - 1) {
-          // ★成長完了してから初めて並べる
-          applyCardPositions(0);
-          showSwipeHint();
-          isSwipeEnabled = true;
-          setupSwipeEvents();
+          setTimeout(() => {
+            applyCardPositions(0); // 🌟 出現後に一発だけ並べ直す
+            showSwipeHint();
+            isSwipeEnabled = true;
+            setupSwipeEvents();
+          }, 500); // 安全のため0.5秒待つ
         }
-      }, 2000); // 成長完了後にアニメ付与
+      }, 2000);
     }, delay);
     delay += 300;
   });
