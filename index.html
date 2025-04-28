@@ -10,19 +10,18 @@
     #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:1000; color:white; }
     #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
     #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; filter: brightness(0.85); }
-    .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1200px; z-index: 20; }
+    .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
     .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
-    .card-wrapper { position: absolute; width: 320px; height: 200px; transform-style: preserve-3d; top: 0; left: calc(50% - 160px); transition: transform 0.5s ease-out, opacity 0.5s ease-out; }
-    .card { width: 100%; height: 100%; background: url('./assets/1waku.png') no-repeat center/cover; border-radius: 10px; filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.7)); opacity: 0.9; }
+    .card-wrapper { position: absolute; width: 280px; height: 180px; transform-style: preserve-3d; top: 0; left: calc(50% - 140px); transition: transform 0.6s ease-out, opacity 0.6s ease-out; }
+    .card { width: 100%; height: 100%; background: url('./assets/1waku.png') no-repeat center/cover; border-radius: 10px; filter: drop-shadow(0 0 8px rgba(0, 200, 255, 0.7)); opacity: 0.9; }
     .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); z-index:15; pointer-events:none; }
-    @keyframes spin { 0%{transform:rotate(0);} 100%{transform:rotate(360deg);} }
   </style>
 </head>
 <body>
   <div id="loading-screen">
     <div style="border:5px solid rgba(0,200,255,0.1); border-top:5px solid #00c8ff; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; margin-bottom:20px;"></div>
     <div>読み込み中...</div>
-    <button id="start-button" style="margin-top:20px; padding:15px 30px; background-color:#00a2ff; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">AR体験を開始</button>
+    <button id="start-button" style="margin-top:20px; padding:15px 30px; background:#00a2ff; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">AR体験を開始</button>
   </div>
 
   <div id="ar-container">
@@ -33,115 +32,96 @@
     </div>
   </div>
 
-  <script>
-    let activeCardIndex = 0;
-    let isSwipeEnabled = false;
-    const layoutConfig = {
-      radius: window.innerWidth * 1.2,
-      theta: Math.PI * 1.2, // ←前より弧を広げた
-      centerZ: -600,
-      cardWidth: 320,
-      cardSpacing: 1.5,
-    };
+<script>
+let activeCardIndex = 0;
+let isSwipeEnabled = false;
+const layoutConfig = {
+  radius: window.innerWidth * 1.8, // → 半径広め
+  theta: Math.PI * 1.6,            // → 弧を深く
+  centerZ: -800,                   // → Zを奥に
+  cardWidth: 280,
+  cardSpacing: 1.5,
+};
 
-    document.addEventListener("DOMContentLoaded", function() {
-      document.getElementById('start-button').addEventListener('click', () => {
-        document.getElementById('loading-screen').style.display = 'none';
-        initAR();
-      });
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById('start-button').addEventListener('click', () => {
+    document.getElementById('loading-screen').style.display = 'none';
+    initAR();
+  });
+});
+
+function initAR() {
+  document.getElementById('ar-container').style.display = 'block';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(stream => {
+      document.getElementById('camera-view').srcObject = stream;
+      createCards();
+    })
+    .catch(() => {
+      createCards();
     });
+}
 
-    function initAR() {
-      document.getElementById('ar-container').style.display = 'block';
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(stream => {
-          document.getElementById('camera-view').srcObject = stream;
-          createCards();
-          setTimeout(growCards, 1000);
-        })
-        .catch(() => {
-          createCards();
-          setTimeout(growCards, 1000);
-        });
-    }
+function createCards() {
+  const carousel = document.querySelector('.carousel');
+  const totalCards = 5;
+  activeCardIndex = Math.floor(totalCards / 2);
+  for (let i = 0; i < totalCards; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+    wrapper.innerHTML = `<div class="card"></div>`;
+    carousel.appendChild(wrapper);
+  }
+  applyCardPositions(0);
+  isSwipeEnabled = true;
+  setupSwipeEvents();
+}
 
-    function createCards() {
-      const carousel = document.querySelector('.carousel');
-      const totalCards = 5;
-      activeCardIndex = Math.floor(totalCards / 2);
-      for (let i = 0; i < totalCards; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
-        wrapper.innerHTML = `<div class="card"></div>`;
-        carousel.appendChild(wrapper);
-      }
-      applyCardPositions(0);
-    }
+function applyCardPositions(offset = 0) {
+  const wrappers = document.querySelectorAll('.card-wrapper');
+  const total = wrappers.length;
+  wrappers.forEach((wrapper, i) => {
+    let relIndex = i - activeCardIndex - offset;
+    if (relIndex < -total/2) relIndex += total;
+    if (relIndex > total/2) relIndex -= total;
+    const angleRatio = relIndex / (total/2);
+    const angle = angleRatio * (layoutConfig.theta/2);
+    const x = Math.sin(angle) * layoutConfig.radius;
+    const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
+    const rotateY = angleRatio * 60;
+    const scale = 1 - 0.4 * Math.abs(angleRatio);
+    const opacity = 1 - 0.5 * Math.abs(angleRatio);
 
-    function applyCardPositions(offset = 0) {
-      const wrappers = document.querySelectorAll('.card-wrapper');
-      const total = wrappers.length;
-      wrappers.forEach((wrapper, i) => {
-        let relIndex = i - activeCardIndex - offset;
-        if (relIndex < -total/2) relIndex += total;
-        if (relIndex > total/2) relIndex -= total;
-        const angleRatio = relIndex / (total/2);
-        const angle = angleRatio * (layoutConfig.theta / 2);
-        const x = Math.sin(angle) * layoutConfig.radius;
-        const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
-        const rotateY = angleRatio * 50;
-        const scale = 1 - 0.3 * Math.abs(angleRatio);
-        const opacity = 1 - 0.4 * Math.abs(angleRatio);
+    wrapper.style.transform = `
+      translateX(${x}px)
+      translateZ(${z}px)
+      rotateY(${rotateY}deg)
+      scale(${scale})
+    `;
+    wrapper.style.opacity = opacity;
+    wrapper.style.zIndex = 100 - Math.abs(Math.round(relIndex*10));
+  });
+}
 
-        wrapper.style.transform = `
-          translateX(${x}px)
-          translateZ(${z}px)
-          rotateY(${rotateY}deg)
-          scale(${scale})
-        `;
-        wrapper.style.opacity = opacity;
-        wrapper.style.zIndex = 100 - Math.abs(Math.round(relIndex*10));
-      });
-    }
+function setupSwipeEvents() {
+  let startX = 0;
+  document.addEventListener('touchstart', e => { if (!isSwipeEnabled) return; startX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => { if (!isSwipeEnabled) return; handleSwipe(e.changedTouches[0].clientX - startX); });
+  document.addEventListener('mousedown', e => { if (!isSwipeEnabled) return; startX = e.clientX; });
+  document.addEventListener('mouseup', e => { if (!isSwipeEnabled) return; handleSwipe(e.clientX - startX); });
+}
 
-    function growCards() {
-      applyCardPositions(0);
-      isSwipeEnabled = true;
-      setupSwipeEvents();
-    }
+function handleSwipe(diffX) {
+  const threshold = 50;
+  const total = document.querySelectorAll('.card-wrapper').length;
+  if (diffX > threshold) {
+    activeCardIndex = (activeCardIndex - 1 + total) % total;
+  } else if (diffX < -threshold) {
+    activeCardIndex = (activeCardIndex + 1) % total;
+  }
+  applyCardPositions(0);
+}
+</script>
 
-    function setupSwipeEvents() {
-      let startX = 0;
-      document.addEventListener('touchstart', e => {
-        if (!isSwipeEnabled) return;
-        startX = e.touches[0].clientX;
-      });
-      document.addEventListener('touchend', e => {
-        if (!isSwipeEnabled) return;
-        const diffX = e.changedTouches[0].clientX - startX;
-        handleSwipe(diffX);
-      });
-      document.addEventListener('mousedown', e => {
-        if (!isSwipeEnabled) return;
-        startX = e.clientX;
-      });
-      document.addEventListener('mouseup', e => {
-        if (!isSwipeEnabled) return;
-        const diffX = e.clientX - startX;
-        handleSwipe(diffX);
-      });
-    }
-
-    function handleSwipe(diffX) {
-      const threshold = 50;
-      const total = document.querySelectorAll('.card-wrapper').length;
-      if (diffX > threshold) {
-        activeCardIndex = (activeCardIndex - 1 + total) % total;
-      } else if (diffX < -threshold) {
-        activeCardIndex = (activeCardIndex + 1) % total;
-      }
-      applyCardPositions(0);
-    }
-  </script>
 </body>
 </html>
