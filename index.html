@@ -339,7 +339,8 @@
       }
       
       // 👇 ここで最初から並べておく！！高さ0だけど並べる！
-      applyCardPositions(0);
+      setTimeout(() => applyCardPositions(0), 100); 
+
     }
     
     // カード位置を適用（activeIndexとオフセットに基づいて）
