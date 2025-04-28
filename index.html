@@ -72,6 +72,7 @@
       bottom: 180px; /* キーボード表面の位置を調整 */
       transform-style: preserve-3d;
       transform: rotateX(15deg); /* やや斜め上からのアングル */
+      transition: transform 0.5s ease-out;
     }
     
     .card-wrapper {
@@ -81,17 +82,9 @@
       transform-style: preserve-3d;
       transition: all 0.5s ease-out;
       transform-origin: bottom center;
-      left: 50%; /* 中央配置の基準点 */
-      margin-left: -160px; /* カード幅の半分をネガティブマージンで中央寄せ */
-    }
-    
-    /* 位置制御用の内部コンテナ（浮遊アニメーションと分離） */
-    .card-position {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      transform-style: preserve-3d;
-      transition: all 0.5s ease-out;
+      /* 中央配置はtransformで行う */
+      top: 0;
+      left: 0;
     }
     
     .card {
@@ -238,9 +231,24 @@
   </div>
 
   <script>
+    // グローバル変数
+    let activeCardIndex = 0;
+    // カード配置のパラメータ
+    const layoutParams = {
+      radius: 0, // 初期化時に設定
+      theta: Math.PI / 2.0, // 弧の角度範囲（90度）
+      centerX: 0, // 初期化時に設定
+      centerZ: 0, // 初期化時に設定
+    };
+    
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
+      
+      // レイアウトパラメータを初期化
+      layoutParams.radius = window.innerWidth * 1.2; // 大きめの半径
+      layoutParams.centerX = window.innerWidth / 2;
+      layoutParams.centerZ = layoutParams.radius * 0.5;
       
       // 開始ボタンのイベント設定
       document.getElementById('start-button').addEventListener('click', function() {
@@ -291,23 +299,16 @@
         { title: "STEP 5", content: "完食" }
       ];
       
-      // 初期配置の弧を作るためのパラメータ
-      const radius = window.innerWidth * 1.2; // より広い弧のために大きな半径
-      const theta = Math.PI / 2; // 弧の角度範囲を90度に広げる
-      
-      // アクティブカードのインデックスを中央に設定
+      // 中央のカードをアクティブに設定
       activeCardIndex = Math.floor(totalCards / 2);
       
-      // カードを生成して配置
+      // カードを生成
       for (let i = 0; i < totalCards; i++) {
         // カードラッパーを作成
         const cardWrapper = document.createElement('div');
         cardWrapper.className = 'card-wrapper';
         cardWrapper.id = `card-wrapper-${i}`;
-        
-        // 位置制御用の内部コンテナを作成（浮遊アニメーションと分離）
-        const cardPosition = document.createElement('div');
-        cardPosition.className = 'card-position';
+        cardWrapper.dataset.index = i;
         
         // 実際のカードを作成
         const card = document.createElement('div');
@@ -323,64 +324,88 @@
         const reflection = document.createElement('div');
         reflection.className = 'card-reflection';
         
-        // 構造を構築: wrapper > position > card/reflection
-        cardPosition.appendChild(card);
-        cardPosition.appendChild(reflection);
-        cardWrapper.appendChild(cardPosition);
+        // カードラッパーに追加
+        cardWrapper.appendChild(card);
+        cardWrapper.appendChild(reflection);
         
         // カルーセルに追加
         carousel.appendChild(cardWrapper);
-        
-        // データ属性を設定
-        cardWrapper.dataset.index = i;
       }
       
-      // 初期カード配置を更新（出現前の位置）
+      // 初期カード配置を設定
       updateCardPositions();
-      
-      // スワイプイベントのセットアップ（出現演出完了後に実行）
-      // ※スワイプ制御は出現後に有効化
     }
     
-    // カード配置を更新（個別カードの位置・スケール・透明度を計算）
+    // カード配置を更新（カード個別のtransformとカルーセル全体のrotateYを調整）
     function updateCardPositions() {
       const cardWrappers = document.querySelectorAll('.card-wrapper');
       const totalCards = cardWrappers.length;
+      const carousel = document.querySelector('.carousel');
       
-      // 湾曲した弧を作るためのパラメータ
-      const radius = window.innerWidth * 1.2; // より広い弧のために大きな半径
-      const theta = Math.PI / 2; // 弧の角度範囲を90度に広げる
+      // カルーセル全体の回転角度を計算（中央のカードが正面を向くように）
+      const carouselRotation = -activeCardIndex * (layoutParams.theta / (totalCards - 1));
+      carousel.style.transform = `rotateX(15deg) rotateY(${carouselRotation}rad)`;
       
       // 各カードの位置を更新
       cardWrappers.forEach((wrapper, i) => {
-        // カードのインデックスをループ対応にする
-        let relativeIndex = (i - activeCardIndex) % totalCards;
-        if (relativeIndex < -Math.floor(totalCards / 2)) {
-          relativeIndex += totalCards;
-        } else if (relativeIndex > Math.floor(totalCards / 2)) {
-          relativeIndex -= totalCards;
-        }
+        // カードの角度位置を計算
+        const angle = (i / (totalCards - 1) - 0.5) * layoutParams.theta;
         
-        // 相対位置に基づく角度を計算（-theta/2からtheta/2の範囲）
-        const angle = (relativeIndex / (totalCards - 1)) * theta - (theta / 2);
+        // 角度に基づく位置を計算
+        const x = Math.sin(angle) * layoutParams.radius;
+        const z = -Math.cos(angle) * layoutParams.radius;
         
-        // 角度に基づく位置とスケールを計算
-        const x = Math.sin(angle) * radius;
-        const z = -Math.cos(angle) * radius + radius;
-        const scale = 1 - 0.2 * Math.abs(angle / (theta / 2)); // 中央が最大、端が小さい
-        const opacity = 1 - 0.4 * Math.abs(angle / (theta / 2)); // 中央が最も不透明
+        // 中心からの距離に基づくスケールと不透明度
+        const distanceFromCenter = Math.abs(i - activeCardIndex);
+        const maxDistance = Math.floor(totalCards / 2);
+        const scale = 1 - 0.2 * (distanceFromCenter / maxDistance);
+        const opacity = 1 - 0.4 * (distanceFromCenter / maxDistance);
         
-        // 位置制御用コンテナのスタイルを更新（浮遊アニメーションとは別）
-        const cardPosition = wrapper.querySelector('.card-position');
-        cardPosition.style.transform = `translateX(${x}px) translateZ(${-z}px) rotateY(${angle * 180 / Math.PI}deg) scale(${scale})`;
+        // カードの3D配置を設定（中央を基準に）
+        wrapper.style.transform = `translateX(${x}px) translateZ(${z}px) rotateY(${angle}rad) scale(${scale})`;
         wrapper.style.opacity = opacity;
         
         // Z-インデックスの調整（中央が最前面）
-        wrapper.style.zIndex = Math.floor(20 - Math.abs(relativeIndex) * 5);
+        wrapper.style.zIndex = 10 - distanceFromCenter;
       });
     }
     
-    // カードを成長させる（出現アニメーション）
+    // ドラッグ中の一時的なオフセットを適用した位置更新
+    function updateCardPositionsWithOffset(offset) {
+      const cardWrappers = document.querySelectorAll('.card-wrapper');
+      const totalCards = cardWrappers.length;
+      const carousel = document.querySelector('.carousel');
+      
+      // カルーセル全体の回転角度を計算（オフセット込み）
+      const tempActiveIndex = activeCardIndex - offset;
+      const carouselRotation = -tempActiveIndex * (layoutParams.theta / (totalCards - 1));
+      carousel.style.transform = `rotateX(15deg) rotateY(${carouselRotation}rad)`;
+      
+      // 各カードの位置を更新
+      cardWrappers.forEach((wrapper, i) => {
+        // カードの角度位置を計算（変更なし）
+        const angle = (i / (totalCards - 1) - 0.5) * layoutParams.theta;
+        
+        // 角度に基づく位置を計算
+        const x = Math.sin(angle) * layoutParams.radius;
+        const z = -Math.cos(angle) * layoutParams.radius;
+        
+        // 中心からの距離に基づくスケールと不透明度（オフセット込み）
+        const distanceFromCenter = Math.abs(i - tempActiveIndex);
+        const maxDistance = Math.floor(totalCards / 2);
+        const scale = 1 - 0.2 * (distanceFromCenter / maxDistance);
+        const opacity = 1 - 0.4 * (distanceFromCenter / maxDistance);
+        
+        // カードの3D配置を設定（中央を基準に）
+        wrapper.style.transform = `translateX(${x}px) translateZ(${z}px) rotateY(${angle}rad) scale(${scale})`;
+        wrapper.style.opacity = opacity;
+        
+        // Z-インデックスの調整（中央が最前面）
+        wrapper.style.zIndex = 10 - distanceFromCenter;
+      });
+    }
+    
+    // カードを成長させる
     function growCards() {
       const cards = document.querySelectorAll('.card');
       const reflections = document.querySelectorAll('.card-reflection');
@@ -421,10 +446,12 @@
               cards[index].style.animation = 'glowPulse 3s infinite';
               reflections[index].style.animation = 'reflectionGlow 3s infinite';
               
-              // わずかに浮遊するアニメーション（カードラッパー自体に適用）
+              // わずかに浮遊するアニメーション
+              // 注意: これはカードの位置制御と干渉しないCSS animationのみを適用
+              // cardWrappers[index].classList.add('floating');  // CSSクラスで制御する方法もある
               cardWrappers[index].style.animation = 'float 4s ease-in-out infinite';
               
-              // 最後のカードが成長したらスワイプヒントを表示とスワイプイベントを有効化
+              // 最後のカードが成長したらスワイプヒントを表示
               if (orderIndex === growOrder.length - 1) {
                 showSwipeHint();
                 // 成長アニメーション完了後にスワイプ機能を有効化
@@ -449,7 +476,7 @@
       }, 10000);
     }
     
-    // スワイプイベントのセットアップ（出現アニメーション完了後に実行）
+    // スワイプイベントのセットアップ
     function setupSwipeEvents() {
       let startX = 0;
       let currentX = 0;
@@ -466,10 +493,14 @@
         if (!isSwiping) return;
         currentX = e.touches[0].clientX;
         
-        // ドラッグ中のリアルタイムなカード移動（オプション）
-        if (Math.abs(currentX - startX) > 10) {
-          // 一時的な擬似的なアクティブインデックスで位置更新
-          const tempOffset = (currentX - startX) / 100; // 感度調整
+        // ドラッグ中のリアルタイムなカード移動（滑らかさ向上）
+        if (Math.abs(currentX - startX) > 5) {
+          // 一時的なオフセットを計算（スワイプ距離からオフセット値を生成）
+          const dragDistance = currentX - startX;
+          const offsetRange = window.innerWidth / 5; // 感度調整
+          const tempOffset = dragDistance / offsetRange; // -1.0〜1.0の範囲に正規化
+          
+          // オフセット込みでカード位置を更新
           updateCardPositionsWithOffset(tempOffset);
         }
       });
@@ -492,10 +523,14 @@
         if (!isSwiping) return;
         currentX = e.clientX;
         
-        // ドラッグ中のリアルタイムなカード移動（オプション）
-        if (Math.abs(currentX - startX) > 10) {
-          // 一時的な擬似的なアクティブインデックスで位置更新
-          const tempOffset = (currentX - startX) / 100; // 感度調整
+        // ドラッグ中のリアルタイムなカード移動（滑らかさ向上）
+        if (Math.abs(currentX - startX) > 5) {
+          // 一時的なオフセットを計算（スワイプ距離からオフセット値を生成）
+          const dragDistance = currentX - startX;
+          const offsetRange = window.innerWidth / 5; // 感度調整
+          const tempOffset = dragDistance / offsetRange; // -1.0〜1.0の範囲に正規化
+          
+          // オフセット込みでカード位置を更新
           updateCardPositionsWithOffset(tempOffset);
         }
       });
@@ -526,44 +561,6 @@
           updateCardPositions();
         }
       }
-    }
-    
-    // ドラッグ中の一時的なオフセットを適用した位置更新
-    function updateCardPositionsWithOffset(offset) {
-      const cardWrappers = document.querySelectorAll('.card-wrapper');
-      const totalCards = cardWrappers.length;
-      
-      // 湾曲した弧を作るためのパラメータ
-      const radius = window.innerWidth * 1.2; // より広い弧のために大きな半径
-      const theta = Math.PI / 2; // 弧の角度範囲を90度に広げる
-      
-      // 各カードの位置を更新
-      cardWrappers.forEach((wrapper, i) => {
-        // 一時的なオフセット込みでインデックスを計算
-        let relativeIndex = (i - activeCardIndex - offset) % totalCards;
-        if (relativeIndex < -Math.floor(totalCards / 2)) {
-          relativeIndex += totalCards;
-        } else if (relativeIndex > Math.floor(totalCards / 2)) {
-          relativeIndex -= totalCards;
-        }
-        
-        // 相対位置に基づく角度を計算（-theta/2からtheta/2の範囲）
-        const angle = (relativeIndex / (totalCards - 1)) * theta - (theta / 2);
-        
-        // 角度に基づく位置とスケールを計算
-        const x = Math.sin(angle) * radius;
-        const z = -Math.cos(angle) * radius + radius;
-        const scale = 1 - 0.2 * Math.abs(angle / (theta / 2)); // 中央が最大、端が小さい
-        const opacity = 1 - 0.4 * Math.abs(angle / (theta / 2)); // 中央が最も不透明
-        
-        // 位置制御用コンテナのスタイルを更新（浮遊アニメーションとは別）
-        const cardPosition = wrapper.querySelector('.card-position');
-        cardPosition.style.transform = `translateX(${x}px) translateZ(${-z}px) rotateY(${angle * 180 / Math.PI}deg) scale(${scale})`;
-        wrapper.style.opacity = opacity;
-        
-        // Z-インデックスの調整（中央が最前面）
-        wrapper.style.zIndex = Math.floor(20 - Math.abs(relativeIndex) * 5);
-      });
     }
   </script>
 </body>
