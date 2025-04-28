@@ -140,7 +140,22 @@
       }
     }
     
-   
+    @keyframes float {
+      0% {
+        transform: translateY(0px);
+      }
+      50% {
+        transform: translateY(-5px);
+      }
+      100% {
+        transform: translateY(0px);
+      }
+    }
+    
+    /* 浮遊アニメーション用のクラス */
+    .floating {
+      animation: float 4s ease-in-out infinite;
+    }
     
     /* スワイプ誘導インジケーター */
     .swipe-hint {
@@ -332,43 +347,26 @@
       const cardWrappers = document.querySelectorAll('.card-wrapper');
       const totalCards = cardWrappers.length;
       
-      // 各カードの位置を更新
       cardWrappers.forEach((wrapper, i) => {
-        // 実際のインデックス位置を計算（アクティブインデックスとオフセットを考慮）
-        // オフセットは -1.0 〜 1.0 の小数値
         const relativeIndex = i - activeCardIndex - offset;
-        
-        // 相対位置を -2.0 〜 2.0 の範囲に正規化（5枚カードの場合）
         let normalizedIndex = relativeIndex;
-        
-        // 無限ループのため、端から端へのワープを処理
         if (normalizedIndex < -Math.floor(totalCards / 2) - 0.5) {
           normalizedIndex += totalCards;
         } else if (normalizedIndex > Math.floor(totalCards / 2) + 0.5) {
           normalizedIndex -= totalCards;
         }
-        
-        // 角度を計算（中央が0、左右に広がる）
-        // 正規化された位置を -2.0 〜 2.0 の範囲から、角度範囲 -theta/2 〜 theta/2 にマッピング
-        const maxPosition = Math.floor(totalCards / 2);
-        const angle = (normalizedIndex / maxPosition) * (layoutConfig.theta / 2);
-        
-        // 位置を計算（円弧上の座標）
-        const x = Math.sin(angle) * layoutConfig.radius;
-        // Z座標は円弧の一部を形成、中央が最も手前に
-        const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius - layoutConfig.radius;
-        
-        // スケールと不透明度を計算（中央ほど大きく明るく）
-        const distanceRatio = Math.abs(normalizedIndex) / maxPosition;
+        // 👇 このあたりから、さっき送った新ロジックに**全部**書き換える！
+        const angle = (normalizedIndex / totalCards) * 2 * Math.PI;
+        const radius = layoutConfig.radius;
+        const centerZ = layoutConfig.centerZ;
+        const x = Math.sin(angle) * radius;
+        const z = centerZ + Math.cos(angle) * radius;
+        const distanceRatio = Math.min(Math.abs(normalizedIndex) / (totalCards / 2), 1);
         const scale = layoutConfig.maxScale - (layoutConfig.maxScale - layoutConfig.minScale) * distanceRatio;
         const opacity = layoutConfig.maxOpacity - (layoutConfig.maxOpacity - layoutConfig.minOpacity) * distanceRatio;
-        
-        // 3D配置を設定
         wrapper.style.transform = `translateX(${x}px) translateZ(${z}px) rotateY(${angle}rad) scale(${scale})`;
         wrapper.style.opacity = opacity;
-        
-        // Z-インデックスの調整（中央が最前面）
-        wrapper.style.zIndex = 10 - Math.abs(Math.round(normalizedIndex * 2));
+        wrapper.style.zIndex = 10 - Math.round(Math.abs(normalizedIndex) * 2);
       });
     }
     
