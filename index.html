@@ -399,30 +399,29 @@
   let delay = 0;
   growOrder.forEach((index, orderIndex) => {
     setTimeout(() => {
-      cards[index].style.height = '10px';
-      reflections[index].style.height = '6px';
-      setTimeout(() => {
-        cards[index].style.height = '200px';
-        cards[index].style.opacity = '1';
-        reflections[index].style.height = '120px';
-        setTimeout(() => {
-          cards[index].style.animation = 'glowPulse 3s infinite';
-          reflections[index].style.animation = 'reflectionGlow 3s infinite';
-          cardWrappers[index].classList.add('floating');
+      cards[index].style.height = '200px';    // いきなり高さ成長！
+      cards[index].style.opacity = '1';
+      reflections[index].style.height = '120px';
 
-          // ★ 出現完了後に一発だけ正しく並べ直す！
-          if (orderIndex === growOrder.length - 1) {
-            showSwipeHint();
-            isSwipeEnabled = true;
-            applyCardPositions(0); // ←これが超重要！！
-            setupSwipeEvents();
-          }
-        }, 2000);
-      }, 500);
+      // 成長後にアニメ付与
+      setTimeout(() => {
+        cards[index].style.animation = 'glowPulse 3s infinite';
+        reflections[index].style.animation = 'reflectionGlow 3s infinite';
+        cardWrappers[index].classList.add('floating');
+
+        if (orderIndex === growOrder.length - 1) {
+          // ★成長完了してから初めて並べる
+          applyCardPositions(0);
+          showSwipeHint();
+          isSwipeEnabled = true;
+          setupSwipeEvents();
+        }
+      }, 2000); // 成長完了後にアニメ付与
     }, delay);
     delay += 300;
   });
 }
+
 
     
     // スワイプヒントを表示
