@@ -53,6 +53,7 @@
       height: 100%;
       object-fit: cover;
       z-index: 10;
+      filter: brightness(0.85); /* 背景をやや暗く */
     }
     
     .scene {
@@ -60,18 +61,26 @@
       width: 100%;
       height: 100%;
       transform-style: preserve-3d;
-      perspective: 1000px;
+      perspective: 1500px;
       z-index: 20;
+    }
+    
+    .carousel {
+      position: absolute;
+      width: 100%;
+      height: 300px;
+      bottom: 180px; /* キーボード表面の位置を調整 */
+      transform-style: preserve-3d;
+      transform: rotateX(15deg); /* やや斜め上からのアングル */
+      transition: transform 0.5s ease-out;
     }
     
     .card-wrapper {
       position: absolute;
-      width: 300px;
-      height: 500px;
-      bottom: 180px; /* キーボード表面の位置を調整 */
-      left: 50%;
-      transform: translateX(-50%) rotateX(15deg); /* やや斜め上からのアングル */
+      width: 320px;
+      height: 200px; /* 横型カード */
       transform-style: preserve-3d;
+      transition: all 0.5s ease-out;
       transform-origin: bottom center;
     }
     
@@ -86,6 +95,8 @@
       filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.7));
       opacity: 0.9; /* 最初は少し透明 */
       transition: height 2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
     }
     
     .card-reflection {
@@ -97,9 +108,10 @@
       background-image: url('./assets/1waku.png');
       background-size: cover;
       background-position: bottom center;
-      opacity: 0.5; /* 反射は透明度高め */
-      filter: blur(3px) brightness(1); /* ぼかして暗く */
+      opacity: 0.3; /* 反射は透明度高め */
+      filter: blur(3px) brightness(0.7); /* ぼかして暗く */
       transition: height 2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      border-radius: 10px;
     }
     
     @keyframes glowPulse {
@@ -128,14 +140,59 @@
     
     @keyframes float {
       0% {
-        transform: translateX(-50%) rotateX(15deg) translateY(0px);
+        transform: translateY(0px);
       }
       50% {
-        transform: translateX(-50%) rotateX(15deg) translateY(-5px);
+        transform: translateY(-5px);
       }
       100% {
-        transform: translateX(-50%) rotateX(15deg) translateY(0px);
+        transform: translateY(0px);
       }
+    }
+    
+    /* スワイプ誘導インジケーター */
+    .swipe-hint {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(0, 200, 255, 0.8);
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 1s ease;
+      z-index: 100;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+    }
+    
+    .swipe-arrows {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    
+    .swipe-arrow {
+      margin: 0 20px;
+      font-size: 24px;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.3; transform: scale(1); }
+    }
+    
+    /* 暗いオーバーレイ */
+    .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%);
+      z-index: 15;
+      pointer-events: none;
     }
     
     @keyframes spin {
@@ -153,11 +210,19 @@
 
   <div id="ar-container">
     <video id="camera-view" autoplay playsinline></video>
+    <div class="overlay"></div>
     
     <div class="scene">
-      <div class="card-wrapper">
-        <div class="card"></div>
-        <div class="card-reflection"></div>
+      <div class="carousel">
+        <!-- カードはJavaScriptで動的に生成されます -->
+      </div>
+    </div>
+    
+    <div class="swipe-hint">
+      スワイプでカードを切り替え
+      <div class="swipe-arrows">
+        <div class="swipe-arrow">←</div>
+        <div class="swipe-arrow">→</div>
       </div>
     </div>
   </div>
@@ -186,48 +251,248 @@
         .then(function(stream) {
           document.getElementById('camera-view').srcObject = stream;
           
+          // カード群を生成
+          createCards();
+          
           // カメラ起動後、カードを表示
-          setTimeout(growCard, 1000);
+          setTimeout(growCards, 1000);
         })
         .catch(function(err) {
           console.error("カメラエラー:", err);
           console.log("カメラは使用できませんが、デモモードで続行します");
           
+          // カード群を生成
+          createCards();
+          
           // カメラなしでもカードを表示
-          setTimeout(growCard, 1000);
+          setTimeout(growCards, 1000);
         });
     }
     
+    // カード群を生成
+    function createCards() {
+      const carousel = document.querySelector('.carousel');
+      const totalCards = 5; // カードの総数
+      const cardData = [
+        { title: "STEP 1", content: "底の方からしっかり混ぜる！" },
+        { title: "STEP 2", content: "よく混ぜる" },
+        { title: "STEP 3", content: "最初の一口" },
+        { title: "STEP 4", content: "追いニンニク" },
+        { title: "STEP 5", content: "完食" }
+      ];
+      
+      // 湾曲した弧を作るためのパラメータ
+      const radius = window.innerWidth * 0.8; // 弧の半径
+      const theta = Math.PI / 4; // 弧の角度範囲
+      
+      // カードを生成して配置
+      for (let i = 0; i < totalCards; i++) {
+        // カードラッパーを作成
+        const cardWrapper = document.createElement('div');
+        cardWrapper.className = 'card-wrapper';
+        cardWrapper.id = `card-wrapper-${i}`;
+        
+        // カードの角度位置を計算（-theta/2からtheta/2の範囲）
+        const angle = (i / (totalCards - 1) - 0.5) * theta;
+        
+        // 角度に基づく位置とスケールを計算
+        const x = Math.sin(angle) * radius;
+        const z = -Math.cos(angle) * radius + radius;
+        const scale = 1 - 0.2 * Math.abs(angle / (theta / 2)); // 中央が最大、端が小さい
+        const opacity = 1 - 0.4 * Math.abs(angle / (theta / 2)); // 中央が最も不透明
+        
+        // カードラッパーのスタイルを設定
+        cardWrapper.style.transform = `translateX(${x}px) translateZ(${-z}px) rotateY(${angle * 180 / Math.PI}deg) scale(${scale})`;
+        cardWrapper.style.opacity = opacity;
+        cardWrapper.dataset.index = i;
+        
+        // 実際のカードを作成
+        const card = document.createElement('div');
+        card.className = 'card';
+        
+        // カードの内容を設定（後で表示用のテキストを追加可能）
+        card.innerHTML = `
+          <div style="position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold; text-shadow: 0 0 5px rgba(0, 200, 255, 0.8);">${cardData[i].title}</div>
+          <div style="position: absolute; top: 60px; left: 20px; color: white; font-size: 16px; width: 90%; text-shadow: 0 0 5px rgba(0, 200, 255, 0.5);">${cardData[i].content}</div>
+        `;
+        
+        // 反射を作成
+        const reflection = document.createElement('div');
+        reflection.className = 'card-reflection';
+        
+        // カードラッパーに追加
+        cardWrapper.appendChild(card);
+        cardWrapper.appendChild(reflection);
+        
+        // カルーセルに追加
+        carousel.appendChild(cardWrapper);
+      }
+      
+      // 中央のカードをアクティブに
+      activeCardIndex = Math.floor(totalCards / 2);
+      
+      // スワイプイベントのセットアップ
+      setupSwipeEvents();
+    }
+    
     // カードを成長させる
-    function growCard() {
-      const card = document.querySelector('.card');
-      const reflection = document.querySelector('.card-reflection');
-      const cardWrapper = document.querySelector('.card-wrapper');
+    function growCards() {
+      const cards = document.querySelectorAll('.card');
+      const reflections = document.querySelectorAll('.card-reflection');
+      const cardWrappers = document.querySelectorAll('.card-wrapper');
       
-      // キーボード表面から、カードが生えてくるアニメーション
-      // 最初にカードの根元だけが見える（高さ10pxくらい）
-      card.style.height = '10px';
-      reflection.style.height = '6px';
+      // 中央から順に生えてくるように順番を設定
+      const growOrder = []; 
+      const midIndex = Math.floor(cards.length / 2);
       
-      // 少し待って、徐々に伸びていくアニメーション
-      setTimeout(() => {
-        // カードが伸びる
-        card.style.height = '500px';
-        card.style.opacity = '1'; // 完全に不透明になる
+      // 中央から両端への順番を作成
+      for (let i = 0; i <= midIndex; i++) {
+        growOrder.push(midIndex - i); // 中央から左
+        if (midIndex + i < cards.length && midIndex + i !== midIndex) {
+          growOrder.push(midIndex + i); // 中央から右
+        }
+      }
+      
+      // 一つずつ成長させる
+      let delay = 0;
+      growOrder.forEach((index, orderIndex) => {
+        setTimeout(() => {
+          // 最初にカードの根元だけが見える（高さ10pxくらい）
+          cards[index].style.height = '10px';
+          reflections[index].style.height = '6px';
+          
+          // 少し待って、徐々に伸びていくアニメーション
+          setTimeout(() => {
+            // カードが伸びる
+            cards[index].style.height = '200px'; // 横型カード
+            cards[index].style.opacity = '1'; // 完全に不透明になる
+            
+            // 反射も同時に伸びる
+            reflections[index].style.height = '120px'; // 反射はカードよりやや短め
+            
+            // 伸び終わった後の処理
+            setTimeout(() => {
+              // グロー効果を適用
+              cards[index].style.animation = 'glowPulse 3s infinite';
+              reflections[index].style.animation = 'reflectionGlow 3s infinite';
+              
+              // わずかに浮遊するアニメーション
+              cardWrappers[index].style.animation = 'float 4s ease-in-out infinite';
+              
+              // 最後のカードが成長したらスワイプヒントを表示
+              if (orderIndex === growOrder.length - 1) {
+                showSwipeHint();
+              }
+            }, 2000);
+          }, 500);
+        }, delay);
         
-        // 反射も同時に伸びる
-        reflection.style.height = '300px'; // 反射はカードよりやや短め
-      }, 500);
+        delay += 300; // カード間の成長遅延
+      });
+    }
+    
+    // スワイプヒントを表示
+    function showSwipeHint() {
+      const swipeHint = document.querySelector('.swipe-hint');
+      swipeHint.style.opacity = '1';
       
-      // 伸び終わった後の処理
+      // 10秒後に非表示
       setTimeout(() => {
-        // グロー効果を適用
-        card.style.animation = 'glowPulse 3s infinite';
-        reflection.style.animation = 'reflectionGlow 3s infinite';
+        swipeHint.style.opacity = '0';
+      }, 10000);
+    }
+    
+    // スワイプイベントのセットアップ
+    function setupSwipeEvents() {
+      const carousel = document.querySelector('.carousel');
+      let startX = 0;
+      let currentX = 0;
+      let isSwiping = false;
+      
+      // タッチイベント
+      document.addEventListener('touchstart', function(e) {
+        startX = e.touches[0].clientX;
+        isSwiping = true;
+      });
+      
+      document.addEventListener('touchmove', function(e) {
+        if (!isSwiping) return;
+        currentX = e.touches[0].clientX;
+      });
+      
+      document.addEventListener('touchend', function(e) {
+        if (!isSwiping) return;
+        const diffX = currentX - startX;
+        handleSwipe(diffX);
+        isSwiping = false;
+      });
+      
+      // マウスイベント
+      document.addEventListener('mousedown', function(e) {
+        startX = e.clientX;
+        isSwiping = true;
+      });
+      
+      document.addEventListener('mousemove', function(e) {
+        if (!isSwiping) return;
+        currentX = e.clientX;
+      });
+      
+      document.addEventListener('mouseup', function(e) {
+        if (!isSwiping) return;
+        const diffX = currentX - startX;
+        handleSwipe(diffX);
+        isSwiping = false;
+      });
+      
+      // スワイプ処理
+      function handleSwipe(diffX) {
+        const threshold = 50; // スワイプと判定する最小の距離
+        const cardWrappers = document.querySelectorAll('.card-wrapper');
+        const maxIndex = cardWrappers.length - 1;
         
-        // わずかに浮遊するアニメーション
-        cardWrapper.style.animation = 'float 4s ease-in-out infinite';
-      }, 2500);
+        if (diffX > threshold && activeCardIndex > 0) {
+          // 右スワイプ（前のカード）
+          activeCardIndex--;
+          updateCarouselPosition();
+        } else if (diffX < -threshold && activeCardIndex < maxIndex) {
+          // 左スワイプ（次のカード）
+          activeCardIndex++;
+          updateCarouselPosition();
+        }
+      }
+    }
+    
+    // カルーセル位置の更新
+    function updateCarouselPosition() {
+      const cardWrappers = document.querySelectorAll('.card-wrapper');
+      const totalCards = cardWrappers.length;
+      const carousel = document.querySelector('.carousel');
+      
+      // 湾曲した弧を作るためのパラメータ
+      const radius = window.innerWidth * 0.8; // 弧の半径
+      const theta = Math.PI / 4; // 弧の角度範囲
+      
+      // 中央のカードを基準とした回転角を計算
+      const rotationOffset = (activeCardIndex - Math.floor(totalCards / 2)) * (-theta / (totalCards - 1));
+      carousel.style.transform = `rotateX(15deg) rotateY(${rotationOffset * 180 / Math.PI}deg)`;
+      
+      // 各カードの不透明度とスケールを更新
+      cardWrappers.forEach((wrapper, i) => {
+        const angle = (i / (totalCards - 1) - 0.5) * theta;
+        const adjustedAngle = angle + rotationOffset;
+        const scale = 1 - 0.2 * Math.abs(adjustedAngle / (theta / 2));
+        const opacity = 1 - 0.4 * Math.abs(adjustedAngle / (theta / 2));
+        
+        wrapper.style.opacity = opacity;
+        
+        // アクティブなカードに強調効果
+        if (i === activeCardIndex) {
+          wrapper.style.zIndex = '100';
+        } else {
+          wrapper.style.zIndex = '1';
+        }
+      });
     }
   </script>
 </body>
