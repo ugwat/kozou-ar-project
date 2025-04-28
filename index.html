@@ -384,6 +384,8 @@
     
     // カードを成長させる
     function growCards() {
+  applyCardPositions(0); // ⭐️ 出現開始時に必ずtransformセット
+  
   const cards = document.querySelectorAll('.card');
   const reflections = document.querySelectorAll('.card-reflection');
   const cardWrappers = document.querySelectorAll('.card-wrapper');
@@ -400,8 +402,7 @@
   let delay = 0;
   growOrder.forEach((index, orderIndex) => {
     setTimeout(() => {
-      // 位置は一切いじらず、高さだけアニメ
-      cards[index].style.height = '200px';
+      cards[index].style.height = '200px';    // 高さだけ伸ばす（transform触らない）
       cards[index].style.opacity = '1';
       reflections[index].style.height = '120px';
 
@@ -410,21 +411,19 @@
         reflections[index].style.animation = 'reflectionGlow 3s infinite';
         cardWrappers[index].classList.add('floating');
 
-        // 最後のカードが成長完了したら
         if (orderIndex === growOrder.length - 1) {
           setTimeout(() => {
-            applyCardPositions(0); // 🌟 出現後に一発だけ並べ直す
+            applyCardPositions(0); // ⭐️ 成長後にも一発だけtransform再適用
             showSwipeHint();
             isSwipeEnabled = true;
             setupSwipeEvents();
-          }, 500); // 安全のため0.5秒待つ
+          }, 500); // 念のため成長完了を待ってから
         }
       }, 2000);
     }, delay);
     delay += 300;
   });
 }
-
 
     
     // スワイプヒントを表示
