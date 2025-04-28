@@ -344,31 +344,42 @@
     
     // カード位置を適用（activeIndexとオフセットに基づいて）
     function applyCardPositions(offset = 0) {
-      const cardWrappers = document.querySelectorAll('.card-wrapper');
-      const totalCards = cardWrappers.length;
-      
-      cardWrappers.forEach((wrapper, i) => {
-        const relativeIndex = i - activeCardIndex - offset;
-        let normalizedIndex = relativeIndex;
-        if (normalizedIndex < -Math.floor(totalCards / 2) - 0.5) {
-          normalizedIndex += totalCards;
-        } else if (normalizedIndex > Math.floor(totalCards / 2) + 0.5) {
-          normalizedIndex -= totalCards;
-        }
-        // 👇 このあたりから、さっき送った新ロジックに**全部**書き換える！
-        const angle = (normalizedIndex / totalCards) * 2 * Math.PI;
-        const radius = layoutConfig.radius;
-        const centerZ = layoutConfig.centerZ;
-        const x = Math.sin(angle) * radius;
-        const z = centerZ + Math.cos(angle) * radius;
-        const distanceRatio = Math.min(Math.abs(normalizedIndex) / (totalCards / 2), 1);
-        const scale = layoutConfig.maxScale - (layoutConfig.maxScale - layoutConfig.minScale) * distanceRatio;
-        const opacity = layoutConfig.maxOpacity - (layoutConfig.maxOpacity - layoutConfig.minOpacity) * distanceRatio;
-        wrapper.style.transform = `translateX(${x}px) translateZ(${z}px) rotateY(${angle}rad) scale(${scale})`;
-        wrapper.style.opacity = opacity;
-        wrapper.style.zIndex = 10 - Math.round(Math.abs(normalizedIndex) * 2);
-      });
+  const cardWrappers = document.querySelectorAll('.card-wrapper');
+  const totalCards = cardWrappers.length;
+
+  cardWrappers.forEach((wrapper, i) => {
+    const relativeIndex = i - activeCardIndex - offset;
+    let normalizedIndex = relativeIndex;
+
+    if (normalizedIndex < -Math.floor(totalCards / 2) - 0.5) {
+      normalizedIndex += totalCards;
+    } else if (normalizedIndex > Math.floor(totalCards / 2) + 0.5) {
+      normalizedIndex -= totalCards;
     }
+
+    const maxPosition = Math.floor(totalCards / 2);
+    const angleRatio = (normalizedIndex / maxPosition); // -1〜1の範囲
+    const angle = angleRatio * (layoutConfig.theta / 2); // カーブの角度
+    const rotateY = angleRatio * 40; // カード自体の向きもカーブに合わせる（ここ調整できる）
+
+    const x = Math.sin(angle) * layoutConfig.radius;
+    const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius - layoutConfig.radius;
+
+    const distanceRatio = Math.abs(normalizedIndex) / maxPosition;
+    const scale = layoutConfig.maxScale - (layoutConfig.maxScale - layoutConfig.minScale) * distanceRatio;
+    const opacity = layoutConfig.maxOpacity - (layoutConfig.maxOpacity - layoutConfig.minOpacity) * distanceRatio;
+
+    wrapper.style.transform = `
+      translateX(${x}px)
+      translateZ(${z}px)
+      rotateY(${rotateY}deg)
+      scale(${scale})
+    `;
+    wrapper.style.opacity = opacity;
+    wrapper.style.zIndex = 10 - Math.abs(Math.round(normalizedIndex * 2));
+  });
+}
+
     
     // カードを成長させる
     function growCards() {
