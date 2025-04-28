@@ -389,18 +389,22 @@
     
     // カードを成長させる
     function growCards() {
-      const cards = document.querySelectorAll('.card');
-      const reflections = document.querySelectorAll('.card-reflection');
-      const cardWrappers = document.querySelectorAll('.card-wrapper');
-      
-      const growOrder = []; 
-      const midIndex = Math.floor(cards.length / 2);
-      for (let i = 0; i <= midIndex; i++) {
-        growOrder.push(midIndex - i);
-        if (midIndex + i < cards.length && midIndex + i !== midIndex) {
-          growOrder.push(midIndex + i);
-        }
-      }
+  const cards = document.querySelectorAll('.card');
+  const reflections = document.querySelectorAll('.card-reflection');
+  const cardWrappers = document.querySelectorAll('.card-wrapper');
+  
+  // ★追加！ここで成長開始時に一発「並べ直し」をする！！
+  applyCardPositions(0);
+
+  const growOrder = [];
+  const midIndex = Math.floor(cards.length / 2);
+  for (let i = 0; i <= midIndex; i++) {
+    growOrder.push(midIndex - i);
+    if (midIndex + i < cards.length && midIndex + i !== midIndex) {
+      growOrder.push(midIndex + i);
+    }
+  }
+
       let delay = 0;
       growOrder.forEach((index, orderIndex) => {
         setTimeout(() => {
