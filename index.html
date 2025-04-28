@@ -142,13 +142,13 @@
     
     @keyframes float {
       0% {
-        transform: translateY(0px) translateX(0px) translateZ(0px) rotateY(0deg);
+        transform: translateY(0px);
       }
       50% {
-        transform: translateY(-5px) translateX(0px) translateZ(0px) rotateY(0deg);
+        transform: translateY(-5px);
       }
       100% {
-        transform: translateY(0px) translateX(0px) translateZ(0px) rotateY(0deg);
+        transform: translateY(0px);
       }
     }
     
@@ -237,8 +237,20 @@
   <script>
     // グローバル変数
     let activeCardIndex = 0;
-    let cardPositions = []; // カードの位置情報を保存
     let isSwipeEnabled = false; // スワイプ有効フラグ（出現後に有効化）
+    
+    // レイアウトパラメータ（共通設定）
+    const layoutConfig = {
+      radius: window.innerWidth * 1.5, // より大きな半径で弧を広げる
+      theta: Math.PI * 0.6, // 約108度の弧
+      centerZ: -300, // Z軸オフセット（手前に引き出す）
+      cardWidth: 320, // カード幅
+      cardSpacing: 1.5, // カード間の間隔係数
+      maxScale: 1.0, // 中央カードのスケール
+      minScale: 0.7, // 端のカードのスケール
+      maxOpacity: 1.0, // 中央カードの不透明度
+      minOpacity: 0.6 // 端のカードの不透明度
+    };
     
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
@@ -326,53 +338,8 @@
         carousel.appendChild(cardWrapper);
       }
       
-      // 初期カード配置を計算
-      calculateCardPositions();
-      
       // 初期位置を適用
       applyCardPositions(0); // オフセットなし
-    }
-    
-    // カード位置を計算（初期位置と再配置共通のロジック）
-    function calculateCardPositions() {
-      const totalCards = document.querySelectorAll('.card-wrapper').length;
-      const screenWidth = window.innerWidth;
-      
-      // カード配置パラメータ
-      const radius = screenWidth * 1.5; // より大きな半径で弧を広げる
-      const theta = Math.PI * 0.6; // 約108度の弧
-      const centerZ = -300; // Z軸オフセット（手前に引き出す）
-      
-      // 位置情報を初期化
-      cardPositions = [];
-      
-      // 各カードの位置を計算
-      for (let i = 0; i < totalCards; i++) {
-        // カードのインデックスを中央を0とする相対値に変換 (-2, -1, 0, 1, 2)
-        const relIndex = i - Math.floor(totalCards / 2);
-        
-        // 角度を計算（中央が0度、左右に広がる）
-        const angle = (relIndex / (totalCards - 1)) * theta;
-        
-        // 円弧上の位置を計算
-        const x = Math.sin(angle) * radius;
-        const z = centerZ + Math.cos(angle) * radius - radius;
-        
-        // 相対位置に基づくスケールと不透明度
-        const distanceRatio = Math.abs(relIndex) / Math.floor(totalCards / 2);
-        const scale = 1 - 0.25 * distanceRatio; // 中央が1.0、端が0.75
-        const opacity = 1 - 0.4 * distanceRatio; // 中央が1.0、端が0.6
-        
-        // 位置情報を保存
-        cardPositions.push({
-          x: x,
-          z: z,
-          rotY: angle, // Y軸回転（弧に沿って）
-          scale: scale,
-          opacity: opacity,
-          zIndex: 10 - Math.abs(relIndex) // Z-インデックス（中央が最前面）
-        });
-      }
     }
     
     // カード位置を適用（activeIndexとオフセットに基づいて）
@@ -382,27 +349,41 @@
       
       // 各カードの位置を更新
       cardWrappers.forEach((wrapper, i) => {
-        // アクティブインデックスとオフセットを考慮した相対位置
-        let relativePos = (i - activeCardIndex + offset + totalCards) % totalCards;
+        // 実際のインデックス位置を計算（アクティブインデックスとオフセットを考慮）
+        // オフセットは -1.0 〜 1.0 の小数値
+        const relativeIndex = i - activeCardIndex - offset;
         
-        // 左右対称にするため、相対位置を調整（-2, -1, 0, 1, 2）の形に
-        if (relativePos > Math.floor(totalCards / 2)) {
-          relativePos -= totalCards;
+        // 相対位置を -2.0 〜 2.0 の範囲に正規化（5枚カードの場合）
+        let normalizedIndex = relativeIndex;
+        
+        // 無限ループのため、端から端へのワープを処理
+        if (normalizedIndex < -Math.floor(totalCards / 2) - 0.5) {
+          normalizedIndex += totalCards;
+        } else if (normalizedIndex > Math.floor(totalCards / 2) + 0.5) {
+          normalizedIndex -= totalCards;
         }
-        if (relativePos < -Math.floor(totalCards / 2)) {
-          relativePos += totalCards;
-        }
         
-        // 位置インデックスを計算（円環状の配置を保証）
-        const posIndex = (Math.floor(totalCards / 2) + relativePos + totalCards) % totalCards;
+        // 角度を計算（中央が0、左右に広がる）
+        // 正規化された位置を -2.0 〜 2.0 の範囲から、角度範囲 -theta/2 〜 theta/2 にマッピング
+        const maxPosition = Math.floor(totalCards / 2);
+        const angle = (normalizedIndex / maxPosition) * (layoutConfig.theta / 2);
         
-        // 保存された位置情報を取得
-        const pos = cardPositions[posIndex];
+        // 位置を計算（円弧上の座標）
+        const x = Math.sin(angle) * layoutConfig.radius;
+        // Z座標は円弧の一部を形成、中央が最も手前に
+        const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius - layoutConfig.radius;
         
-        // カードの3D配置を設定
-        wrapper.style.transform = `translateX(${pos.x}px) translateZ(${pos.z}px) rotateY(${pos.rotY}rad) scale(${pos.scale})`;
-        wrapper.style.opacity = pos.opacity;
-        wrapper.style.zIndex = pos.zIndex;
+        // スケールと不透明度を計算（中央ほど大きく明るく）
+        const distanceRatio = Math.abs(normalizedIndex) / maxPosition;
+        const scale = layoutConfig.maxScale - (layoutConfig.maxScale - layoutConfig.minScale) * distanceRatio;
+        const opacity = layoutConfig.maxOpacity - (layoutConfig.maxOpacity - layoutConfig.minOpacity) * distanceRatio;
+        
+        // 3D配置を設定
+        wrapper.style.transform = `translateX(${x}px) translateZ(${z}px) rotateY(${angle}rad) scale(${scale})`;
+        wrapper.style.opacity = opacity;
+        
+        // Z-インデックスの調整（中央が最前面）
+        wrapper.style.zIndex = 10 - Math.abs(Math.round(normalizedIndex * 2));
       });
     }
     
@@ -498,8 +479,7 @@
         
         // ドラッグ中のリアルタイムなカード移動
         const dragDistance = currentX - startX;
-        const cardWidth = 320; // カード幅
-        const dragRatio = dragDistance / cardWidth; // ドラッグ量をカード幅で正規化
+        const dragRatio = dragDistance / (layoutConfig.cardWidth * layoutConfig.cardSpacing); // ドラッグ量を正規化
         
         // ドラッグ中はオフセット付きで位置更新
         applyCardPositions(dragRatio);
@@ -529,8 +509,7 @@
         
         // ドラッグ中のリアルタイムなカード移動
         const dragDistance = currentX - startX;
-        const cardWidth = 320; // カード幅
-        const dragRatio = dragDistance / cardWidth; // ドラッグ量をカード幅で正規化
+        const dragRatio = dragDistance / (layoutConfig.cardWidth * layoutConfig.cardSpacing); // ドラッグ量を正規化
         
         // ドラッグ中はオフセット付きで位置更新
         applyCardPositions(dragRatio);
