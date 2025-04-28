@@ -3,7 +3,6 @@
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <title>KOZOU+ AR Experience</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&display=swap" rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -17,8 +16,6 @@
       width: 100%; 
       height: 100%;
       background-color: #000;
-      font-family: 'Noto Sans JP', sans-serif;
-      color: #ffffff;
       position: fixed;
       overflow: hidden;
     }
@@ -64,111 +61,135 @@
       height: 500px;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(0);
       z-index: 20;
-      overflow: visible;
+      opacity: 0;
+      transform-origin: center 70%; /* 丼の位置からカードが出てくるように原点を下部に設定 */
+      animation: none;
     }
     
-    .card-layer {
-      position: absolute;
+    .card-image {
       width: 100%;
       height: 100%;
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
+      object-fit: contain;
     }
     
-    .base-layer {
-      background-image: url('./assets/base.png');
-      z-index: 1;
+    /* 出現アニメーション */
+    @keyframes appear {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.1);
+        filter: brightness(1.5) blur(10px);
+      }
+      30% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(0.4);
+        filter: brightness(1.3) blur(5px);
+      }
+      60% {
+        opacity: 0.9;
+        transform: translate(-50%, -50%) scale(0.8);
+        filter: brightness(1.2) blur(2px);
+      }
+      80% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+        filter: brightness(1.1) blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        filter: brightness(1) blur(0px);
+      }
     }
     
-    .waku-layer {
-      background-image: url('./assets/1waku.png');
-      z-index: 2;
+    /* ホバリングアニメーション */
+    @keyframes hover {
+      0% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
+      25% {
+        transform: translate(-50%, -50%) scale(1.02) rotate(0.5deg);
+      }
+      50% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
+      75% {
+        transform: translate(-50%, -50%) scale(0.98) rotate(-0.5deg);
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+      }
     }
     
-    .step-layer {
+    /* パーティクル */
+    .particle {
       position: absolute;
-      width: 150px;
-      height: 150px;
-      background-image: url('./assets/step.png');
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
-      top: 20px;
-      left: 20px;
-      z-index: 3;
+      width: 10px;
+      height: 10px;
+      background-color: #00c8ff;
+      border-radius: 50%;
+      opacity: 0.7;
+      z-index: 15;
+      pointer-events: none;
+      filter: blur(2px);
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
     }
     
-    .title-layer {
-      background-image: url('./assets/title1.png');
-      z-index: 3;
-      top: 20%;
-      width: 100%;
-      height: 25%;
-    }
-    
-    .line-layer {
+    /* スキャンエフェクト */
+    .scan-effect {
       position: absolute;
-      width: 100%;
+      width: 200px;
       height: 40px;
-      background-image: url('./assets/line.png');
-      background-size: contain;
-      background-position: center;
-      background-repeat: no-repeat;
-      bottom: 25%;
-      z-index: 3;
-    }
-    
-    .osusume-layer {
-      background-image: url('./assets/osusume.png');
-      z-index: 3;
-      top: 50%;
-      width: 100%;
-      height: 10%;
-      display: none; /* STEP1では非表示 */
-    }
-    
-    .card-content {
-      position: absolute;
-      width: 80%;
+      top: 70%;
       left: 50%;
-      top: 45%;
-      transform: translateX(-50%);
-      color: #ffffff;
-      font-weight: 700;
-      text-align: center;
-      font-size: 16px;
-      line-height: 1.7;
-      z-index: 4;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(to bottom, rgba(0, 200, 255, 0), rgba(0, 200, 255, 0.8), rgba(0, 200, 255, 0));
+      opacity: 0;
+      z-index: 25;
+      border-radius: 50%;
     }
     
-    .card-note {
-      position: absolute;
-      width: 80%;
-      left: 50%;
-      bottom: 10%;
-      transform: translateX(-50%);
-      color: #ffffff;
-      font-weight: 700;
-      text-align: center;
-      font-size: 14px;
-      line-height: 1.6;
-      z-index: 4;
+    @keyframes scan {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.5);
+        height: 5px;
+      }
+      20% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1);
+        height: 10px;
+      }
+      80% {
+        opacity: 0.8;
+        transform: translate(-50%, -50%) scale(1.2);
+        height: 20px;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2);
+        height: 5px;
+      }
     }
     
-    .number-12 {
-      position: absolute;
-      top: 55%;
-      width: 100%;
-      text-align: center;
-      color: #ff3333;
-      font-size: 100px;
-      font-weight: 900;
-      text-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
-      z-index: 4;
-      display: none; /* STEP1では非表示 */
+    .glow-effect {
+      animation: glow 2s infinite alternate;
+    }
+    
+    @keyframes glow {
+      0% {
+        filter: drop-shadow(0 0 5px rgba(0, 200, 255, 0.5));
+      }
+      100% {
+        filter: drop-shadow(0 0 15px rgba(0, 200, 255, 0.8));
+      }
+    }
+    
+    /* スピンアニメーション */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -182,93 +203,19 @@
   <div id="ar-container">
     <video id="camera-view" autoplay playsinline></video>
     
-    <!-- カード -->
+    <!-- スキャンエフェクト -->
+    <div class="scan-effect"></div>
+    
+    <!-- カード（1枚の画像として） -->
     <div class="card">
-      <!-- 画像レイヤー -->
-      <div class="card-layer base-layer"></div>
-      <div class="card-layer waku-layer"></div>
-      <div class="step-layer"></div>
-      <div class="card-layer title-layer"></div>
-      <div class="line-layer"></div>
-      <div class="card-layer osusume-layer"></div>
-      
-      <!-- コンテンツ -->
-      <div class="number-12">12</div>
-      <div class="card-content">
-        底に旨みの詰まったタレが<br>
-        沈んでいるので、<br>
-        しっかり混ぜましょう。
-      </div>
-      <div class="card-note">
-        汁が跳ねやすいので、紙エプロンが必要な方は<br>
-        スタッフにお申し付けください。
-      </div>
+      <img src="./assets/1waku.png" alt="ステップ1: 底の方からしっかり混ぜる！" class="card-image glow-effect">
     </div>
   </div>
 
   <script>
-    // スピンアニメーション用のスタイル
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(style);
-    
-    // 画像の読み込み確認
-    function preloadImages() {
-      const images = [
-        './assets/base.png', 
-        './assets/1waku.png', 
-        './assets/step.png', 
-        './assets/title1.png', 
-        './assets/line.png', 
-        './assets/osusume.png'
-      ];
-      
-      images.forEach(src => {
-        const img = new Image();
-        img.onload = () => console.log(`画像読み込み成功: ${src}`);
-        img.onerror = () => {
-          console.error(`画像読み込み失敗: ${src}`);
-          
-          // 代替パスを試す
-          const altSrc = src.replace('./assets/', 'assets/');
-          console.log(`代替パスを試します: ${altSrc}`);
-          
-          const altImg = new Image();
-          altImg.onload = () => {
-            console.log(`代替パスで読み込み成功: ${altSrc}`);
-            // 対応する要素を更新
-            if (src.includes('base')) {
-              document.querySelector('.base-layer').style.backgroundImage = `url('${altSrc}')`;
-            } else if (src.includes('1waku')) {
-              document.querySelector('.waku-layer').style.backgroundImage = `url('${altSrc}')`;
-            } else if (src.includes('step')) {
-              document.querySelector('.step-layer').style.backgroundImage = `url('${altSrc}')`;
-            } else if (src.includes('title1')) {
-              document.querySelector('.title-layer').style.backgroundImage = `url('${altSrc}')`;
-            } else if (src.includes('line')) {
-              document.querySelector('.line-layer').style.backgroundImage = `url('${altSrc}')`;
-            } else if (src.includes('osusume')) {
-              document.querySelector('.osusume-layer').style.backgroundImage = `url('${altSrc}')`;
-            }
-          };
-          altImg.onerror = () => console.error(`代替パスでも読み込み失敗: ${altSrc}`);
-          altImg.src = altSrc;
-        };
-        img.src = src;
-      });
-    }
-    
     // DOMの読み込み完了時の処理
     document.addEventListener("DOMContentLoaded", function() {
       console.log("DOM読み込み完了");
-      
-      // 画像のプリロード
-      preloadImages();
       
       // 開始ボタンのイベント設定
       document.getElementById('start-button').addEventListener('click', function() {
@@ -288,11 +235,121 @@
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(function(stream) {
           document.getElementById('camera-view').srcObject = stream;
+          
+          // スキャンエフェクトを実行
+          setTimeout(runScanEffect, 1000);
         })
         .catch(function(err) {
           console.error("カメラエラー:", err);
           console.log("カメラは使用できませんが、デモモードで続行します");
+          
+          // カメラなしでもスキャンエフェクトを実行
+          setTimeout(runScanEffect, 1000);
         });
+    }
+    
+    // スキャンエフェクトの実行
+    function runScanEffect() {
+      const scanEffect = document.querySelector('.scan-effect');
+      scanEffect.style.animation = 'scan 2s ease-in-out';
+      
+      // アニメーション完了後にパーティクルエフェクト開始
+      setTimeout(function() {
+        scanEffect.style.animation = 'none';
+        createParticles();
+      }, 2000);
+    }
+    
+    // パーティクルの作成
+    function createParticles() {
+      const arContainer = document.getElementById('ar-container');
+      const containerRect = arContainer.getBoundingClientRect();
+      
+      // 丼の想定位置（画面の中央下部）
+      const bowlX = containerRect.width / 2;
+      const bowlY = containerRect.height * 0.7;
+      
+      // パーティクルの数
+      const particleCount = 30;
+      
+      // パーティクルを生成
+      for (let i = 0; i < particleCount; i++) {
+        createParticle(arContainer, bowlX, bowlY, i);
+      }
+      
+      // カードの表示アニメーションを開始
+      setTimeout(showCard, 1500);
+    }
+    
+    // 個別のパーティクル作成
+    function createParticle(container, bowlX, bowlY, index) {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      
+      // 開始位置（丼の中心付近でランダム）
+      const startX = bowlX + (Math.random() * 40 - 20);
+      const startY = bowlY + (Math.random() * 20 - 10);
+      
+      // 終了位置（カードの形になるように分散）
+      const cardWidth = 300;
+      const cardHeight = 500;
+      const cardLeft = window.innerWidth / 2 - cardWidth / 2;
+      const cardTop = window.innerHeight / 2 - cardHeight / 2;
+      
+      // カードのどの位置に配置するか（全体に分散）
+      const endX = cardLeft + Math.random() * cardWidth;
+      const endY = cardTop + Math.random() * cardHeight;
+      
+      // 初期スタイル設定
+      particle.style.left = `${startX}px`;
+      particle.style.top = `${startY}px`;
+      particle.style.width = `${5 + Math.random() * 5}px`;
+      particle.style.height = particle.style.width;
+      particle.style.opacity = '0';
+      
+      // コンテナに追加
+      container.appendChild(particle);
+      
+      // アニメーションの遅延（バラバラのタイミングで始まるように）
+      const delay = Math.random() * 500 + index * 30;
+      
+      // パーティクルを表示してアニメーション開始
+      setTimeout(() => {
+        // 最初は見えるようにする
+        particle.style.opacity = '0.7';
+        
+        // アニメーションを適用
+        particle.style.transition = `all ${1 + Math.random() * 0.5}s cubic-bezier(0.2, 0.8, 0.2, 1.0)`;
+        
+        // 目標位置へ移動
+        setTimeout(() => {
+          particle.style.left = `${endX}px`;
+          particle.style.top = `${endY}px`;
+          
+          // アニメーション完了後に消える
+          setTimeout(() => {
+            particle.style.opacity = '0';
+            
+            // 要素の削除
+            setTimeout(() => {
+              if (particle.parentNode) {
+                particle.parentNode.removeChild(particle);
+              }
+            }, 1000);
+          }, 1000);
+        }, 10);
+      }, delay);
+    }
+    
+    // カードの表示
+    function showCard() {
+      const card = document.querySelector('.card');
+      card.style.animation = 'appear 1.5s cubic-bezier(0.2, 0.8, 0.2, 1.0) forwards';
+      
+      // 出現アニメーション後、ホバリングアニメーションを開始
+      setTimeout(() => {
+        card.style.animation = 'hover 4s ease-in-out infinite';
+      }, 1500);
     }
   </script>
 </body>
