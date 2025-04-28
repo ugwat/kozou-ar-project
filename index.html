@@ -393,56 +393,38 @@
       const reflections = document.querySelectorAll('.card-reflection');
       const cardWrappers = document.querySelectorAll('.card-wrapper');
       
-      // 中央から順に生えてくるように順番を設定
       const growOrder = []; 
       const midIndex = Math.floor(cards.length / 2);
-      
-      // 中央から両端への順番を作成
       for (let i = 0; i <= midIndex; i++) {
-        growOrder.push(midIndex - i); // 中央から左
+        growOrder.push(midIndex - i);
         if (midIndex + i < cards.length && midIndex + i !== midIndex) {
-          growOrder.push(midIndex + i); // 中央から右
+          growOrder.push(midIndex + i);
         }
       }
-      
-      // 一つずつ成長させる
       let delay = 0;
       growOrder.forEach((index, orderIndex) => {
         setTimeout(() => {
-          // 最初にカードの根元だけが見える（高さ10pxくらい）
           cards[index].style.height = '10px';
           reflections[index].style.height = '6px';
-          
-          // 少し待って、徐々に伸びていくアニメーション
           setTimeout(() => {
-            // カードが伸びる
-            cards[index].style.height = '200px'; // 横型カード
-            cards[index].style.opacity = '1'; // 完全に不透明になる
-            
-            // 反射も同時に伸びる
-            reflections[index].style.height = '120px'; // 反射はカードよりやや短め
-            
-            // 伸び終わった後の処理
+            cards[index].style.height = '200px';
+            cards[index].style.opacity = '1';
+            reflections[index].style.height = '120px';
             setTimeout(() => {
-              // グロー効果を適用
               cards[index].style.animation = 'glowPulse 3s infinite';
               reflections[index].style.animation = 'reflectionGlow 3s infinite';
-              
-              // わずかに浮遊するアニメーション
               cardWrappers[index].classList.add('floating');
-              
-              // 最後のカードが成長したらスワイプヒントを表示
+              // 👇 最後のカードが生え終わったらここで applyCardPositions(0) を呼ぶ！
               if (orderIndex === growOrder.length - 1) {
                 showSwipeHint();
-                // 成長アニメーション完了後にスワイプ機能を有効化
                 isSwipeEnabled = true;
+                applyCardPositions(0); // ★ここを必ず追加！！
                 setupSwipeEvents();
               }
             }, 2000);
           }, 500);
         }, delay);
-        
-        delay += 300; // カード間の成長遅延
+        delay += 300;
       });
     }
     
