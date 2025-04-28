@@ -61,132 +61,65 @@
       height: 500px;
       top: 50%;
       left: 50%;
-      transform: translate(-50%, -50%) scale(0);
+      transform: translate(-50%, -50%);
       z-index: 20;
       opacity: 0;
-      transform-origin: center 70%; /* 丼の位置からカードが出てくるように原点を下部に設定 */
-      animation: none;
     }
     
     .card-image {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.7));
     }
     
-    /* 出現アニメーション */
-    @keyframes appear {
+    @keyframes fadeIn {
       0% {
         opacity: 0;
-        transform: translate(-50%, -50%) scale(0.1);
-        filter: brightness(1.5) blur(10px);
+        transform: translate(-50%, -50%) translateY(20px);
+        filter: blur(5px) brightness(1.5);
       }
       30% {
-        opacity: 0.7;
-        transform: translate(-50%, -50%) scale(0.4);
-        filter: brightness(1.3) blur(5px);
+        opacity: 0.3;
+        transform: translate(-50%, -50%) translateY(10px);
+        filter: blur(3px) brightness(1.3);
       }
       60% {
-        opacity: 0.9;
-        transform: translate(-50%, -50%) scale(0.8);
-        filter: brightness(1.2) blur(2px);
-      }
-      80% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1.1);
-        filter: brightness(1.1) blur(0px);
+        opacity: 0.6;
+        transform: translate(-50%, -50%) translateY(5px);
+        filter: blur(1px) brightness(1.2);
       }
       100% {
         opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-        filter: brightness(1) blur(0px);
+        transform: translate(-50%, -50%) translateY(0);
+        filter: blur(0) brightness(1);
       }
     }
     
-    /* ホバリングアニメーション */
-    @keyframes hover {
+    @keyframes float {
       0% {
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
-      }
-      25% {
-        transform: translate(-50%, -50%) scale(1.02) rotate(0.5deg);
+        transform: translate(-50%, -50%) translateY(0);
       }
       50% {
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
-      }
-      75% {
-        transform: translate(-50%, -50%) scale(0.98) rotate(-0.5deg);
+        transform: translate(-50%, -50%) translateY(-10px);
       }
       100% {
-        transform: translate(-50%, -50%) scale(1) rotate(0deg);
+        transform: translate(-50%, -50%) translateY(0);
       }
     }
     
-    /* パーティクル */
-    .particle {
-      position: absolute;
-      width: 10px;
-      height: 10px;
-      background-color: #00c8ff;
-      border-radius: 50%;
-      opacity: 0.7;
-      z-index: 15;
-      pointer-events: none;
-      filter: blur(2px);
-      box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
-    }
-    
-    /* スキャンエフェクト */
-    .scan-effect {
-      position: absolute;
-      width: 200px;
-      height: 40px;
-      top: 70%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: linear-gradient(to bottom, rgba(0, 200, 255, 0), rgba(0, 200, 255, 0.8), rgba(0, 200, 255, 0));
-      opacity: 0;
-      z-index: 25;
-      border-radius: 50%;
-    }
-    
-    @keyframes scan {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(0.5);
-        height: 5px;
-      }
-      20% {
-        opacity: 0.8;
-        transform: translate(-50%, -50%) scale(1);
-        height: 10px;
-      }
-      80% {
-        opacity: 0.8;
-        transform: translate(-50%, -50%) scale(1.2);
-        height: 20px;
-      }
-      100% {
-        opacity: 0;
-        transform: translate(-50%, -50%) scale(2);
-        height: 5px;
-      }
-    }
-    
-    .glow-effect {
-      animation: glow 2s infinite alternate;
-    }
-    
-    @keyframes glow {
+    @keyframes glowPulse {
       0% {
         filter: drop-shadow(0 0 5px rgba(0, 200, 255, 0.5));
       }
+      50% {
+        filter: drop-shadow(0 0 15px rgba(0, 200, 255, 1));
+      }
       100% {
-        filter: drop-shadow(0 0 15px rgba(0, 200, 255, 0.8));
+        filter: drop-shadow(0 0 5px rgba(0, 200, 255, 0.5));
       }
     }
     
-    /* スピンアニメーション */
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -203,12 +136,9 @@
   <div id="ar-container">
     <video id="camera-view" autoplay playsinline></video>
     
-    <!-- スキャンエフェクト -->
-    <div class="scan-effect"></div>
-    
     <!-- カード（1枚の画像として） -->
     <div class="card">
-      <img src="./assets/1waku.png" alt="ステップ1: 底の方からしっかり混ぜる！" class="card-image glow-effect">
+      <img src="./assets/1waku.png" alt="ステップ1: 底の方からしっかり混ぜる！" class="card-image">
     </div>
   </div>
 
@@ -236,120 +166,53 @@
         .then(function(stream) {
           document.getElementById('camera-view').srcObject = stream;
           
-          // スキャンエフェクトを実行
-          setTimeout(runScanEffect, 1000);
+          // カメラ起動後、カードを表示
+          setTimeout(showCard, 1000);
         })
         .catch(function(err) {
           console.error("カメラエラー:", err);
           console.log("カメラは使用できませんが、デモモードで続行します");
           
-          // カメラなしでもスキャンエフェクトを実行
-          setTimeout(runScanEffect, 1000);
+          // カメラなしでもカードを表示
+          setTimeout(showCard, 1000);
         });
-    }
-    
-    // スキャンエフェクトの実行
-    function runScanEffect() {
-      const scanEffect = document.querySelector('.scan-effect');
-      scanEffect.style.animation = 'scan 2s ease-in-out';
-      
-      // アニメーション完了後にパーティクルエフェクト開始
-      setTimeout(function() {
-        scanEffect.style.animation = 'none';
-        createParticles();
-      }, 2000);
-    }
-    
-    // パーティクルの作成
-    function createParticles() {
-      const arContainer = document.getElementById('ar-container');
-      const containerRect = arContainer.getBoundingClientRect();
-      
-      // 丼の想定位置（画面の中央下部）
-      const bowlX = containerRect.width / 2;
-      const bowlY = containerRect.height * 0.7;
-      
-      // パーティクルの数
-      const particleCount = 30;
-      
-      // パーティクルを生成
-      for (let i = 0; i < particleCount; i++) {
-        createParticle(arContainer, bowlX, bowlY, i);
-      }
-      
-      // カードの表示アニメーションを開始
-      setTimeout(showCard, 1500);
-    }
-    
-    // 個別のパーティクル作成
-    function createParticle(container, bowlX, bowlY, index) {
-      const particle = document.createElement('div');
-      particle.className = 'particle';
-      
-      // 開始位置（丼の中心付近でランダム）
-      const startX = bowlX + (Math.random() * 40 - 20);
-      const startY = bowlY + (Math.random() * 20 - 10);
-      
-      // 終了位置（カードの形になるように分散）
-      const cardWidth = 300;
-      const cardHeight = 500;
-      const cardLeft = window.innerWidth / 2 - cardWidth / 2;
-      const cardTop = window.innerHeight / 2 - cardHeight / 2;
-      
-      // カードのどの位置に配置するか（全体に分散）
-      const endX = cardLeft + Math.random() * cardWidth;
-      const endY = cardTop + Math.random() * cardHeight;
-      
-      // 初期スタイル設定
-      particle.style.left = `${startX}px`;
-      particle.style.top = `${startY}px`;
-      particle.style.width = `${5 + Math.random() * 5}px`;
-      particle.style.height = particle.style.width;
-      particle.style.opacity = '0';
-      
-      // コンテナに追加
-      container.appendChild(particle);
-      
-      // アニメーションの遅延（バラバラのタイミングで始まるように）
-      const delay = Math.random() * 500 + index * 30;
-      
-      // パーティクルを表示してアニメーション開始
-      setTimeout(() => {
-        // 最初は見えるようにする
-        particle.style.opacity = '0.7';
-        
-        // アニメーションを適用
-        particle.style.transition = `all ${1 + Math.random() * 0.5}s cubic-bezier(0.2, 0.8, 0.2, 1.0)`;
-        
-        // 目標位置へ移動
-        setTimeout(() => {
-          particle.style.left = `${endX}px`;
-          particle.style.top = `${endY}px`;
-          
-          // アニメーション完了後に消える
-          setTimeout(() => {
-            particle.style.opacity = '0';
-            
-            // 要素の削除
-            setTimeout(() => {
-              if (particle.parentNode) {
-                particle.parentNode.removeChild(particle);
-              }
-            }, 1000);
-          }, 1000);
-        }, 10);
-      }, delay);
     }
     
     // カードの表示
     function showCard() {
       const card = document.querySelector('.card');
-      card.style.animation = 'appear 1.5s cubic-bezier(0.2, 0.8, 0.2, 1.0) forwards';
+      const cardImage = document.querySelector('.card-image');
       
-      // 出現アニメーション後、ホバリングアニメーションを開始
+      // カード要素にフェードインのアニメーションを適用
+      card.style.animation = 'fadeIn 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards';
+      
+      // アニメーション完了後の処理
       setTimeout(() => {
-        card.style.animation = 'hover 4s ease-in-out infinite';
+        // フローティングアニメーションを適用
+        card.style.animation = 'float 4s ease-in-out infinite';
+        
+        // 画像にグロー効果のアニメーションを適用
+        cardImage.style.animation = 'glowPulse 3s infinite';
       }, 1500);
+      
+      // デバイスの向きに応じたカードの調整（ジャイロスコープ）
+      window.addEventListener('deviceorientation', function(event) {
+        if (!event.beta || !event.gamma) return;
+        
+        // デバイスの傾きを取得
+        const beta = event.beta;  // 前後の傾き (-180〜180)
+        const gamma = event.gamma; // 左右の傾き (-90〜90)
+        
+        // 値を制限
+        const limitedBeta = Math.max(-15, Math.min(15, beta));
+        const limitedGamma = Math.max(-15, Math.min(15, gamma));
+        
+        // カードの位置を調整
+        card.style.transform = `translate(calc(-50% + ${limitedGamma * 0.5}px), calc(-50% + ${-limitedBeta * 0.5}px))`;
+        
+        // グロー効果の調整
+        cardImage.style.filter = `drop-shadow(${limitedGamma * 0.2}px ${limitedBeta * 0.2}px 10px rgba(0, 200, 255, 0.8))`;
+      });
     }
   </script>
 </body>
