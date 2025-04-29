@@ -93,12 +93,18 @@ function createCards() {
   const carousel = document.querySelector('.carousel');
   const totalCards = 5;
   activeCardIndex = Math.floor(totalCards / 2);
+
   for (let i = 0; i < totalCards; i++) {
     const wrapper = document.createElement('div');
     wrapper.className = 'card-wrapper';
     wrapper.innerHTML = `<div class="card"></div>`;
     carousel.appendChild(wrapper);
   }
+
+  applyCardPositions(0); // ★最初に位置を配置してから
+  setTimeout(growCards, 500); // ★その位置で生やす
+}
+
 
   // ★ ここでカードの高さを最初から小さく固定しておく
   const cards = document.querySelectorAll('.card');
