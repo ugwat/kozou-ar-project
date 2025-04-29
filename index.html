@@ -18,21 +18,21 @@
   .carousel { 
     position: absolute; 
     width: 100%; 
-    height: 80%; 
+    height: 85%; 
     top: 50%;
     transform: translateY(-50%) rotateX(20deg);
     transform-style: preserve-3d; 
   }
   .card-wrapper {
     position: absolute;
-    width: 280px;
-    height: 491px;
+    width: 320px;  /* カード幅を拡大 */
+    height: 560px; /* カード高さを拡大 */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
     top: 50%;
-    margin-left: -140px;
-    margin-top: -245.5px;
+    margin-left: -160px; /* 幅の半分 */
+    margin-top: -280px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
@@ -107,19 +107,19 @@ let isSwiping = false;
 
 // カード画像の設定
 const cardImages = [
-  './assets/1waku.png',  // カード1枚目
+  './assets/c2.png',     // カード1枚目を変更（枠だけではなく、第2カードと同じ画像を使用）
   './assets/c2.png',     // カード2枚目
   './assets/c3.png',     // カード3枚目
   './assets/c4.png',     // カード4枚目
-  './assets/1waku.png'   // カード5枚目（まだ準備中なので元の画像を使用）
+  './assets/c2.png'      // カード5枚目も第2カードと同じ画像を使用
 ];
 
 // 設定
 const config = {
-  cardSpacing: 300,           // カード間の距離
+  cardSpacing: 350,           // カード間の距離を広げる
   swipeSensitivity: 200,      // スワイプの感度
   cardRotation: 30,           // カードの回転角度
-  centerZ: -400,              // Z軸の奥行き
+  centerZ: -450,              // Z軸の奥行きを深く
   cardCount: 5                // カードの総数
 };
 
@@ -176,7 +176,7 @@ function growCards() {
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '491px'; // 枠の高さに合わせる
+      card.style.height = '560px'; // 拡大したカードの高さに合わせる
       card.style.opacity = '1';
     }, i * 200);
   });
