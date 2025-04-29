@@ -1,234 +1,183 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <title>KOZOU+ AR Experience</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    
-    body { 
-      margin: 0; 
-      padding: 0;
-      width: 100%; 
-      height: 100%;
-      background-color: #000;
-      position: fixed;
-      overflow: hidden;
-    }
-    
-    #loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: black;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      color: white;
-    }
-    
-    #ar-container {
-      width: 100%;
-      height: 100%;
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: 1;
-      display: none;
-    }
-    
-    #camera-view {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 10;
-    }
-    
-    .scene {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      transform-style: preserve-3d;
-      perspective: 1000px;
-      z-index: 20;
-    }
-    
-    .card-wrapper {
-      position: absolute;
-      width: 300px;
-      height: 500px;
-      bottom: 180px; /* キーボード表面の位置を調整 */
-      left: 50%;
-      transform: translateX(-50%) rotateX(15deg); /* やや斜め上からのアングル */
-      transform-style: preserve-3d;
-      transform-origin: bottom center;
-    }
-    
-    .card {
-      position: absolute;
-      width: 100%;
-      height: 0; /* 最初は高さ0（見えない） */
-      bottom: 0;
-      background-image: url('./assets/1waku.png');
-      background-size: cover;
-      background-position: bottom center;
-      filter: drop-shadow(0 0 10px rgba(0, 200, 255, 0.7));
-      opacity: 0.9; /* 最初は少し透明 */
-      transition: height 2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-    
-    .card-reflection {
-      position: absolute;
-      width: 100%;
-      height: 0; /* 最初は高さ0（見えない） */
-      top: 0; /* 反射なので上から始まる */
-      transform: rotateX(180deg) scaleY(0.6); /* 上下反転し、少し縮める */
-      background-image: url('./assets/1waku.png');
-      background-size: cover;
-      background-position: bottom center;
-      opacity: 0.3; /* 反射は透明度高め */
-      filter: blur(3px) brightness(0.7); /* ぼかして暗く */
-      transition: height 2s cubic-bezier(0.2, 0.8, 0.2, 1);
-    }
-    
-    @keyframes glowPulse {
-      0% {
-        filter: drop-shadow(0 0 5px rgba(0, 200, 255, 0.5)) blur(0px);
-      }
-      50% {
-        filter: drop-shadow(0 0 15px rgba(0, 200, 255, 0.8)) blur(0px);
-      }
-      100% {
-        filter: drop-shadow(0 0 5px rgba(0, 200, 255, 0.5)) blur(0px);
-      }
-    }
-    
-    @keyframes reflectionGlow {
-      0% {
-        filter: blur(3px) brightness(0.7) drop-shadow(0 0 2px rgba(0, 200, 255, 0.3));
-      }
-      50% {
-        filter: blur(3px) brightness(0.7) drop-shadow(0 0 7px rgba(0, 200, 255, 0.5));
-      }
-      100% {
-        filter: blur(3px) brightness(0.7) drop-shadow(0 0 2px rgba(0, 200, 255, 0.3));
-      }
-    }
-    
-    @keyframes float {
-      0% {
-        transform: translateX(-50%) rotateX(15deg) translateY(0px);
-      }
-      50% {
-        transform: translateX(-50%) rotateX(15deg) translateY(-5px);
-      }
-      100% {
-        transform: translateX(-50%) rotateX(15deg) translateY(0px);
-      }
-    }
-    
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>KOZOU+ AR Experience</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; }
+  #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:1000; color:white; }
+  #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
+  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; filter: brightness(0.85); }
+  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
+  .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
+  .card-wrapper {
+    position: absolute;
+    width: 320px;
+    height: 200px;
+    transform-style: preserve-3d;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 100px) scale(1.8) rotateX(0deg);
+    opacity: 0;
+    transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s ease-out;
+  }
+  .card {
+    width: 100%;
+    height: 100%;
+    background: url('./assets/1waku.png') no-repeat center/cover;
+    border-radius: 12px;
+    opacity: 0.95;
+    filter: drop-shadow(0 0 25px rgba(0,255,255,0.9)) drop-shadow(0 0 50px rgba(0,255,255,0.6));
+  }
+  .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); z-index:15; pointer-events:none; }
+</style>
 </head>
 <body>
-  <div id="loading-screen">
-    <div style="border: 5px solid rgba(0, 200, 255, 0.1); border-top: 5px solid #00c8ff; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
-    <div>読み込み中...</div>
-    <button id="start-button" style="margin-top: 20px; padding: 15px 30px; background-color: #00a2ff; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; box-shadow: 0 0 15px rgba(0, 200, 255, 0.5);">AR体験を開始</button>
-  </div>
+<div id="loading-screen">
+  <div style="border:5px solid rgba(0,200,255,0.1); border-top:5px solid #00c8ff; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; margin-bottom:20px;"></div>
+  <div>読み込み中...</div>
+  <button id="start-button" style="margin-top:20px; padding:15px 30px; background:#00a2ff; color:white; border:none; border-radius:5px; font-size:18px; cursor:pointer;">AR体験を開始</button>
+</div>
 
-  <div id="ar-container">
-    <video id="camera-view" autoplay playsinline></video>
-    
-    <div class="scene">
-      <div class="card-wrapper">
-        <div class="card"></div>
-        <div class="card-reflection"></div>
-      </div>
-    </div>
+<div id="ar-container">
+  <video id="camera-view" autoplay playsinline></video>
+  <div class="overlay"></div>
+  <div class="scene">
+    <div class="carousel"></div>
   </div>
+</div>
 
-  <script>
-    // DOMの読み込み完了時の処理
-    document.addEventListener("DOMContentLoaded", function() {
-      console.log("DOM読み込み完了");
-      
-      // 開始ボタンのイベント設定
-      document.getElementById('start-button').addEventListener('click', function() {
-        document.getElementById('loading-screen').style.display = 'none';
-        initAR();
-      });
-    });
-    
-    // ARの初期化
-    function initAR() {
-      console.log("AR初期化開始");
-      
-      // ARコンテナを表示
-      document.getElementById('ar-container').style.display = 'block';
-      
-      // カメラを起動
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-        .then(function(stream) {
-          document.getElementById('camera-view').srcObject = stream;
-          
-          // カメラ起動後、カードを表示
-          setTimeout(growCard, 1000);
-        })
-        .catch(function(err) {
-          console.error("カメラエラー:", err);
-          console.log("カメラは使用できませんが、デモモードで続行します");
-          
-          // カメラなしでもカードを表示
-          setTimeout(growCard, 1000);
-        });
+<script>
+let activeCardIndex = 0;
+let isSwipeEnabled = false;
+const layoutConfig = {
+  radius: window.innerWidth * 1.2,
+  theta: Math.PI * 1.3,
+  centerZ: -600,
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById('start-button').addEventListener('click', () => {
+    document.getElementById('loading-screen').style.display = 'none';
+    initAR();
+  });
+});
+
+function initAR() {
+  document.getElementById('ar-container').style.display = 'block';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    .then(stream => {
+      document.getElementById('camera-view').srcObject = stream;
+      createCards();
+    })
+    .catch(() => { createCards(); });
+}
+
+function createCards() {
+  const carousel = document.querySelector('.carousel');
+  const totalCards = 5;
+  activeCardIndex = Math.floor(totalCards / 2);
+  for (let i = 0; i < totalCards; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+    wrapper.innerHTML = `<div class="card"></div>`;
+    carousel.appendChild(wrapper);
+  }
+  setTimeout(growCards, 500);
+}
+
+function growCards() {
+  const wrappers = document.querySelectorAll('.card-wrapper');
+  wrappers.forEach((wrapper, i) => {
+    const card = wrapper.querySelector('.card');
+
+    // 初期状態：高さほぼゼロ
+    card.style.height = '10px';
+
+    // 少し遅れてから伸びる
+    setTimeout(() => {
+      card.style.transition = 'height 1.8s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      card.style.height = '200px'; // 各カードの正しい高さ
+      card.style.opacity = '1';
+    }, i * 150); // カードごとにディレイをつけて生やす
+  });
+
+  setTimeout(() => {
+    startSpinAnimation();
+  }, wrappers.length * 150 + 2000);
+}
+
+
+function applyCardPositions(offset = 0) {
+  const wrappers = document.querySelectorAll('.card-wrapper');
+  const total = wrappers.length;
+  wrappers.forEach((wrapper, i) => {
+    let relIndex = i - activeCardIndex - offset;
+    if (relIndex < -total/2) relIndex += total;
+    if (relIndex > total/2) relIndex -= total;
+    const angleRatio = relIndex / (total/2);
+    const angle = angleRatio * (layoutConfig.theta/2);
+    const x = Math.sin(angle) * layoutConfig.radius;
+    const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
+    const rotateY = angleRatio * 60;
+    const scale = 1 - 0.4 * Math.abs(angleRatio);
+    const opacity = 1 - 0.5 * Math.abs(angleRatio);
+
+    wrapper.style.transform = `
+      translateX(${x}px) 
+      translateZ(${z}px)
+      rotateY(${rotateY}deg)
+      scale(${scale})
+    `;
+    wrapper.style.opacity = opacity;
+    wrapper.style.zIndex = 100 - Math.abs(Math.round(relIndex*10));
+  });
+}
+
+function startSpinAnimation() {
+  let speed = 0.35;  // 初速
+  let spins = 0;
+  const total = document.querySelectorAll('.card-wrapper').length;
+  const spinFrames = total * 3; // 3周
+
+  function spinStep() {
+    activeCardIndex = (activeCardIndex + speed) % total;
+    applyCardPositions(activeCardIndex % 1);
+
+    if (spins++ < spinFrames) {
+      requestAnimationFrame(spinStep);
+    } else {
+      activeCardIndex = Math.round(activeCardIndex) % total;
+      applyCardPositions(0);
+      isSwipeEnabled = true;
+      setupSwipeEvents();
     }
-    
-    // カードを成長させる
-    function growCard() {
-      const card = document.querySelector('.card');
-      const reflection = document.querySelector('.card-reflection');
-      const cardWrapper = document.querySelector('.card-wrapper');
-      
-      // キーボード表面から、カードが生えてくるアニメーション
-      // 最初にカードの根元だけが見える（高さ10pxくらい）
-      card.style.height = '10px';
-      reflection.style.height = '6px';
-      
-      // 少し待って、徐々に伸びていくアニメーション
-      setTimeout(() => {
-        // カードが伸びる
-        card.style.height = '500px';
-        card.style.opacity = '1'; // 完全に不透明になる
-        
-        // 反射も同時に伸びる
-        reflection.style.height = '300px'; // 反射はカードよりやや短め
-      }, 500);
-      
-      // 伸び終わった後の処理
-      setTimeout(() => {
-        // グロー効果を適用
-        card.style.animation = 'glowPulse 3s infinite';
-        reflection.style.animation = 'reflectionGlow 3s infinite';
-        
-        // わずかに浮遊するアニメーション
-        cardWrapper.style.animation = 'float 4s ease-in-out infinite';
-      }, 2500);
-    }
-  </script>
+  }
+
+  spinStep();
+}
+
+function setupSwipeEvents() {
+  let startX = 0;
+  document.addEventListener('touchstart', e => { if (!isSwipeEnabled) return; startX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => { if (!isSwipeEnabled) return; handleSwipe(e.changedTouches[0].clientX - startX); });
+  document.addEventListener('mousedown', e => { if (!isSwipeEnabled) return; startX = e.clientX; });
+  document.addEventListener('mouseup', e => { if (!isSwipeEnabled) return; handleSwipe(e.clientX - startX); });
+}
+
+function handleSwipe(diffX) {
+  const threshold = 50;
+  const total = document.querySelectorAll('.card-wrapper').length;
+  if (diffX > threshold) {
+    activeCardIndex = (activeCardIndex - 1 + total) % total;
+  } else if (diffX < -threshold) {
+    activeCardIndex = (activeCardIndex + 1) % total;
+  }
+  applyCardPositions(0);
+}
+</script>
+
 </body>
 </html>
