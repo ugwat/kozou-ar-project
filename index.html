@@ -25,14 +25,14 @@
   }
   .card-wrapper {
     position: absolute;
-    width: 336px;  /* 280px * 1.2 */
-    height: 491px; /* もともとの枠サイズ */
+    width: 280px;
+    height: 400px;
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
     top: 50%;
-    margin-left: -168px; /* 幅の半分 */
-    margin-top: -245.5px; /* 高さの半分 */
+    margin-left: -140px;
+    margin-top: -200px;
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
@@ -41,9 +41,7 @@
     width: 100%;
     height: 10px;
     bottom: 0;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
+    background: url('./assets/1waku.png') no-repeat center/cover;
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
@@ -119,15 +117,6 @@ let startX = 0;
 let currentX = 0;
 let isSwiping = false;
 
-// カード画像の設定
-const cardImages = [
-  './assets/1waku.png',  // カード1枚目
-  './assets/c2.png',     // カード2枚目
-  './assets/c3.png',     // カード3枚目
-  './assets/c4.png',     // カード4枚目
-  './assets/1waku.png'   // カード5枚目
-];
-
 // 設定
 const config = {
   cardSpacing: 300,           // カード間の距離
@@ -171,7 +160,6 @@ function createCards() {
     
     const card = document.createElement('div');
     card.className = 'card';
-    card.style.backgroundImage = `url(${cardImages[i]})`;
     
     wrapper.appendChild(card);
     carousel.appendChild(wrapper);
@@ -200,7 +188,7 @@ function growCards() {
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '491px'; // 正しいサイズに変更
+      card.style.height = '400px'; // フルサイズに戻す
       card.style.opacity = '1';
     }, i * 200);
   });
