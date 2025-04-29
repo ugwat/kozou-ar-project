@@ -33,7 +33,6 @@
     top: 50%;
     margin-left: -140px;
     margin-top: -200px;
-    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
     will-change: transform, opacity;
   }
   .card {
@@ -45,7 +44,7 @@
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
-    transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
+    transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s;
     backface-visibility: hidden;
     will-change: height, opacity, filter;
   }
@@ -55,9 +54,9 @@
     z-index:15; pointer-events:none;
   }
   @keyframes float {
-    0% { transform: translateY(0px); }
-    50% { transform: translateY(-5px); }
-    100% { transform: translateY(0px); }
+    0% { transform: translateY(0px) translateX(0px) translateZ(0px) rotateY(0deg) scale(1); }
+    50% { transform: translateY(-5px) translateX(0px) translateZ(0px) rotateY(0deg) scale(1); }
+    100% { transform: translateY(0px) translateX(0px) translateZ(0px) rotateY(0deg) scale(1); }
   }
   @keyframes glow {
     0% { filter: drop-shadow(0 0 15px rgba(0,255,255,0.7)); }
@@ -69,12 +68,11 @@
     100% { transform: rotate(360deg); }
   }
   
-  /* アクティブカードスタイル */
-  .card-wrapper.active .card {
+  /* 中央のカードのスタイル */
+  .card-wrapper.center .card {
     animation: glow 3s ease-in-out infinite;
   }
-  
-  .card-wrapper.active {
+  .card-wrapper.center {
     animation: float 4s ease-in-out infinite;
   }
 </style>
@@ -96,16 +94,20 @@
 </div>
 
 <script>
+// グローバル変数
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 let startX = 0;
 let currentX = 0;
 let isSwiping = false;
 
-const layoutConfig = {
-  radius: window.innerWidth * 0.9,
-  theta: Math.PI * 0.8,
-  centerZ: -500,
+// 設定
+const config = {
+  radius: window.innerWidth * 0.8, // 半径を適切に調整
+  centerZ: -400,                   // Z軸の奥行き
+  cardSpacing: 300,               // カード間の距離
+  swipeSensitivity: 200,          // スワイプの感度
+  cardRotation: 30                // カードの回転角度
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -133,11 +135,9 @@ function initAR() {
 
 function createCards() {
   const carousel = document.querySelector('.carousel');
-  carousel.innerHTML = ''; // クリア
+  carousel.innerHTML = '';
   
-  const totalCards = 5;
-  
-  for (let i = 0; i < totalCards; i++) {
+  for (let i = 0; i < 5; i++) {
     const wrapper = document.createElement('div');
     wrapper.className = 'card-wrapper';
     wrapper.dataset.index = i;
@@ -149,66 +149,12 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
   
-  // 位置を適用
-  updateCardsPosition();
-  
-  // スワイプイベント設定
+  // 初期位置の設定
+  updateCardPositions();
   setupSwipeEvents();
   
-  // カードの成長アニメーション
+  // カード成長アニメーション
   setTimeout(growCards, 500);
-}
-
-// スワイプ中の位置計算も含めて最適化
-function updateCardsPosition(offset = 0) {
-  const wrappers = document.querySelectorAll('.card-wrapper');
-  const total = wrappers.length;
-  
-  // まずすべてのアクティブクラスを削除
-  wrappers.forEach(wrapper => {
-    wrapper.classList.remove('active');
-  });
-  
-  wrappers.forEach((wrapper, i) => {
-    let relIndex = i - activeCardIndex - offset;
-    
-    // 循環表示のための調整
-    if (relIndex < -total/2) relIndex += total;
-    if (relIndex > total/2) relIndex -= total;
-    
-    const angleRatio = relIndex / (total/2);
-    const angle = angleRatio * (layoutConfig.theta/2);
-    
-    // X, Z座標を計算
-    const x = Math.sin(angle) * layoutConfig.radius;
-    const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
-    
-    // Y座標も調整（中央が少し高く、左右が低くなるようにする）
-    const y = Math.abs(angleRatio) * -30;
-    
-    const rotateY = angleRatio * 60;
-    const scale = 1 - 0.3 * Math.abs(angleRatio);
-    const opacity = 1 - 0.35 * Math.abs(angleRatio);
-    
-    // transform適用
-    wrapper.style.transform = `
-      translateZ(${z}px)
-      translateX(${x}px)
-      translateY(${y}px)
-      rotateY(${rotateY}deg)
-      scale(${scale})
-    `;
-    
-    wrapper.style.opacity = opacity;
-    
-    // z-indexの調整（より手前に来るカードが上になるように）
-    wrapper.style.zIndex = Math.round(1000 + z);
-    
-    // 中央のカードにアクティブクラスを追加
-    if (relIndex === 0) {
-      wrapper.classList.add('active');
-    }
-  });
 }
 
 function growCards() {
@@ -223,13 +169,66 @@ function growCards() {
   
   setTimeout(() => {
     isSwipeEnabled = true;
-  }, cards.length * 200 + 500);
+  }, 1500);
+}
+
+// スライドを含めたカード位置の更新（重要な部分）
+function updateCardPositions(offsetRatio = 0) {
+  const wrappers = document.querySelectorAll('.card-wrapper');
+  
+  // すべてのクラスを一旦リセット
+  wrappers.forEach(wrapper => {
+    wrapper.classList.remove('center', 'left', 'right');
+  });
+  
+  wrappers.forEach((wrapper, i) => {
+    // カードの相対位置を計算（offsetRatioを含む）
+    let relativePos = i - activeCardIndex - offsetRatio;
+    
+    // 循環表示のための調整
+    if (relativePos < -2) relativePos += 5;
+    if (relativePos > 2) relativePos -= 5;
+    
+    // X軸位置の計算
+    const xPos = relativePos * config.cardSpacing;
+    
+    // Z軸位置の計算（放物線状に）
+    const zPos = config.centerZ - Math.abs(relativePos) * 100;
+    
+    // 回転角度の計算
+    const rotationY = relativePos * config.cardRotation;
+    
+    // 縮小率の計算
+    const scale = 1 - Math.abs(relativePos) * 0.2;
+    
+    // 不透明度の計算
+    const opacity = 1 - Math.abs(relativePos) * 0.3;
+    
+    // スタイルの適用
+    wrapper.style.transform = `
+      translateX(${xPos}px)
+      translateZ(${zPos}px)
+      rotateY(${rotationY}deg)
+      scale(${scale})
+    `;
+    wrapper.style.opacity = opacity;
+    wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
+    
+    // 中央カードにクラスを追加
+    if (Math.abs(relativePos) < 0.5) {
+      wrapper.classList.add('center');
+    } else if (relativePos < 0) {
+      wrapper.classList.add('left');
+    } else {
+      wrapper.classList.add('right');
+    }
+  });
 }
 
 function setupSwipeEvents() {
   // タッチイベント
-  document.addEventListener('touchstart', e => { 
-    if (!isSwipeEnabled) return; 
+  document.addEventListener('touchstart', e => {
+    if (!isSwipeEnabled) return;
     startX = e.touches[0].clientX;
     currentX = startX;
     isSwiping = true;
@@ -238,20 +237,20 @@ function setupSwipeEvents() {
   document.addEventListener('touchmove', e => {
     if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.touches[0].clientX;
-    const dragDistance = currentX - startX;
-    const dragRatio = dragDistance / 200;
-    updateCardsPosition(dragRatio);
+    const diffX = currentX - startX;
+    const offsetRatio = diffX / config.swipeSensitivity;
+    updateCardPositions(offsetRatio);
   });
   
-  document.addEventListener('touchend', e => { 
-    if (!isSwipeEnabled || !isSwiping) return; 
-    handleSwipeEnd();
+  document.addEventListener('touchend', () => {
+    if (!isSwipeEnabled || !isSwiping) return;
+    finishSwipe();
     isSwiping = false;
   });
   
   // マウスイベント
-  document.addEventListener('mousedown', e => { 
-    if (!isSwipeEnabled) return; 
+  document.addEventListener('mousedown', e => {
+    if (!isSwipeEnabled) return;
     startX = e.clientX;
     currentX = startX;
     isSwiping = true;
@@ -260,35 +259,39 @@ function setupSwipeEvents() {
   document.addEventListener('mousemove', e => {
     if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.clientX;
-    const dragDistance = currentX - startX;
-    const dragRatio = dragDistance / 200;
-    updateCardsPosition(dragRatio);
+    const diffX = currentX - startX;
+    const offsetRatio = diffX / config.swipeSensitivity;
+    updateCardPositions(offsetRatio);
   });
   
-  document.addEventListener('mouseup', e => { 
-    if (!isSwipeEnabled || !isSwiping) return; 
-    handleSwipeEnd();
+  document.addEventListener('mouseup', () => {
+    if (!isSwipeEnabled || !isSwiping) return;
+    finishSwipe();
     isSwiping = false;
   });
 }
 
-function handleSwipeEnd() {
+function finishSwipe() {
   const diffX = currentX - startX;
   const threshold = 50;
   
   if (Math.abs(diffX) < threshold) {
-    updateCardsPosition(0);
+    // しきい値以下ならスワイプなし
+    updateCardPositions(0);
     return;
   }
   
-  const total = document.querySelectorAll('.card-wrapper').length;
+  // スワイプ方向に応じてアクティブカードを変更
   if (diffX > 0) {
-    activeCardIndex = (activeCardIndex - 1 + total) % total;
+    // 右スワイプ
+    activeCardIndex = (activeCardIndex - 1 + 5) % 5;
   } else {
-    activeCardIndex = (activeCardIndex + 1) % total;
+    // 左スワイプ
+    activeCardIndex = (activeCardIndex + 1) % 5;
   }
   
-  updateCardsPosition(0);
+  // 新しい位置を適用
+  updateCardPositions(0);
 }
 </script>
 
