@@ -16,10 +16,13 @@
     position: absolute;
     width: 250px;  /* 横幅を少し縮小 */
     height: 350px; /* 縦に長く */
-    top: 0;
-    left: 0;
     transform-style: preserve-3d;
     opacity: 1;
+    /* 重要: カードを中央に配置するための設定 */
+    left: 50%;
+    top: 50%;
+    margin-left: -125px; /* 幅の半分 */
+    margin-top: -175px;  /* 高さの半分 */
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
   .card {
@@ -31,7 +34,7 @@
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 25px rgba(0,255,255,0.9)) drop-shadow(0 0 50px rgba(0,255,255,0.6));
-    transition: height 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s;
+    transition: height 2.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.5s; /* 2.5秒に変更 */
   }
   .overlay { 
     position: absolute; 
@@ -71,7 +74,7 @@ let isSwipeEnabled = false;
 const layoutConfig = {
   radius: window.innerWidth * 1.2,
   theta: Math.PI * 1.2,
-  centerZ: -500,
+  centerZ: -600,  // より遠くに配置
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -99,12 +102,27 @@ function initAR() {
 function createCards() {
   const carousel = document.querySelector('.carousel');
   const totalCards = 5;
+  const cardData = [
+    { title: "STEP 1", content: "底の方からしっかり混ぜる！" },
+    { title: "STEP 2", content: "よく混ぜる" },
+    { title: "STEP 3", content: "最初の一口" },
+    { title: "STEP 4", content: "追いニンニク" },
+    { title: "STEP 5", content: "完食" }
+  ];
+
+  // 中央のカードをアクティブに設定
   activeCardIndex = Math.floor(totalCards / 2);
 
   for (let i = 0; i < totalCards; i++) {
     const wrapper = document.createElement('div');
     wrapper.className = 'card-wrapper';
-    wrapper.innerHTML = `<div class="card"></div>`;
+    // カードの内容を追加
+    wrapper.innerHTML = `
+      <div class="card">
+        <div style="position: absolute; top: 20px; left: 20px; color: white; font-size: 24px; font-weight: bold; text-shadow: 0 0 5px rgba(0, 200, 255, 0.8);">${cardData[i].title}</div>
+        <div style="position: absolute; top: 60px; left: 20px; color: white; font-size: 16px; width: 90%; text-shadow: 0 0 5px rgba(0, 200, 255, 0.5);">${cardData[i].content}</div>
+      </div>
+    `;
     carousel.appendChild(wrapper);
   }
 
@@ -131,12 +149,13 @@ function growCards() {
     setTimeout(() => {
       card.style.height = '350px'; // 縦型カード
       card.style.opacity = '1';
-    }, i * 100);
+    }, i * 300); // 300ミリ秒に変更（以前は100）
   });
 
+  // スワイプ有効化までの時間も延長
   setTimeout(() => {
     isSwipeEnabled = true;
-  }, wrappers.length * 100 + 500);
+  }, wrappers.length * 300 + 1000); // 1000ミリ秒に変更（以前は500）
 }
 
 function applyCardPositions(offset = 0) {
@@ -154,6 +173,7 @@ function applyCardPositions(offset = 0) {
     const scale = 1 - 0.5 * Math.abs(angleRatio); // スケール差を拡大
     const opacity = 1 - 0.5 * Math.abs(angleRatio);
 
+    // 中央からのX, Z移動だけを指定（カードの中心はCSSで既に設定済み）
     wrapper.style.transform = `
       translateX(${x}px)
       translateZ(${z}px)
