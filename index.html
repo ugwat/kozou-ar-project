@@ -18,30 +18,30 @@
   .carousel { 
     position: absolute; 
     width: 100%; 
-    height: 75%; 
-    bottom: 12%; 
-    transform-style: preserve-3d; 
-    transform: rotateX(20deg);
+    height: 80%; /* 高さを増加 */
+    top: 50%; /* センターに配置 */
+    transform: translateY(-50%) rotateX(20deg); /* Y軸中央揃え */
+    transform-style: preserve-3d;
   }
   .card-wrapper {
     position: absolute;
     width: 280px;
-    height: 400px;
+    height: 491px; /* 枠の高さに合わせて修正 */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
     top: 50%;
     margin-left: -140px;
-    margin-top: -200px;
+    margin-top: -245.5px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
   .card {
     position: absolute;
     width: 100%;
-    height: 10px;
+    height: 10px; /* 初期は小さく */
     bottom: 0;
-    background: url('./assets/1waku.png') no-repeat center/cover;
+    background: url('./assets/1waku.png') no-repeat center/contain;
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
@@ -49,9 +49,47 @@
     backface-visibility: hidden;
     will-change: height, opacity, filter;
   }
-  /* 中央カードのみに適用する特別効果 */
-  .card-wrapper.center .card {
-    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
+  /* カードのテキスト部分 */
+  .card-content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 40px 20px 20px;
+    opacity: 0;
+    transition: opacity 1.5s ease-in;
+    color: #dbfaff;
+    text-shadow: 0 0 10px rgba(0,255,255,0.8), 0 0 20px rgba(0,255,255,0.4);
+    font-family: sans-serif;
+  }
+  .card-title {
+    font-size: 28px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+    line-height: 1.4;
+  }
+  .card-subtitle {
+    font-size: 18px;
+    text-align: center;
+    margin-bottom: 30px;
+    line-height: 1.5;
+  }
+  .number-placeholder {
+    width: 100px;
+    height: 100px;
+    margin: 20px auto;
+    background: url('./assets/placeholder-logo.png') no-repeat center/contain;
+  }
+  .card-description {
+    font-size: 14px;
+    text-align: center;
+    margin-top: 30px;
+    line-height: 1.4;
+    opacity: 0.8;
   }
   /* スキャンライン効果 */
   .center .card::after {
@@ -77,19 +115,6 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-  
-  /* デバッグ用のカウンター表示 */
-  #card-counter {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    z-index: 1000;
-  }
 </style>
 </head>
 
@@ -106,10 +131,38 @@
   <div class="scene">
     <div class="carousel"></div>
   </div>
-  <div id="card-counter">カード数: 0 / 現在のインデックス: 0</div>
 </div>
 
 <script>
+// カードのコンテンツデータ
+const cardContents = [
+  {
+    title: "底の方から\nしっかり混ぜる！",
+    description: "底に旨みの詰まったタレが\n沈んでいるので、\nしっかり混ぜましょう。",
+    footer: "汁が跳ねやすいので、紙エプロンが必要な方は\nスタッフにお申し付けください。"
+  },
+  {
+    title: "まずは\nそのまま食す！",
+    description: "最初に豚骨本来の旨み、\n甘味をを味わって\nいただきたいので、\nまずはそのまま\nお召し上がりください。",
+    footer: "※当店のチャーシューは非常に大きいので、\nかぶりつけないという方は肉バサミを\nご利用いただけます。"
+  },
+  {
+    title: "自分好みに\nカスタマイズ！",
+    description: "当店ではデリシャススティック\n（うまい棒）を砕いて入れることを推奨しております。\nバリエーション豊かな卓上調味料もご用意しておりますので、\n自分好みの味変を楽しみましょう。",
+    footer: "※お好みでお酢を入れると、さらにサッパリして\n後味がいいというお声をいただいております。"
+  },
+  {
+    title: "〆にライスを\n入れて完食！",
+    description: "麺を食べ終えたら残ったスープに\nライスダイブ！",
+    footer: "追加注文ご希望の方はご遠慮なくスタッフに\nお申し付けください。"
+  },
+  {
+    title: "SNSで\nシェア！",
+    description: "お楽しみいただけましたら\nSNSでのシェアもお願いします！\n#ラーメン小僧 #KOZOUPLUS",
+    footer: "また食べに来てね！"
+  }
+];
+
 // グローバル変数
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
@@ -161,12 +214,40 @@ function createCards() {
     const card = document.createElement('div');
     card.className = 'card';
     
+    // カードコンテンツを追加（テキスト部分を別レイヤーに）
+    const content = document.createElement('div');
+    content.className = 'card-content';
+    
+    // タイトル部分
+    const title = document.createElement('div');
+    title.className = 'card-title';
+    title.innerText = cardContents[i].title;
+    
+    // 説明文部分
+    const description = document.createElement('div');
+    description.className = 'card-subtitle';
+    description.innerText = cardContents[i].description;
+    
+    // 番号プレースホルダー（画像差し替え用）
+    const numPlaceholder = document.createElement('div');
+    numPlaceholder.className = 'number-placeholder';
+    
+    // フッターテキスト部分
+    const footer = document.createElement('div');
+    footer.className = 'card-description';
+    footer.innerText = cardContents[i].footer;
+    
+    // コンテンツ内容を追加
+    content.appendChild(title);
+    content.appendChild(description);
+    content.appendChild(numPlaceholder);
+    content.appendChild(footer);
+    
+    // カードに追加
+    card.appendChild(content);
     wrapper.appendChild(card);
     carousel.appendChild(wrapper);
   }
-  
-  // カード数の表示を更新
-  updateCardCounter();
   
   // 初期位置の設定
   updateCardPositions();
@@ -176,20 +257,19 @@ function createCards() {
   setTimeout(growCards, 500);
 }
 
-// カードカウンターの更新
-function updateCardCounter() {
-  const counter = document.getElementById('card-counter');
-  const count = document.querySelectorAll('.card-wrapper').length;
-  counter.textContent = `カード数: ${count} / 現在のインデックス: ${activeCardIndex}`;
-}
-
 function growCards() {
   const cards = document.querySelectorAll('.card');
+  const contents = document.querySelectorAll('.card-content');
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '400px'; // フルサイズに戻す
+      card.style.height = '491px'; // 枠の高さに合わせる
       card.style.opacity = '1';
+      
+      // コンテンツも表示
+      setTimeout(() => {
+        contents[i].style.opacity = '1';
+      }, 500);
     }, i * 200);
   });
   
@@ -249,9 +329,6 @@ function updateCardPositions(offsetRatio = 0) {
       wrapper.classList.add('right');
     }
   });
-  
-  // カード数の表示を更新
-  updateCardCounter();
   
   // 浮遊効果のシミュレーション
   if (!isSwiping) {
