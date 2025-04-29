@@ -11,7 +11,7 @@
   #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
   #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { position: absolute; width: 100%; height: 70%; bottom: 15%; transform-style: preserve-3d; transform: rotateX(20deg); }
+  .carousel { position: absolute; width: 100%; height: 75%; bottom: 12%; transform-style: preserve-3d; transform: rotateX(20deg); transition: transform 0.3s ease-out; }
   .card-wrapper {
     position: absolute;
     width: 280px;
@@ -27,15 +27,34 @@
   .card {
     position: absolute;
     width: 100%;
-    height: 400px; /* フルサイズで表示 */
-    top: 0;
-    background-color: #00a2ff; /* 単純な背景色 */
+    height: 10px; /* 最初は小さい高さ */
+    bottom: 0;
+    background-color: #00a2ff;
     border-radius: 12px;
     opacity: 0.8;
     box-shadow: 0 0 25px rgba(0,255,255,0.9);
-    /* 最初は上部だけ表示 */
-    clip-path: inset(0 0 380px 0); /* 上部20pxのみ表示（引っ張るところ） */
-    transition: clip-path 2.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.5s;
+    transition: height 2.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.5s;
+  }
+  .card-content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+    color: white;
+    text-align: center;
+    opacity: 0; /* 最初は非表示 */
+    transition: opacity 1s ease-in;
+  }
+  .card-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-shadow: 0 0 5px rgba(0, 200, 255, 0.8);
+  }
+  .card-text {
+    font-size: 18px;
+    line-height: 1.5;
+    text-shadow: 0 0 5px rgba(0, 200, 255, 0.5);
   }
   .overlay { 
     position: absolute; 
@@ -90,10 +109,19 @@
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 const layoutConfig = {
-  radius: window.innerWidth * 1.0,
-  theta: Math.PI * 1.0,
-  centerZ: -600,
+  radius: window.innerWidth * 0.9, // より大きな半径で横のカードをより見えるように
+  theta: Math.PI * 0.8,  // カードの間隔を適切に
+  centerZ: -500,  // Z軸位置も調整
 };
+
+// カードコンテンツの定義
+const cardData = [
+  { title: "STEP 1", content: "底の方からしっかり混ぜる！", color: "#00a2ff" },
+  { title: "STEP 2", content: "よく混ぜる", color: "#00c8ff" },
+  { title: "STEP 3", content: "最初の一口", color: "#00e5ff" },
+  { title: "STEP 4", content: "追いニンニク", color: "#00ffea" },
+  { title: "STEP 5", content: "完食", color: "#00ffc8" }
+];
 
 // デバッグ用の関数
 function showDebugInfo(message) {
@@ -127,6 +155,9 @@ function initAR() {
   showDebugInfo("initAR: AR初期化開始");
   document.getElementById('ar-container').style.display = 'block';
   
+  // デバイスの傾きセンサーの初期化
+  initDeviceOrientation();
+  
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(stream => {
       showDebugInfo("カメラ起動成功");
@@ -144,16 +175,34 @@ function initAR() {
     });
 }
 
+// デバイスの傾きに対応する
+function initDeviceOrientation() {
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', function(event) {
+      // デバイスの傾きに応じてカルーセルの傾きを変更
+      const carousel = document.querySelector('.carousel');
+      
+      // betaは前後の傾き（-180〜180）
+      // gammaは左右の傾き（-90〜90）
+      const tiltFrontBack = (event.beta || 0) - 60; // 60度を基準にする
+      const tiltLeftRight = event.gamma || 0;
+      
+      // 傾きに応じてカルーセルの角度を調整（大きな動きにならないよう制限）
+      const rotateX = 20 + tiltFrontBack * 0.2; // 基本20度 + 傾き補正（小さめに）
+      const rotateY = tiltLeftRight * 0.2; // 左右の傾きも小さめに
+      
+      carousel.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }, true);
+  }
+}
+
 function createCards() {
   showDebugInfo("createCards: カード生成開始");
   const carousel = document.querySelector('.carousel');
-  const totalCards = 5;
+  const totalCards = cardData.length;
   
   // 中央のカードをアクティブに設定
   activeCardIndex = Math.floor(totalCards / 2);
-  
-  // 色の配列（カードの色を変えて識別しやすく）
-  const cardColors = ['#00a2ff', '#00c8ff', '#00e5ff', '#00ffea', '#00ffc8'];
   
   for (let i = 0; i < totalCards; i++) {
     const wrapper = document.createElement('div');
@@ -162,12 +211,18 @@ function createCards() {
     // カードを作成
     const card = document.createElement('div');
     card.className = 'card';
-    card.textContent = 'Card ' + (i+1); // テキストを追加
-    card.style.color = 'white';
-    card.style.textAlign = 'center';
-    card.style.paddingTop = '5px';
-    card.style.backgroundColor = cardColors[i]; // 色を変える
+    card.style.backgroundColor = cardData[i].color;
     
+    // カードコンテンツ（最初は非表示）
+    const content = document.createElement('div');
+    content.className = 'card-content';
+    content.innerHTML = `
+      <div class="card-title">${cardData[i].title}</div>
+      <div class="card-text">${cardData[i].content}</div>
+    `;
+    
+    // 要素をカードに追加
+    card.appendChild(content);
     wrapper.appendChild(card);
     carousel.appendChild(wrapper);
     
@@ -184,13 +239,20 @@ function createCards() {
 function growCards() {
   showDebugInfo("growCards: カードの成長開始");
   const cards = document.querySelectorAll('.card');
+  const contents = document.querySelectorAll('.card-content');
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      // 大根引き抜きスタイル: 上から下へクリップパスを広げる
-      card.style.clipPath = 'inset(0 0 0 0)'; // 完全に表示
+      card.style.height = '400px'; // 完全に表示
       card.style.opacity = '1';
       showDebugInfo("カード" + (i+1) + "を成長させました");
+      
+      // カードが成長した後にコンテンツを表示
+      setTimeout(() => {
+        contents[i].style.opacity = '1';
+        showDebugInfo("カード" + (i+1) + "のコンテンツを表示");
+      }, 500); // 0.5秒後に表示
+      
     }, i * 300);
   });
   
@@ -202,22 +264,26 @@ function growCards() {
 }
 
 function applyCardPositions(offset = 0) {
-  showDebugInfo("applyCardPositions: カード位置適用");
   const wrappers = document.querySelectorAll('.card-wrapper');
   const total = wrappers.length;
   
   wrappers.forEach((wrapper, i) => {
     let relIndex = i - activeCardIndex - offset;
+    // 無限ループ対応
     if (relIndex < -total/2) relIndex += total;
     if (relIndex > total/2) relIndex -= total;
     
     const angleRatio = relIndex / (total/2);
     const angle = angleRatio * (layoutConfig.theta/2);
+    
+    // よりカードが見えるように位置計算を調整
     const x = Math.sin(angle) * layoutConfig.radius;
     const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
     const rotateY = angleRatio * 60;
-    const scale = 1 - 0.4 * Math.abs(angleRatio);
-    const opacity = 1 - 0.4 * Math.abs(angleRatio);
+    
+    // 端のカードをより見えるように調整
+    const scale = 1 - 0.3 * Math.abs(angleRatio); // 縮小率を小さく
+    const opacity = 1 - 0.35 * Math.abs(angleRatio); // 透明度も調整
     
     wrapper.style.transform = `
       translateX(${x}px)
