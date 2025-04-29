@@ -18,14 +18,13 @@
     height: 200px;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, 0) scale(1) rotateX(0deg);
     transform-style: preserve-3d;
     opacity: 1;
   }
   .card {
     position: absolute;
     width: 100%;
-    height: 10px;
+    height: 10px; /* 最初は埋もれている状態 */
     bottom: 0;
     background: url('./assets/1waku.png') no-repeat center/cover;
     border-radius: 12px;
@@ -65,9 +64,9 @@
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 const layoutConfig = {
-  radius: window.innerWidth * 0.5,
+  radius: window.innerWidth * 0.6,
   theta: Math.PI * 1.0,
-  centerZ: -300,
+  centerZ: -400,
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -105,7 +104,6 @@ function createCards() {
   }
 
   setupSwipeEvents();
-  applyCardPositions(0);
   prepareCards();
 }
 
@@ -128,32 +126,11 @@ function growCards() {
     }, i * 100);
   });
 
-  // 生え終わったあと軽くスピン！
+  // 生えたあとすぐ立体配置して、スライド許可！
   setTimeout(() => {
-    startLightSpin(); // ★軽スピンをスタート
+    applyCardPositions(0);
+    isSwipeEnabled = true;
   }, wrappers.length * 100 + 500);
-}
-
-function startLightSpin() {
-  let spins = 0;
-  let speed = 0.25;
-  const total = document.querySelectorAll('.card-wrapper').length;
-  const spinFrames = total * 1.5; // 1.5周だけ回す
-
-  function spinStep() {
-    activeCardIndex = (activeCardIndex + speed) % total;
-    applyCardPositions(activeCardIndex % 1);
-
-    if (spins++ < spinFrames) {
-      requestAnimationFrame(spinStep);
-    } else {
-      activeCardIndex = Math.round(activeCardIndex) % total;
-      applyCardPositions(0);
-      isSwipeEnabled = true; // ★スピン終了後にスワイプ解禁
-    }
-  }
-
-  spinStep();
 }
 
 function applyCardPositions(offset = 0) {
