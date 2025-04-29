@@ -129,9 +129,11 @@ function growCards() {
   });
 
   setTimeout(() => {
-    isSwipeEnabled = true; // ここで有効化！
-  }, 1000);
+    applyCardPositions(0);  // ← ★これ追加！
+    isSwipeEnabled = true; // ← ★これもこのタイミング！
+  }, wrappers.length * 100 + 500);
 }
+
 
 function applyCardPositions(offset = 0) {
   const wrappers = document.querySelectorAll('.card-wrapper');
