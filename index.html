@@ -18,21 +18,21 @@
   .carousel { 
     position: absolute; 
     width: 100%; 
-    height: 100%; 
-    top: 40%; 
-    transform: translateY(-50%) rotateX(20deg);
+    height: 75%; 
+    bottom: 12%; 
     transform-style: preserve-3d; 
+    transform: rotateX(20deg);
   }
   .card-wrapper {
     position: absolute;
     width: 336px;  /* 280px * 1.2 */
-    height: 589px; /* 491px * 1.2 */
+    height: 491px; /* もともとの枠サイズ */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
     top: 50%;
     margin-left: -168px; /* 幅の半分 */
-    margin-top: -294.5px; /* 高さの半分 */
+    margin-top: -245.5px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
@@ -79,6 +79,19 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+  
+  /* デバッグ用のカウンター表示 */
+  #card-counter {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 1000;
+  }
 </style>
 </head>
 
@@ -95,6 +108,7 @@
   <div class="scene">
     <div class="carousel"></div>
   </div>
+  <div id="card-counter">カード数: 0 / 現在のインデックス: 0</div>
 </div>
 
 <script>
@@ -116,7 +130,7 @@ const cardImages = [
 
 // 設定
 const config = {
-  cardSpacing: 350,           // カード間の距離
+  cardSpacing: 300,           // カード間の距離
   swipeSensitivity: 200,      // スワイプの感度
   cardRotation: 30,           // カードの回転角度
   centerZ: -400,              // Z軸の奥行き
@@ -163,6 +177,9 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
   
+  // カード数の表示を更新
+  updateCardCounter();
+  
   // 初期位置の設定
   updateCardPositions();
   setupSwipeEvents();
@@ -171,20 +188,26 @@ function createCards() {
   setTimeout(growCards, 500);
 }
 
+// カードカウンターの更新
+function updateCardCounter() {
+  const counter = document.getElementById('card-counter');
+  const count = document.querySelectorAll('.card-wrapper').length;
+  counter.textContent = `カード数: ${count} / 現在のインデックス: ${activeCardIndex}`;
+}
+
 function growCards() {
   const cards = document.querySelectorAll('.card');
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '589px'; // 拡大したサイズに合わせる
+      card.style.height = '491px'; // 正しいサイズに変更
       card.style.opacity = '1';
-      card.style.filter = 'drop-shadow(0 0 25px rgba(0,255,255,0.9)) drop-shadow(0 0 50px rgba(0,255,255,0.6))';
-    }, i * 300);
+    }, i * 200);
   });
   
   setTimeout(() => {
     isSwipeEnabled = true;
-  }, cards.length * 300 + 1000);
+  }, 1500);
 }
 
 // スライドを含めたカード位置の更新
@@ -238,6 +261,9 @@ function updateCardPositions(offsetRatio = 0) {
       wrapper.classList.add('right');
     }
   });
+  
+  // カード数の表示を更新
+  updateCardCounter();
   
   // 浮遊効果のシミュレーション
   if (!isSwiping) {
