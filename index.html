@@ -41,7 +41,7 @@
     height:100%; 
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
     z-index:15; 
-    pointer-events: none; /* ←スライド操作を邪魔しない！ */
+    pointer-events: none; /* スライド邪魔しない */
   }
 </style>
 </head>
@@ -65,9 +65,9 @@
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 const layoutConfig = {
-  radius: window.innerWidth * 1.2,
-  theta: Math.PI * 1.3,
-  centerZ: -600,
+  radius: window.innerWidth * 0.5,
+  theta: Math.PI * 1.0,
+  centerZ: -300,
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -83,13 +83,11 @@ function initAR() {
     .then(stream => {
       const video = document.getElementById('camera-view');
       video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        video.play(); // 確実に再生
-      };
+      video.onloadedmetadata = () => { video.play(); };
       createCards();
     })
     .catch(err => {
-      console.warn("カメラ使えない、ダミーモードで続行", err);
+      console.warn("カメラ使えない、ダミーモード続行", err);
       createCards();
     });
 }
@@ -106,15 +104,17 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
 
+  setupSwipeEvents();
   applyCardPositions(0);
-  setupSwipeEvents(); // スワイプイベントここで登録
+  prepareCards();
+}
 
+function prepareCards() {
   const cards = document.querySelectorAll('.card');
   cards.forEach(card => {
     card.style.height = '10px';
     card.style.opacity = '0.8';
   });
-
   setTimeout(growCards, 500);
 }
 
@@ -128,12 +128,33 @@ function growCards() {
     }, i * 100);
   });
 
+  // 生え終わったあと軽くスピン！
   setTimeout(() => {
-    applyCardPositions(0);  // ← ★これ追加！
-    isSwipeEnabled = true; // ← ★これもこのタイミング！
+    startLightSpin(); // ★軽スピンをスタート
   }, wrappers.length * 100 + 500);
 }
 
+function startLightSpin() {
+  let spins = 0;
+  let speed = 0.25;
+  const total = document.querySelectorAll('.card-wrapper').length;
+  const spinFrames = total * 1.5; // 1.5周だけ回す
+
+  function spinStep() {
+    activeCardIndex = (activeCardIndex + speed) % total;
+    applyCardPositions(activeCardIndex % 1);
+
+    if (spins++ < spinFrames) {
+      requestAnimationFrame(spinStep);
+    } else {
+      activeCardIndex = Math.round(activeCardIndex) % total;
+      applyCardPositions(0);
+      isSwipeEnabled = true; // ★スピン終了後にスワイプ解禁
+    }
+  }
+
+  spinStep();
+}
 
 function applyCardPositions(offset = 0) {
   const wrappers = document.querySelectorAll('.card-wrapper');
@@ -171,10 +192,11 @@ function setupSwipeEvents() {
 
 function handleSwipe(diffX) {
   const threshold = 50;
+  if (Math.abs(diffX) < threshold) return;
   const total = document.querySelectorAll('.card-wrapper').length;
-  if (diffX > threshold) {
+  if (diffX > 0) {
     activeCardIndex = (activeCardIndex - 1 + total) % total;
-  } else if (diffX < -threshold) {
+  } else {
     activeCardIndex = (activeCardIndex + 1) % total;
   }
   applyCardPositions(0);
