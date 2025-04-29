@@ -13,16 +13,17 @@
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
   .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
   .card-wrapper {
-    position: absolute;
-    width: 320px;
-    height: 200px;
-    transform-style: preserve-3d;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, 100px) scale(1.8) rotateX(0deg);
-    opacity: 0;
-    transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s ease-out;
-  }
+  position: absolute;
+  width: 320px;
+  height: 200px;
+  transform-style: preserve-3d;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 0px) scale(1.0) rotateX(0deg);
+  opacity: 1; /* 最初から見える */
+  transition: none; /* 余計なアニメーション禁止 */
+}
+
   .card {
     width: 100%;
     height: 100%;
