@@ -16,10 +16,11 @@
     position: absolute;
     width: 320px;
     height: 200px;
-    top: 50%;
-    left: 50%;
+    top: 0;
+    left: 0;
     transform-style: preserve-3d;
     opacity: 1;
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* 追加：スムーズな移動のため */
   }
   .card {
     position: absolute;
@@ -41,6 +42,10 @@
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
     z-index:15; 
     pointer-events: none; /* スライド邪魔しない */
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 </style>
 </head>
@@ -103,6 +108,9 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
 
+  // 重要：最初から位置を設定する
+  applyCardPositions(0);
+  
   setupSwipeEvents();
   prepareCards();
 }
@@ -126,9 +134,8 @@ function growCards() {
     }, i * 100);
   });
 
-  // 生えたあとすぐ立体配置して、スライド許可！
+  // 各カードが生え終わる前にスライド有効化（タイミング改善）
   setTimeout(() => {
-    applyCardPositions(0);
     isSwipeEnabled = true;
   }, wrappers.length * 100 + 500);
 }
@@ -161,15 +168,62 @@ function applyCardPositions(offset = 0) {
 
 function setupSwipeEvents() {
   let startX = 0;
-  document.addEventListener('touchstart', e => { if (!isSwipeEnabled) return; startX = e.touches[0].clientX; });
-  document.addEventListener('touchend', e => { if (!isSwipeEnabled) return; handleSwipe(e.changedTouches[0].clientX - startX); });
-  document.addEventListener('mousedown', e => { if (!isSwipeEnabled) return; startX = e.clientX; });
-  document.addEventListener('mouseup', e => { if (!isSwipeEnabled) return; handleSwipe(e.clientX - startX); });
+  let currentX = 0;
+  let isSwiping = false;
+  
+  // タッチイベント（ドラッグ中のリアルタイム更新を追加）
+  document.addEventListener('touchstart', e => { 
+    if (!isSwipeEnabled) return; 
+    startX = e.touches[0].clientX;
+    currentX = startX;
+    isSwiping = true;
+  });
+  
+  document.addEventListener('touchmove', e => {
+    if (!isSwipeEnabled || !isSwiping) return;
+    currentX = e.touches[0].clientX;
+    const dragDistance = currentX - startX;
+    const dragRatio = dragDistance / 200; // ドラッグ感度調整
+    applyCardPositions(dragRatio); // ドラッグ中リアルタイム更新
+  });
+  
+  document.addEventListener('touchend', e => { 
+    if (!isSwipeEnabled || !isSwiping) return; 
+    handleSwipe(currentX - startX);
+    isSwiping = false;
+  });
+  
+  // マウスイベント（ドラッグ中のリアルタイム更新を追加）
+  document.addEventListener('mousedown', e => { 
+    if (!isSwipeEnabled) return; 
+    startX = e.clientX;
+    currentX = startX;
+    isSwiping = true;
+  });
+  
+  document.addEventListener('mousemove', e => {
+    if (!isSwipeEnabled || !isSwiping) return;
+    currentX = e.clientX;
+    const dragDistance = currentX - startX;
+    const dragRatio = dragDistance / 200; // ドラッグ感度調整
+    applyCardPositions(dragRatio); // ドラッグ中リアルタイム更新
+  });
+  
+  document.addEventListener('mouseup', e => { 
+    if (!isSwipeEnabled || !isSwiping) return; 
+    handleSwipe(currentX - startX);
+    isSwiping = false;
+  });
 }
 
 function handleSwipe(diffX) {
   const threshold = 50;
-  if (Math.abs(diffX) < threshold) return;
+  if (Math.abs(diffX) < threshold) {
+    // スワイプしきれなかった場合は元の位置に戻す
+    applyCardPositions(0);
+    return;
+  }
+  
   const total = document.querySelectorAll('.card-wrapper').length;
   if (diffX > 0) {
     activeCardIndex = (activeCardIndex - 1 + total) % total;
