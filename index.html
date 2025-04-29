@@ -91,16 +91,24 @@ function createCards() {
 function growCards() {
   const wrappers = document.querySelectorAll('.card-wrapper');
   wrappers.forEach((wrapper, i) => {
+    const card = wrapper.querySelector('.card');
+
+    // 初期状態：高さほぼゼロ
+    card.style.height = '10px';
+
+    // 少し遅れてから伸びる
     setTimeout(() => {
-      wrapper.style.transform = `translate(-50%, 0px) scale(1.0)`;
-      wrapper.style.opacity = 1;
-    }, i * 150);
+      card.style.transition = 'height 1.8s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      card.style.height = '200px'; // 各カードの正しい高さ
+      card.style.opacity = '1';
+    }, i * 150); // カードごとにディレイをつけて生やす
   });
 
   setTimeout(() => {
     startSpinAnimation();
-  }, wrappers.length * 150 + 1000);
+  }, wrappers.length * 150 + 2000);
 }
+
 
 function applyCardPositions(offset = 0) {
   const wrappers = document.querySelectorAll('.card-wrapper');
