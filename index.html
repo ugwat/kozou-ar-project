@@ -2,16 +2,59 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>KOZOU+ AR Experience</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; }
-  #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:1000; color:white; }
-  #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
-  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
-  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { position: absolute; width: 100%; height: 75%; bottom: 12%; transform-style: preserve-3d; transform: rotateX(20deg); }
+
+  #loading-screen {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:black;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+    color:white;
+  }
+
+  #ar-container {
+    width: 100%; height: 100%;
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 1;
+    display: none;
+  }
+
+  #camera-view {
+    position: absolute;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    z-index: 10;
+    background: #000;
+  }
+
+  .scene {
+    position: absolute;
+    width: 100%; height: 100%;
+    transform-style: preserve-3d;
+    perspective: 1400px;
+    z-index: 20;
+  }
+
+  .carousel {
+    position: absolute;
+    width: 100%;
+    height: 75%;
+    bottom: 12%;
+    transform-style: preserve-3d;
+    transform: rotateX(20deg);
+    transition: transform 0.3s ease-out;
+  }
+
   .card-wrapper {
     position: absolute;
     width: 280px;
@@ -24,6 +67,7 @@
     margin-top: -200px;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
+
   .card {
     position: absolute;
     width: 100%;
@@ -35,37 +79,24 @@
     filter: drop-shadow(0 0 25px rgba(0,255,255,0.9)) drop-shadow(0 0 50px rgba(0,255,255,0.6));
     transition: height 2.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.5s;
   }
-  .card-content {
+
+  .overlay {
     position: absolute;
-    width: 100%;
-    height: 100%;
-    padding: 20px;
-    color: white;
-    text-align: center;
-    opacity: 0;
-    transition: opacity 1s ease-in;
-  }
-  .card-title {
-    font-size: 28px;
-    font-weight: bold;
-    margin-bottom: 15px;
-    text-shadow: 0 0 5px rgba(0, 200, 255, 0.8);
-  }
-  .card-text {
-    font-size: 18px;
-    line-height: 1.5;
-    text-shadow: 0 0 5px rgba(0, 200, 255, 0.5);
-  }
-  .overlay { 
-    position: absolute; 
-    top:0; left:0; width:100%; height:100%;
+    top:0; left:0;
+    width:100%; height:100%;
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%);
-    z-index:15; pointer-events:none;
+    z-index:15;
+    pointer-events: none;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 </style>
 </head>
-
 <body>
+
 <div id="loading-screen">
   <div style="border:5px solid rgba(0,200,255,0.1); border-top:5px solid #00c8ff; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; margin-bottom:20px;"></div>
   <div>読み込み中...</div>
@@ -84,141 +115,4 @@
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 const layoutConfig = {
-  radius: window.innerWidth * 0.9,
-  theta: Math.PI * 0.8,
-  centerZ: -500,
-};
-
-const cardData = [
-  { title: "STEP 1", content: "底の方からしっかり混ぜる！" },
-  { title: "STEP 2", content: "よく混ぜる" },
-  { title: "STEP 3", content: "最初の一口" },
-  { title: "STEP 4", content: "追いニンニク" },
-  { title: "STEP 5", content: "完食" }
-];
-
-document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById('start-button').addEventListener('click', () => {
-    document.getElementById('loading-screen').style.display = 'none';
-    initAR();
-  });
-});
-
-function initAR() {
-  document.getElementById('ar-container').style.display = 'block';
-
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then(stream => {
-      const video = document.getElementById('camera-view');
-      video.srcObject = stream;
-      video.onloadedmetadata = () => {
-        video.play();
-        createCards(); // ★ここに移動！！
-      };
-    })
-    .catch(err => {
-      console.warn("カメラエラー:", err);
-      createCards();
-    });
-}
-
-
-function createCards() {
-  const carousel = document.querySelector('.carousel');
-  const totalCards = cardData.length;
-  activeCardIndex = Math.floor(totalCards / 2);
-
-  for (let i = 0; i < totalCards; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'card-wrapper';
-    const card = document.createElement('div');
-    card.className = 'card';
-    const content = document.createElement('div');
-    content.className = 'card-content';
-    content.innerHTML = `<div class="card-title">${cardData[i].title}</div><div class="card-text">${cardData[i].content}</div>`;
-    card.appendChild(content);
-    wrapper.appendChild(card);
-    carousel.appendChild(wrapper);
-  }
-
-  applyCardPositions(0);
-  setupSwipeEvents();
-
-  const cards = document.querySelectorAll('.card');
-  cards.forEach(card => {
-    card.style.height = '10px';
-    card.style.opacity = '0.8';
-  });
-
-  setTimeout(growCards, 500);
-}
-
-function growCards() {
-  const cards = document.querySelectorAll('.card');
-  const contents = document.querySelectorAll('.card-content');
-  cards.forEach((card, i) => {
-    setTimeout(() => {
-      card.style.height = '400px';
-      card.style.opacity = '1';
-      setTimeout(() => { contents[i].style.opacity = '1'; }, 500);
-    }, i * 300);
-  });
-  setTimeout(() => { isSwipeEnabled = true; }, cards.length * 300 + 1500);
-}
-
-function applyCardPositions(offset = 0) {
-  const wrappers = document.querySelectorAll('.card-wrapper');
-  const total = wrappers.length;
-  wrappers.forEach((wrapper, i) => {
-    let relIndex = i - activeCardIndex - offset;
-    if (relIndex < -total/2) relIndex += total;
-    if (relIndex > total/2) relIndex -= total;
-    const angleRatio = relIndex / (total/2);
-    const angle = angleRatio * (layoutConfig.theta/2);
-    const x = Math.sin(angle) * layoutConfig.radius;
-    const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
-    const rotateY = angleRatio * 60;
-    const scale = 1 - 0.3 * Math.abs(angleRatio);
-    const opacity = 1 - 0.35 * Math.abs(angleRatio);
-
-    wrapper.style.transform = `
-      translateX(${x}px)
-      translateZ(${z}px)
-      rotateY(${rotateY}deg)
-      scale(${scale})
-    `;
-    wrapper.style.opacity = opacity;
-    wrapper.style.zIndex = 100 - Math.abs(Math.round(relIndex*10));
-  });
-}
-
-function setupSwipeEvents() {
-  let startX = 0;
-  let currentX = 0;
-  let isSwiping = false;
-  document.addEventListener('touchstart', e => { if (!isSwipeEnabled) return; startX = e.touches[0].clientX; currentX = startX; isSwiping = true; });
-  document.addEventListener('touchmove', e => { if (!isSwipeEnabled || !isSwiping) return; currentX = e.touches[0].clientX; const dragRatio = (currentX - startX) / 200; applyCardPositions(dragRatio); });
-  document.addEventListener('touchend', e => { if (!isSwipeEnabled || !isSwiping) return; handleSwipe(currentX - startX); isSwiping = false; });
-  document.addEventListener('mousedown', e => { if (!isSwipeEnabled) return; startX = e.clientX; currentX = startX; isSwiping = true; });
-  document.addEventListener('mousemove', e => { if (!isSwipeEnabled || !isSwiping) return; currentX = e.clientX; const dragRatio = (currentX - startX) / 200; applyCardPositions(dragRatio); });
-  document.addEventListener('mouseup', e => { if (!isSwipeEnabled || !isSwiping) return; handleSwipe(currentX - startX); isSwiping = false; });
-}
-
-function handleSwipe(diffX) {
-  const threshold = 50;
-  if (Math.abs(diffX) < threshold) {
-    applyCardPositions(0);
-    return;
-  }
-  const total = document.querySelectorAll('.card-wrapper').length;
-  if (diffX > 0) {
-    activeCardIndex = (activeCardIndex - 1 + total) % total;
-  } else {
-    activeCardIndex = (activeCardIndex + 1) % total;
-  }
-  applyCardPositions(0);
-}
-</script>
-
-</body>
-</html>
+  radius: window.innerWidth * 1.4,  //*
