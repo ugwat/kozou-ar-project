@@ -77,6 +77,19 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+  
+  /* デバッグ用のカウンター表示 */
+  #card-counter {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 1000;
+  }
 </style>
 </head>
 
@@ -93,6 +106,7 @@
   <div class="scene">
     <div class="carousel"></div>
   </div>
+  <div id="card-counter">カード数: 0 / 現在のインデックス: 0</div>
 </div>
 
 <script>
@@ -151,6 +165,9 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
   
+  // カード数の表示を更新
+  updateCardCounter();
+  
   // 初期位置の設定
   updateCardPositions();
   setupSwipeEvents();
@@ -159,12 +176,19 @@ function createCards() {
   setTimeout(growCards, 500);
 }
 
+// カードカウンターの更新
+function updateCardCounter() {
+  const counter = document.getElementById('card-counter');
+  const count = document.querySelectorAll('.card-wrapper').length;
+  counter.textContent = `カード数: ${count} / 現在のインデックス: ${activeCardIndex}`;
+}
+
 function growCards() {
   const cards = document.querySelectorAll('.card');
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '400px';
+      card.style.height = '400px'; // フルサイズに戻す
       card.style.opacity = '1';
     }, i * 200);
   });
@@ -200,8 +224,8 @@ function updateCardPositions(offsetRatio = 0) {
     // 回転角度の計算
     const rotationY = relativePos * config.cardRotation;
     
-    // 縮小率の計算
-    const scale = 1 - Math.abs(relativePos) * 0.2;
+    // 縮小率の計算（1.0を基準に）
+    const scale = 1.0 - Math.abs(relativePos) * 0.2;
     
     // 不透明度の計算
     const opacity = 1 - Math.abs(relativePos) * 0.3;
@@ -225,6 +249,9 @@ function updateCardPositions(offsetRatio = 0) {
       wrapper.classList.add('right');
     }
   });
+  
+  // カード数の表示を更新
+  updateCardCounter();
   
   // 浮遊効果のシミュレーション
   if (!isSwiping) {
