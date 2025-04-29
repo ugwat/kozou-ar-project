@@ -9,7 +9,7 @@
   body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; }
   #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:black; display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:1000; color:white; }
   #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
-  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; filter: brightness(0.85); background: #000; }
+  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
   .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
   .card-wrapper {
@@ -33,7 +33,16 @@
     filter: drop-shadow(0 0 25px rgba(0,255,255,0.9)) drop-shadow(0 0 50px rgba(0,255,255,0.6));
     transition: height 1.2s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 1.2s;
   }
-  .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); z-index:15; pointer-events:none; }
+  .overlay { 
+    position: absolute; 
+    top:0; 
+    left:0; 
+    width:100%; 
+    height:100%; 
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
+    z-index:15; 
+    pointer-events: none; /* ←スライド操作を邪魔しない！ */
+  }
 </style>
 </head>
 
@@ -55,7 +64,6 @@
 <script>
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
-let swipeEventsRegistered = false;
 const layoutConfig = {
   radius: window.innerWidth * 1.2,
   theta: Math.PI * 1.3,
@@ -73,10 +81,17 @@ function initAR() {
   document.getElementById('ar-container').style.display = 'block';
   navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     .then(stream => {
-      document.getElementById('camera-view').srcObject = stream;
+      const video = document.getElementById('camera-view');
+      video.srcObject = stream;
+      video.onloadedmetadata = () => {
+        video.play(); // 確実に再生
+      };
       createCards();
     })
-    .catch(() => { createCards(); });
+    .catch(err => {
+      console.warn("カメラ使えない、ダミーモードで続行", err);
+      createCards();
+    });
 }
 
 function createCards() {
@@ -92,6 +107,7 @@ function createCards() {
   }
 
   applyCardPositions(0);
+  setupSwipeEvents(); // スワイプイベントここで登録
 
   const cards = document.querySelectorAll('.card');
   cards.forEach(card => {
@@ -113,12 +129,8 @@ function growCards() {
   });
 
   setTimeout(() => {
-    isSwipeEnabled = true;
-    if (!swipeEventsRegistered) {
-      setupSwipeEvents();
-      swipeEventsRegistered = true;
-    }
-  }, 1000); // 生えたあとすぐスワイプ可能に
+    isSwipeEnabled = true; // ここで有効化！
+  }, 1000);
 }
 
 function applyCardPositions(offset = 0) {
