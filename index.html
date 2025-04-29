@@ -11,16 +11,16 @@
   #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
   #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { position: absolute; width: 100%; height: 300px; bottom: 180px; transform-style: preserve-3d; transform: rotateX(20deg); }
+  .carousel { position: absolute; width: 100%; height: 60%; bottom: 20%; transform-style: preserve-3d; transform: rotateX(20deg); }
   .card-wrapper {
     position: absolute;
-    width: 320px;
-    height: 200px;
+    width: 250px;  /* 横幅を少し縮小 */
+    height: 350px; /* 縦に長く */
     top: 0;
     left: 0;
     transform-style: preserve-3d;
     opacity: 1;
-    transition: transform 0.5s ease-out, opacity 0.5s ease-out; /* 追加：スムーズな移動のため */
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
   .card {
     position: absolute;
@@ -41,7 +41,7 @@
     height:100%; 
     background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
     z-index:15; 
-    pointer-events: none; /* スライド邪魔しない */
+    pointer-events: none;
   }
   @keyframes spin {
     0% { transform: rotate(0deg); }
@@ -69,9 +69,9 @@
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 const layoutConfig = {
-  radius: window.innerWidth * 0.6,
-  theta: Math.PI * 1.0,
-  centerZ: -400,
+  radius: window.innerWidth * 1.2,
+  theta: Math.PI * 1.2,
+  centerZ: -500,
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -108,7 +108,7 @@ function createCards() {
     carousel.appendChild(wrapper);
   }
 
-  // 重要：最初から位置を設定する
+  // 最初から位置を設定
   applyCardPositions(0);
   
   setupSwipeEvents();
@@ -129,12 +129,11 @@ function growCards() {
   wrappers.forEach((wrapper, i) => {
     const card = wrapper.querySelector('.card');
     setTimeout(() => {
-      card.style.height = '200px';
+      card.style.height = '350px'; // 縦型カード
       card.style.opacity = '1';
     }, i * 100);
   });
 
-  // 各カードが生え終わる前にスライド有効化（タイミング改善）
   setTimeout(() => {
     isSwipeEnabled = true;
   }, wrappers.length * 100 + 500);
@@ -152,7 +151,7 @@ function applyCardPositions(offset = 0) {
     const x = Math.sin(angle) * layoutConfig.radius;
     const z = layoutConfig.centerZ + Math.cos(angle) * layoutConfig.radius;
     const rotateY = angleRatio * 60;
-    const scale = 1 - 0.4 * Math.abs(angleRatio);
+    const scale = 1 - 0.5 * Math.abs(angleRatio); // スケール差を拡大
     const opacity = 1 - 0.5 * Math.abs(angleRatio);
 
     wrapper.style.transform = `
@@ -171,7 +170,6 @@ function setupSwipeEvents() {
   let currentX = 0;
   let isSwiping = false;
   
-  // タッチイベント（ドラッグ中のリアルタイム更新を追加）
   document.addEventListener('touchstart', e => { 
     if (!isSwipeEnabled) return; 
     startX = e.touches[0].clientX;
@@ -184,7 +182,7 @@ function setupSwipeEvents() {
     currentX = e.touches[0].clientX;
     const dragDistance = currentX - startX;
     const dragRatio = dragDistance / 200; // ドラッグ感度調整
-    applyCardPositions(dragRatio); // ドラッグ中リアルタイム更新
+    applyCardPositions(dragRatio);
   });
   
   document.addEventListener('touchend', e => { 
@@ -193,7 +191,6 @@ function setupSwipeEvents() {
     isSwiping = false;
   });
   
-  // マウスイベント（ドラッグ中のリアルタイム更新を追加）
   document.addEventListener('mousedown', e => { 
     if (!isSwipeEnabled) return; 
     startX = e.clientX;
@@ -205,8 +202,8 @@ function setupSwipeEvents() {
     if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.clientX;
     const dragDistance = currentX - startX;
-    const dragRatio = dragDistance / 200; // ドラッグ感度調整
-    applyCardPositions(dragRatio); // ドラッグ中リアルタイム更新
+    const dragRatio = dragDistance / 200;
+    applyCardPositions(dragRatio);
   });
   
   document.addEventListener('mouseup', e => { 
@@ -219,7 +216,6 @@ function setupSwipeEvents() {
 function handleSwipe(diffX) {
   const threshold = 50;
   if (Math.abs(diffX) < threshold) {
-    // スワイプしきれなかった場合は元の位置に戻す
     applyCardPositions(0);
     return;
   }
