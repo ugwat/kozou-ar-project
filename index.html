@@ -27,13 +27,15 @@
   .card {
     position: absolute;
     width: 100%;
-    height: 10px; /* 最初は小さい高さ - シンプルな方法に戻す */
-    bottom: 0; /* 底から出てくる */
+    height: 400px; /* フルサイズで表示 */
+    top: 0;
     background-color: #00a2ff; /* 単純な背景色 */
     border-radius: 12px;
     opacity: 0.8;
     box-shadow: 0 0 25px rgba(0,255,255,0.9);
-    transition: height 2.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.5s;
+    /* 最初は上部だけ表示 */
+    clip-path: inset(0 0 380px 0); /* 上部20pxのみ表示（引っ張るところ） */
+    transition: clip-path 2.5s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.5s;
   }
   .overlay { 
     position: absolute; 
@@ -48,6 +50,21 @@
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+  }
+  
+  /* デバッグ情報用スタイル */
+  #debug-info {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: red;
+    z-index: 9999;
+    background-color: rgba(0,0,0,0.5);
+    padding: 5px;
+    max-width: 80%;
+    max-height: 50%;
+    overflow: auto;
+    font-size: 10px;
   }
 </style>
 </head>
@@ -67,6 +84,8 @@
   </div>
 </div>
 
+<div id="debug-info"></div>
+
 <script>
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
@@ -76,28 +95,27 @@ const layoutConfig = {
   centerZ: -600,
 };
 
-// デバッグ用の関数を追加
+// デバッグ用の関数
 function showDebugInfo(message) {
   console.log(message);
-  // デバッグ情報を画面に表示
   const debugElem = document.getElementById('debug-info');
-  if (!debugElem) {
-    const newDebug = document.createElement('div');
-    newDebug.id = 'debug-info';
-    newDebug.style.position = 'fixed';
-    newDebug.style.top = '10px';
-    newDebug.style.left = '10px';
-    newDebug.style.color = 'red';
-    newDebug.style.zIndex = '9999';
-    document.body.appendChild(newDebug);
-    newDebug.textContent = message;
-  } else {
-    debugElem.textContent += "\n" + message;
+  if (debugElem) {
+    debugElem.innerHTML += message + "<br>";
+    // スクロールを一番下に
+    debugElem.scrollTop = debugElem.scrollHeight;
   }
 }
 
 document.addEventListener("DOMContentLoaded", function() {
   showDebugInfo("DOMContentLoaded: ロード完了");
+  
+  // デバッグ情報エリアの作成
+  if (!document.getElementById('debug-info')) {
+    const newDebug = document.createElement('div');
+    newDebug.id = 'debug-info';
+    document.body.appendChild(newDebug);
+  }
+  
   document.getElementById('start-button').addEventListener('click', () => {
     showDebugInfo("スタートボタンがクリックされました");
     document.getElementById('loading-screen').style.display = 'none';
@@ -134,17 +152,21 @@ function createCards() {
   // 中央のカードをアクティブに設定
   activeCardIndex = Math.floor(totalCards / 2);
   
+  // 色の配列（カードの色を変えて識別しやすく）
+  const cardColors = ['#00a2ff', '#00c8ff', '#00e5ff', '#00ffea', '#00ffc8'];
+  
   for (let i = 0; i < totalCards; i++) {
     const wrapper = document.createElement('div');
     wrapper.className = 'card-wrapper';
     
-    // シンプルなカードを作成
+    // カードを作成
     const card = document.createElement('div');
     card.className = 'card';
     card.textContent = 'Card ' + (i+1); // テキストを追加
     card.style.color = 'white';
     card.style.textAlign = 'center';
     card.style.paddingTop = '5px';
+    card.style.backgroundColor = cardColors[i]; // 色を変える
     
     wrapper.appendChild(card);
     carousel.appendChild(wrapper);
@@ -165,7 +187,8 @@ function growCards() {
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '400px';
+      // 大根引き抜きスタイル: 上から下へクリップパスを広げる
+      card.style.clipPath = 'inset(0 0 0 0)'; // 完全に表示
       card.style.opacity = '1';
       showDebugInfo("カード" + (i+1) + "を成長させました");
     }, i * 300);
