@@ -18,21 +18,21 @@
   .carousel { 
     position: absolute; 
     width: 100%; 
-    height: 75%; 
-    bottom: 12%; 
+    height: 100%; /* 75%から100%に変更 - より広いエリアを使用 */
+    top: 0;       /* bottomプロパティの代わりにtopを使用 */
     transform-style: preserve-3d; 
     transform: rotateX(20deg);
   }
   .card-wrapper {
     position: absolute;
-    width: 286px;  /* 実際の画像幅に合わせて修正 */
-    height: 491px; /* 高さはそのまま */
+    width: 343.2px;  /* 286px × 1.2 = 343.2px */
+    height: 589.2px; /* 491px × 1.2 = 589.2px */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
     top: 50%;
-    margin-left: -143px; /* 幅の半分に修正 */
-    margin-top: -245.5px; /* 高さの半分 */
+    margin-left: -171.6px; /* 幅の半分 */
+    margin-top: -294.6px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
@@ -285,7 +285,7 @@ function growCards() {
   
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '491px'; // 修正後のサイズに合わせる
+      card.style.height = '589.2px'; // 修正後のサイズに合わせる (491px × 1.2)
       card.style.opacity = '1';
     }, i * 200);
   });
