@@ -25,13 +25,13 @@
   }
   .card-wrapper {
     position: absolute;
-    width: 336px;  /* 280px * 1.2 */
-    height: 491px; /* 原寸サイズ */
+    width: 286px;  /* 実際の画像幅に合わせて修正 */
+    height: 491px; /* 高さはそのまま */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
     top: 50%;
-    margin-left: -168px; /* 幅の半分 */
+    margin-left: -143px; /* 幅の半分に修正 */
     margin-top: -245.5px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
@@ -92,10 +92,49 @@
     font-size: 14px;
     z-index: 1000;
   }
+
+  /* ShowOneChildエラーの修正用スタイル追加 */
+  #error-suppression-container {
+    display: none;
+    visibility: hidden;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
 </style>
+<script>
+// ShowOneChildエラーの修正 - 先に定義して対応
+window.ShowOneChild = window.ShowOneChild || {
+  readRenderPromptFromStorage: function() { return null; },
+  getRenderPrompt: function() { return null; },
+  render: function() { return null; }
+};
+
+// localStorage拡張
+if (window.localStorage && !window.localStorage.getWithTTL) {
+  window.localStorage.getWithTTL = function(key) {
+    return window.localStorage.getItem(key);
+  };
+}
+
+// IO errorの抑制
+window.addEventListener('error', function(e) {
+  if (e && e.message && typeof e.message === 'string' && 
+     (e.message.includes('ChromeMethodBFE') || e.message.includes('Unable to create writable file'))) {
+    console.warn('IO error suppressed:', e.message);
+    return true; // エラー伝播を停止
+  }
+}, true);
+</script>
 </head>
 
 <body>
+<!-- エラー抑制用のダミー要素 -->
+<div id="error-suppression-container">
+  <div id="ShowOneChild-dummy"></div>
+</div>
+
 <div id="loading-screen">
   <div style="border:5px solid rgba(0,200,255,0.1); border-top:5px solid #00c8ff; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite; margin-bottom:20px;"></div>
   <div>読み込み中...</div>
@@ -112,12 +151,36 @@
 </div>
 
 <script>
+// 画像の事前読み込み
+function preloadImages(images, callback) {
+  if (!images || images.length === 0) {
+    callback();
+    return;
+  }
+  
+  let loaded = 0;
+  
+  function imageLoaded() {
+    loaded++;
+    if (loaded === images.length) {
+      callback();
+    }
+  }
+  
+  for (let i = 0; i < images.length; i++) {
+    const img = new Image();
+    img.onload = img.onerror = imageLoaded;
+    img.src = images[i];
+  }
+}
+
 // グローバル変数
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 let startX = 0;
 let currentX = 0;
 let isSwiping = false;
+let floatAnimationFrame = null;
 
 // カード画像の設定
 const cardImages = [
@@ -138,26 +201,48 @@ const config = {
 };
 
 document.addEventListener("DOMContentLoaded", function() {
-  document.getElementById('start-button').addEventListener('click', () => {
+  document.getElementById('start-button').addEventListener('click', function() {
     document.getElementById('loading-screen').style.display = 'none';
     initAR();
+  });
+  
+  // 画面サイズに応じた調整
+  window.addEventListener('resize', function() {
+    if (document.getElementById('ar-container').style.display === 'block') {
+      updateCardPositions();
+    }
   });
 });
 
 function initAR() {
   document.getElementById('ar-container').style.display = 'block';
   
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then(stream => {
-      const video = document.getElementById('camera-view');
-      video.srcObject = stream;
-      video.onloadedmetadata = () => video.play();
-      createCards();
-    })
-    .catch(err => {
-      console.warn("カメラエラー:", err);
-      createCards();
-    });
+  // 画像を事前読み込み
+  preloadImages(cardImages, function() {
+    // カメラアクセス
+    try {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+          const video = document.getElementById('camera-view');
+          video.srcObject = stream;
+          video.onloadedmetadata = function() {
+            video.play()
+              .then(createCards)
+              .catch(function(error) {
+                console.warn("ビデオ再生エラー:", error);
+                createCards(); // カメラエラー時もカード表示
+              });
+          };
+        })
+        .catch(function(error) {
+          console.warn("カメラエラー:", error);
+          createCards(); // カメラエラー時もカード表示
+        });
+    } catch (e) {
+      console.warn("MediaDevices API エラー:", e);
+      createCards(); // MediaDevicesがない場合もカード表示
+    }
+  });
 }
 
 function createCards() {
@@ -242,13 +327,8 @@ function updateCardPositions(offsetRatio = 0) {
     // 不透明度の計算
     const opacity = 1 - Math.abs(relativePos) * 0.3;
     
-    // スタイルの適用
-    wrapper.style.transform = `
-      translateX(${xPos}px)
-      translateZ(${zPos}px)
-      rotateY(${rotationY}deg)
-      scale(${scale})
-    `;
+    // スタイルの適用 - 変換文字列を最適化
+    wrapper.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg) scale(${scale})`;
     wrapper.style.opacity = opacity;
     wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
     
@@ -280,8 +360,9 @@ function simulateFloat() {
   if (!centerCard) return;
   
   // 現在のアニメーションフレームをキャンセル
-  if (window.floatAnimationFrame) {
-    cancelAnimationFrame(window.floatAnimationFrame);
+  if (floatAnimationFrame) {
+    cancelAnimationFrame(floatAnimationFrame);
+    floatAnimationFrame = null;
   }
   
   // 浮遊アニメーションの実行関数
@@ -310,56 +391,58 @@ function simulateFloat() {
     
     // 次のフレームをリクエスト
     if (!isSwiping) {
-      window.floatAnimationFrame = requestAnimationFrame(animate);
+      floatAnimationFrame = requestAnimationFrame(animate);
     }
   }
   
   // アニメーションを開始
-  window.floatAnimationFrame = requestAnimationFrame(animate);
+  floatAnimationFrame = requestAnimationFrame(animate);
 }
 
 function setupSwipeEvents() {
   // タッチイベント
-  document.addEventListener('touchstart', e => {
+  document.addEventListener('touchstart', function(e) {
     if (!isSwipeEnabled) return;
     // アニメーションをキャンセル
-    if (window.floatAnimationFrame) {
-      cancelAnimationFrame(window.floatAnimationFrame);
+    if (floatAnimationFrame) {
+      cancelAnimationFrame(floatAnimationFrame);
+      floatAnimationFrame = null;
     }
     startX = e.touches[0].clientX;
     currentX = startX;
     isSwiping = true;
-  });
+  }, { passive: true });
   
-  document.addEventListener('touchmove', e => {
+  document.addEventListener('touchmove', function(e) {
     if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.touches[0].clientX;
     const diffX = currentX - startX;
     const offsetRatio = diffX / config.swipeSensitivity;
     updateCardPositions(offsetRatio);
-  });
+  }, { passive: true });
   
-  document.addEventListener('touchend', () => {
+  document.addEventListener('touchend', function() {
     if (!isSwipeEnabled || !isSwiping) return;
     finishSwipe();
     isSwiping = false;
     // スワイプ終了後に浮遊効果を再開
     setTimeout(simulateFloat, 100);
-  });
+  }, { passive: true });
   
   // マウスイベント
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('mousedown', function(e) {
     if (!isSwipeEnabled) return;
     // アニメーションをキャンセル
-    if (window.floatAnimationFrame) {
-      cancelAnimationFrame(window.floatAnimationFrame);
+    if (floatAnimationFrame) {
+      cancelAnimationFrame(floatAnimationFrame);
+      floatAnimationFrame = null;
     }
     startX = e.clientX;
     currentX = startX;
     isSwiping = true;
   });
   
-  document.addEventListener('mousemove', e => {
+  document.addEventListener('mousemove', function(e) {
     if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.clientX;
     const diffX = currentX - startX;
@@ -367,7 +450,7 @@ function setupSwipeEvents() {
     updateCardPositions(offsetRatio);
   });
   
-  document.addEventListener('mouseup', () => {
+  document.addEventListener('mouseup', function() {
     if (!isSwipeEnabled || !isSwiping) return;
     finishSwipe();
     isSwiping = false;
