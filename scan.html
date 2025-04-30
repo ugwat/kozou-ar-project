@@ -247,6 +247,18 @@
     to { text-shadow: 0 0 20px rgba(0, 255, 255, 1); }
   }
   
+  /* カスタムスキャンオーバーレイ - MindARのデフォルトUIを代替 */
+  #custom-scanning-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0; /* 下層に配置して見えないようにする */
+    opacity: 0;
+    pointer-events: none;
+  }
+  
   /* ARシーン (非表示) */
   #ar-scene {
     display: none;
@@ -260,6 +272,9 @@
 </head>
 
 <body>
+<!-- カスタムスキャンオーバーレイ - MindARのデフォルトUIを代替するため -->
+<div id="custom-scanning-overlay"></div>
+
 <!-- スキャン画面 -->
 <div id="scan-container">
   <video id="camera-view" autoplay playsinline muted></video>
@@ -298,8 +313,19 @@
   <div class="success-message" id="success-message">認識成功！</div>
 </div>
 
-<!-- AR認識用のA-Frameシーン (非表示) -->
-<a-scene id="ar-scene" mindar-image="imageTargetSrc: ./targets.mind; autoStart: false" embedded color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" style="display: none;">
+<!-- AR認識用のA-Frameシーン - デフォルトUIを無効化 -->
+<a-scene id="ar-scene" 
+  mindar-image="imageTargetSrc: ./targets.mind; 
+                autoStart: false; 
+                uiScanning: #custom-scanning-overlay; 
+                uiLoading: none; 
+                uiError: none;" 
+  embedded 
+  color-space="sRGB" 
+  renderer="colorManagement: true" 
+  vr-mode-ui="enabled: false" 
+  device-orientation-permission-ui="enabled: false" 
+  style="display: none;">
   <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
   <a-entity id="target-container" mindar-image-target="targetIndex: 0">
     <!-- マーカー認識用の空のエンティティ -->
@@ -364,7 +390,7 @@ document.addEventListener("DOMContentLoaded", function() {
         };
       })
       .catch(function(error) {
-        console.error("カメラビューエラー:", error);
+        console.error("カメラビューエリ:", error);
       });
   }
   
