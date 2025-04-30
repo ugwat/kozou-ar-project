@@ -34,8 +34,8 @@
     z-index: 10; 
   }
   
-  /* グリッドオーバーレイ - 画面全体に薄い線を表示 */
-  .grid-overlay {
+  /* SVGオーバーレイ - 画面全体をカバー */
+  .svg-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -43,46 +43,24 @@
     height: 100%;
     pointer-events: none;
     z-index: 20;
-    background-image: 
-      linear-gradient(45deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px),
-      linear-gradient(-45deg, rgba(0, 255, 255, 0.1) 1px, transparent 1px);
-    background-size: 20px 20px;
   }
   
-  /* スキャンライン - 上から下へ流れる */
+  /* スキャンライン - SVGアニメーション用 */
+  @keyframes scanDown {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+  
   .scan-line {
+    width: 100%;
+    height: 2px;
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 2px;
     background-color: rgba(0, 255, 255, 0.6);
     box-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
     z-index: 25;
-    animation: scanAnimation 2s linear infinite;
-  }
-  
-  @keyframes scanAnimation {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(100vh); }
-  }
-  
-  /* ランダムなノイズ粒子 */
-  .noise-particle {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    background-color: rgba(0, 255, 255, 0.6);
-    pointer-events: none;
-    z-index: 15;
-    opacity: 0;
-    animation: fadeInOut 3s ease-in-out infinite;
-  }
-  
-  @keyframes fadeInOut {
-    0% { opacity: 0; }
-    50% { opacity: 0.8; }
-    100% { opacity: 0; }
+    animation: scanDown 2s linear infinite;
   }
   
   /* ガイドテキスト */
@@ -139,8 +117,55 @@
 <div id="scan-container">
   <video id="camera-view" autoplay playsinline muted></video>
   
-  <!-- グリッドオーバーレイ -->
-  <div class="grid-overlay"></div>
+  <!-- SVGオーバーレイ -->
+  <svg class="svg-overlay" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
+    <!-- グリッド線 - 横線 -->
+    <g stroke="rgba(0, 255, 255, 0.2)" stroke-width="0.1">
+      <line x1="0" y1="10" x2="100" y2="10" />
+      <line x1="0" y1="20" x2="100" y2="20" />
+      <line x1="0" y1="30" x2="100" y2="30" />
+      <line x1="0" y1="40" x2="100" y2="40" />
+      <line x1="0" y1="50" x2="100" y2="50" />
+      <line x1="0" y1="60" x2="100" y2="60" />
+      <line x1="0" y1="70" x2="100" y2="70" />
+      <line x1="0" y1="80" x2="100" y2="80" />
+      <line x1="0" y1="90" x2="100" y2="90" />
+    </g>
+    
+    <!-- グリッド線 - 縦線 -->
+    <g stroke="rgba(0, 255, 255, 0.2)" stroke-width="0.1">
+      <line x1="10" y1="0" x2="10" y2="100" />
+      <line x1="20" y1="0" x2="20" y2="100" />
+      <line x1="30" y1="0" x2="30" y2="100" />
+      <line x1="40" y1="0" x2="40" y2="100" />
+      <line x1="50" y1="0" x2="50" y2="100" />
+      <line x1="60" y1="0" x2="60" y2="100" />
+      <line x1="70" y1="0" x2="70" y2="100" />
+      <line x1="80" y1="0" x2="80" y2="100" />
+      <line x1="90" y1="0" x2="90" y2="100" />
+    </g>
+    
+    <!-- 対角線 -->
+    <g stroke="rgba(0, 255, 255, 0.15)" stroke-width="0.1">
+      <line x1="0" y1="0" x2="100" y2="100" />
+      <line x1="100" y1="0" x2="0" y2="100" />
+    </g>
+    
+    <!-- 円形要素 - コーナー装飾 -->
+    <circle cx="10" cy="10" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
+    <circle cx="90" cy="10" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
+    <circle cx="10" cy="90" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
+    <circle cx="90" cy="90" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
+    
+    <!-- ランダムな点 - HUD装飾 -->
+    <g fill="rgba(0, 255, 255, 0.3)">
+      <circle cx="25" cy="15" r="0.2" />
+      <circle cx="75" cy="25" r="0.2" />
+      <circle cx="15" cy="65" r="0.2" />
+      <circle cx="85" cy="75" r="0.2" />
+      <circle cx="45" cy="85" r="0.2" />
+    </g>
+  </svg>
   
   <!-- スキャンライン -->
   <div class="scan-line"></div>
@@ -150,8 +175,6 @@
   
   <!-- 認識成功メッセージ -->
   <div class="success-message" id="success-message">認識成功！</div>
-  
-  <!-- ノイズ粒子は動的に生成 -->
 </div>
 
 <!-- AR認識用のA-Frameシーン (非表示) -->
@@ -164,30 +187,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-  // ノイズ粒子を生成
-  function createNoiseParticles() {
-    const container = document.getElementById('scan-container');
-    const particleCount = 20; // 少なめに設定して軽量化
-    
-    for (let i = 0; i < particleCount; i++) {
-      const particle = document.createElement('div');
-      particle.className = 'noise-particle';
-      
-      // ランダムな位置
-      const x = Math.random() * 100;
-      const y = Math.random() * 100;
-      
-      particle.style.left = `${x}%`;
-      particle.style.top = `${y}%`;
-      
-      // ランダムなアニメーション遅延
-      const delay = Math.random() * 5;
-      particle.style.animationDelay = `${delay}s`;
-      
-      container.appendChild(particle);
-    }
-  }
-  
   // AR初期化
   function initAR() {
     const sceneEl = document.getElementById('ar-scene');
@@ -251,7 +250,6 @@ document.addEventListener("DOMContentLoaded", function() {
   // アプリ初期化
   try {
     initCameraView();  // カメラビュー初期化
-    createNoiseParticles(); // ノイズ粒子生成
     initAR();          // AR初期化
   } catch (error) {
     console.error("初期化エラー:", error);
