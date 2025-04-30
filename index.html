@@ -15,14 +15,14 @@
   #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
   #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { 
-    position: absolute; 
-    width: 100%; 
-    height: 75%; 
-    bottom: 12%; 
-    transform-style: preserve-3d; 
-    transform: rotateX(20deg);
-  }
+  .carousel {
+  position: absolute; 
+  width: 100%; 
+  height: 75%; 
+  top: 50%; /* bottom: 12%の代わりに */
+  transform: translateY(-50%) rotateX(20deg); /* Y軸方向の中央揃えとX軸回転の組み合わせ */
+  transform-style: preserve-3d;
+}
   .card-wrapper {
     position: absolute;
     width: 336px;  /* 280px * 1.2 */
