@@ -1,127 +1,118 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>KOZOU+ AR Start</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed;
-      font-family: 'Helvetica Neue', sans-serif; color: white;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KOZOU+ AR Experience</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; font-family: 'Helvetica Neue', sans-serif; }
 
-    #start-screen {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      z-index: 10; background: black;
-    }
+  #start-screen {
+    position: fixed; top:0; left:0; width:100%; height:100%; background:black; 
+    display:flex; flex-direction:column; justify-content:center; align-items:center; 
+    z-index:1000; color:white; overflow: hidden;
+  }
 
-    /* ロゴと小テキスト */
-    #logo {
-      position: absolute; top: 20px; left: 20px;
-      font-size: 16px; color: #00ffff;
-      opacity: 0.7;
-    }
+  /* ロゴ */
+  .logo {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    font-size: 18px;
+    color: #00c8ff;
+    opacity: 0.8;
+  }
+  .logo small {
+    display: block;
+    font-size: 12px;
+    color: #aaa;
+  }
 
-    #logo span {
-      font-size: 12px; display: block; color: #fff; opacity: 0.5;
-    }
+  /* メインタイトルと説明 */
+  .title {
+    font-size: 36px;
+    font-weight: bold;
+    color: white;
+    background: linear-gradient(90deg, #ffffff, #00ffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+  }
+  .subtitle {
+    font-size: 16px;
+    color: #ccc;
+    text-align: center;
+    line-height: 1.6;
+    font-family: "Hiragino Mincho ProN", "Rounded M+ 1c", serif;
+  }
 
-    /* タイトルと説明文 */
-    h1 {
-      font-size: 36px; font-weight: bold;
-      background: linear-gradient(90deg, #fff, #00f0ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-    }
+  /* スタートボタン */
+  #start-button {
+    margin-top: 40px;
+    padding: 15px 40px;
+    background: transparent;
+    border: 1px solid #00c8ff;
+    color: #00c8ff;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  #start-button:hover {
+    background: rgba(0, 200, 255, 0.1);
+  }
 
-    .description {
-      font-size: 16px;
-      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
-      color: #ccc;
-      text-align: center;
-      line-height: 1.8;
-      margin-bottom: 40px;
+  /* キラキラ */
+  .sparkle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: white;
+    opacity: 0.8;
+    border-radius: 50%;
+    animation: sparkle-up 5s linear infinite;
+  }
+  @keyframes sparkle-up {
+    0% {
+      transform: translateY(100vh) scale(0.5);
+      opacity: 0;
     }
-
-    /* スタートボタン */
-    #start-button {
-      padding: 14px 32px;
-      background: transparent;
-      color: #00ffff;
-      border: 2px solid #00ffff;
-      font-size: 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      position: relative;
+    20% {
+      opacity: 0.6;
     }
-
-    #start-button::before {
-      content: "";
-      position: absolute;
-      top: -6px; bottom: -6px; left: -12px; right: -12px;
-      border: 1px dashed #00ffff;
-      border-radius: 12px;
-      opacity: 0.4;
+    100% {
+      transform: translateY(-10vh) scale(1);
+      opacity: 0;
     }
-
-    /* キラキラエフェクト */
-    .particle-container {
-      position: fixed;
-      width: 100%; height: 100%;
-      z-index: 1;
-      pointer-events: none;
-      overflow: hidden;
-    }
-
-    .particle {
-      position: absolute;
-      bottom: -20px;
-      width: 6px; height: 6px;
-      background: rgba(0,255,255,0.4);
-      border-radius: 50%;
-      animation: rise 6s linear infinite;
-    }
-
-    .particle:nth-child(1) { left: 10%; animation-delay: 0s; transform: scale(0.6); }
-    .particle:nth-child(2) { left: 30%; animation-delay: 1s; transform: scale(0.8); }
-    .particle:nth-child(3) { left: 50%; animation-delay: 2s; transform: scale(1); }
-    .particle:nth-child(4) { left: 70%; animation-delay: 3s; transform: scale(0.7); }
-    .particle:nth-child(5) { left: 85%; animation-delay: 4s; transform: scale(0.5); }
-
-    @keyframes rise {
-      0%   { transform: translateY(0) scale(1); opacity: 0; }
-      10%  { opacity: 0.8; }
-      100% { transform: translateY(-100vh) scale(1); opacity: 0; }
-    }
-  </style>
+  }
+</style>
 </head>
+
 <body>
-  <div id="start-screen">
-    <div id="logo">KOZOU<span>+ Augmented Ramen</span></div>
-    <h1>MAZESOBA</h1>
-    <div class="description">
-      カメラを許可して<br>
-      丼のロゴを探してスキャンしてください。
-    </div>
-    <button id="start-button">AR体験を開始</button>
+<div id="start-screen">
+  <div class="logo">KOZOU<small>AR</small></div>
+  <div class="title">MAZESOBA</div>
+  <div class="subtitle">
+    カメラを許可して<br>
+    丼のロゴを探してスキャンしてください。
   </div>
+  <button id="start-button">AR体験を開始</button>
 
-  <!-- 背景キラキラ -->
-  <div class="particle-container">
-    <span class="particle"></span>
-    <span class="particle"></span>
-    <span class="particle"></span>
-    <span class="particle"></span>
-    <span class="particle"></span>
-  </div>
+  <!-- 上昇するキラキラ -->
+  <div class="sparkle" style="left: 20%; animation-delay: 0s;"></div>
+  <div class="sparkle" style="left: 40%; animation-delay: 1s;"></div>
+  <div class="sparkle" style="left: 60%; animation-delay: 2s;"></div>
+  <div class="sparkle" style="left: 80%; animation-delay: 3s;"></div>
+  <div class="sparkle" style="left: 50%; animation-delay: 4s;"></div>
+</div>
 
-  <script>
-    document.getElementById('start-button').addEventListener('click', function() {
-      window.location.href = "scan.html";
-    });
-  </script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById('start-button').addEventListener('click', function() {
+    window.location.href = 'scan.html';
+  });
+});
+</script>
 </body>
 </html>
