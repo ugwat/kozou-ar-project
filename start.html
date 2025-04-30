@@ -1,124 +1,126 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>KOZOU+ AR Start</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      width: 100%;
-      height: 100%;
-      background: #000;
-      overflow: hidden;
-      font-family: 'Helvetica Neue', sans-serif;
+      width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed;
+      font-family: 'Helvetica Neue', sans-serif; color: white;
     }
 
     #start-screen {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 10;
-      color: white;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      z-index: 10; background: black;
     }
 
-    .logo {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #00faff;
-      letter-spacing: 1px;
+    /* ロゴと小テキスト */
+    #logo {
+      position: absolute; top: 20px; left: 20px;
+      font-size: 16px; color: #00ffff;
+      opacity: 0.7;
     }
 
-    .intro-text {
-      text-align: center;
-      z-index: 11;
+    #logo span {
+      font-size: 12px; display: block; color: #fff; opacity: 0.5;
     }
 
-    .intro-title {
-      font-size: 32px;
-      font-weight: bold;
-      background: linear-gradient(90deg, #ffffff, #00faff);
+    /* タイトルと説明文 */
+    h1 {
+      font-size: 36px; font-weight: bold;
+      background: linear-gradient(90deg, #fff, #00f0ff);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: 10px;
     }
 
-    .intro-sub {
+    .description {
       font-size: 16px;
-      font-family: 'Yu Mincho', serif;
-      color: #ddd;
-      line-height: 1.6;
+      font-family: "Hiragino Mincho ProN", "Yu Mincho", serif;
+      color: #ccc;
+      text-align: center;
+      line-height: 1.8;
+      margin-bottom: 40px;
     }
 
-    /* スニペット風ボタン（枠線あり・ホバー演出） */
-    .glow-button {
-      margin-top: 30px;
-      padding: 15px 40px;
-      font-size: 16px;
-      text-transform: uppercase;
-      border: 2px solid #00faff;
-      color: #00faff;
+    /* スタートボタン */
+    #start-button {
+      padding: 14px 32px;
       background: transparent;
-      border-radius: 6px;
+      color: #00ffff;
+      border: 2px solid #00ffff;
+      font-size: 16px;
+      border-radius: 8px;
       cursor: pointer;
       position: relative;
-      overflow: hidden;
-      z-index: 11;
-      transition: all 0.3s ease;
     }
 
-    .glow-button::before {
+    #start-button::before {
       content: "";
       position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 300%;
-      height: 300%;
-      background: radial-gradient(circle, rgba(0,255,255,0.2) 0%, rgba(0,255,255,0) 80%);
-      transform: translate(-50%, -50%) scale(0);
-      transition: transform 0.4s ease;
+      top: -6px; bottom: -6px; left: -12px; right: -12px;
+      border: 1px dashed #00ffff;
+      border-radius: 12px;
+      opacity: 0.4;
+    }
+
+    /* キラキラエフェクト */
+    .particle-container {
+      position: fixed;
+      width: 100%; height: 100%;
+      z-index: 1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      bottom: -20px;
+      width: 6px; height: 6px;
+      background: rgba(0,255,255,0.4);
       border-radius: 50%;
-      z-index: 0;
+      animation: rise 6s linear infinite;
     }
 
-    .glow-button:hover::before {
-      transform: translate(-50%, -50%) scale(1);
-    }
+    .particle:nth-child(1) { left: 10%; animation-delay: 0s; transform: scale(0.6); }
+    .particle:nth-child(2) { left: 30%; animation-delay: 1s; transform: scale(0.8); }
+    .particle:nth-child(3) { left: 50%; animation-delay: 2s; transform: scale(1); }
+    .particle:nth-child(4) { left: 70%; animation-delay: 3s; transform: scale(0.7); }
+    .particle:nth-child(5) { left: 85%; animation-delay: 4s; transform: scale(0.5); }
 
-    .glow-button:hover {
-      color: white;
-      background-color: rgba(0,255,255,0.05);
-      box-shadow: 0 0 10px #00faff, 0 0 20px #00faff inset;
+    @keyframes rise {
+      0%   { transform: translateY(0) scale(1); opacity: 0; }
+      10%  { opacity: 0.8; }
+      100% { transform: translateY(-100vh) scale(1); opacity: 0; }
     }
   </style>
 </head>
 <body>
   <div id="start-screen">
-    <div class="logo">KOZOU</div>
-
-    <div class="intro-text">
-      <div class="intro-title">MAZESOBA</div>
-      <div class="intro-sub">
-        カメラを許可して<br>
-        丼のロゴを探してスキャンしてください。
-      </div>
+    <div id="logo">KOZOU<span>+ Augmented Ramen</span></div>
+    <h1>MAZESOBA</h1>
+    <div class="description">
+      カメラを許可して<br>
+      丼のロゴを探してスキャンしてください。
     </div>
+    <button id="start-button">AR体験を開始</button>
+  </div>
 
-    <button id="start-button" class="glow-button">AR体験を開始</button>
+  <!-- 背景キラキラ -->
+  <div class="particle-container">
+    <span class="particle"></span>
+    <span class="particle"></span>
+    <span class="particle"></span>
+    <span class="particle"></span>
+    <span class="particle"></span>
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      document.getElementById("start-button").addEventListener("click", function () {
-        window.location.href = "scan.html";
-      });
+    document.getElementById('start-button').addEventListener('click', function() {
+      window.location.href = "scan.html";
     });
   </script>
 </body>
