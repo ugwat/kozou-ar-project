@@ -34,6 +34,18 @@
     z-index: 10; 
   }
   
+  /* 背景オーバーレイ */
+  .background-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 12;
+    pointer-events: none;
+  }
+  
   /* レーダーオーバーレイコンテナ */
   .radar-container {
     position: absolute;
@@ -51,12 +63,12 @@
   /* レーダー本体 */
   .radar {
     position: relative;
-    width: 250px;
-    height: 250px;
+    width: 300px;
+    height: 300px;
     border-radius: 50%;
-    background-color: rgba(0, 10, 20, 0.5);
-    border: 1px solid rgba(0, 255, 255, 0.3);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    background-color: rgba(0, 30, 10, 0.3);
+    border: 2px solid rgba(0, 255, 0, 0.4);
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -64,59 +76,76 @@
     transition: opacity 0.3s ease, box-shadow 0.3s ease;
   }
   
-  /* レーダーの中心グリッド線 */
-  .radar::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 1px;
-    height: 100%;
-    background-color: rgba(0, 255, 255, 0.3);
-  }
-  
-  .radar::after {
-    content: "";
+  /* レーダーの放射状グリッド線 */
+  .radar-grid-line {
     position: absolute;
     top: 50%;
-    left: 0;
-    width: 100%;
+    left: 50%;
+    width: 50%;
     height: 1px;
-    background-color: rgba(0, 255, 255, 0.3);
+    background-color: rgba(0, 255, 0, 0.2);
+    transform-origin: left center;
+  }
+  
+  /* 詳細目盛り - 短い線 */
+  .radar-tick {
+    position: absolute;
+    width: 5px;
+    height: 1px;
+    background-color: rgba(0, 255, 0, 0.4);
+    transform-origin: center;
   }
   
   /* レーダーの同心円 */
   .radar-circle {
     position: absolute;
     border-radius: 50%;
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    border: 1px solid rgba(0, 255, 0, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   
   .radar-circle-1 {
-    width: 30%;
-    height: 30%;
+    width: 20%;
+    height: 20%;
   }
   
   .radar-circle-2 {
+    width: 40%;
+    height: 40%;
+  }
+  
+  .radar-circle-3 {
     width: 60%;
     height: 60%;
   }
   
-  .radar-circle-3 {
-    width: 90%;
-    height: 90%;
+  .radar-circle-4 {
+    width: 80%;
+    height: 80%;
   }
   
-  /* スキャン線（ドラゴンレーダーの走査線） */
+  /* 同心円のラベル */
+  .radar-label {
+    position: absolute;
+    color: rgba(0, 255, 0, 0.7);
+    font-size: 8px;
+    font-family: monospace;
+  }
+  
+  /* スキャン線（走査線） */
   .scan-line {
     position: absolute;
     top: 50%;
     left: 50%;
     width: 50%;
     height: 2px;
-    background: linear-gradient(to right, rgba(0, 255, 255, 0.9), rgba(0, 255, 255, 0));
+    background: linear-gradient(to right, rgba(0, 255, 0, 1), rgba(0, 255, 0, 0));
+    filter: drop-shadow(0 0 3px rgba(0, 255, 0, 0.8));
     transform-origin: left center;
-    animation: radar-sweep 2s infinite linear;
+    animation: radar-sweep 4s infinite linear;
+    z-index: 24;
   }
   
   /* スキャン範囲（扇形の光るエリア） */
@@ -128,11 +157,13 @@
     height: 100%;
     clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 50%);
     background: radial-gradient(circle at 50% 50%, 
-                rgba(0, 255, 255, 0.1) 0%, 
-                rgba(0, 255, 255, 0.05) 50%, 
-                rgba(0, 255, 255, 0) 70%);
-    animation: radar-sweep 2s infinite linear;
+                rgba(0, 255, 0, 0.2) 0%, 
+                rgba(0, 255, 0, 0.1) 50%, 
+                rgba(0, 255, 0, 0) 70%);
+    filter: drop-shadow(0 0 8px rgba(0, 255, 0, 0.5));
+    animation: radar-sweep 4s infinite linear;
     transform-origin: center;
+    z-index: 23;
   }
   
   @keyframes radar-sweep {
@@ -147,12 +178,12 @@
   /* 中心点 */
   .radar-center {
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background-color: rgba(0, 255, 255, 0.8);
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-    z-index: 5;
+    background-color: rgba(0, 255, 0, 0.8);
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+    z-index: 25;
   }
   
   /* 検出点（ランダムに点滅する点） */
@@ -161,27 +192,27 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background-color: rgba(0, 255, 255, 0.8);
-    box-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+    background-color: rgba(255, 50, 50, 0.8);
+    box-shadow: 0 0 10px rgba(255, 50, 50, 0.6);
     opacity: 0;
-    z-index: 4;
+    z-index: 24;
   }
   
   .radar-dot-1 {
-    top: 40%;
-    left: 30%;
+    top: 30%;
+    left: 25%;
     animation: blink 3s infinite 1s;
   }
   
   .radar-dot-2 {
-    top: 60%;
+    top: 65%;
     left: 70%;
     animation: blink 4s infinite 2s;
   }
   
   .radar-dot-3 {
-    top: 20%;
-    left: 65%;
+    top: 25%;
+    left: 60%;
     animation: blink 5s infinite 0.5s;
   }
   
@@ -198,8 +229,8 @@
     width: 100%;
     height: 100%;
     background-image: 
-      linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(rgba(0, 255, 0, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 0, 0.03) 1px, transparent 1px);
     background-size: 30px 30px;
     pointer-events: none;
     z-index: 15;
@@ -208,33 +239,30 @@
   /* ガイドテキスト */
   .guide-text {
     position: absolute;
-    bottom: 40px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    color: rgba(0, 255, 255, 0.8);
-    font-size: 16px;
+    color: rgba(0, 255, 0, 0.8);
+    font-size: 12px;
     text-align: center;
     z-index: 30;
-    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
-    background-color: rgba(0, 0, 0, 0.5);
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+    white-space: nowrap;
   }
   
   /* スキャン検出時のフラッシュエフェクト */
   .radar-flash {
-    animation: radar-flash 0.3s 2;
+    animation: radar-flash 0.2s 2;
   }
   
   @keyframes radar-flash {
     0%, 100% {
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
-      border-color: rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+      border-color: rgba(0, 255, 0, 0.4);
     }
     50% {
-      box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
-      border-color: rgba(0, 255, 255, 0.8);
+      box-shadow: 0 0 40px rgba(0, 255, 0, 1);
+      border-color: rgba(0, 255, 0, 1);
     }
   }
   
@@ -263,7 +291,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 0; /* 下層に配置して見えないようにする */
+    z-index: 0;
     opacity: 0;
     pointer-events: none;
   }
@@ -288,6 +316,9 @@
 <div id="scan-container">
   <video id="camera-view" autoplay playsinline muted></video>
   
+  <!-- 背景オーバーレイ -->
+  <div class="background-overlay"></div>
+  
   <!-- グリッドオーバーレイ -->
   <div class="grid-overlay"></div>
   
@@ -295,9 +326,18 @@
   <div class="radar-container">
     <div class="radar" id="radar">
       <!-- 同心円 -->
-      <div class="radar-circle radar-circle-1"></div>
-      <div class="radar-circle radar-circle-2"></div>
-      <div class="radar-circle radar-circle-3"></div>
+      <div class="radar-circle radar-circle-1">
+        <div class="radar-label">100</div>
+      </div>
+      <div class="radar-circle radar-circle-2">
+        <div class="radar-label">200</div>
+      </div>
+      <div class="radar-circle radar-circle-3">
+        <div class="radar-label">300</div>
+      </div>
+      <div class="radar-circle radar-circle-4">
+        <div class="radar-label">400</div>
+      </div>
       
       <!-- スキャン範囲 -->
       <div class="scan-area"></div>
@@ -312,6 +352,8 @@
       <div class="radar-dot radar-dot-1"></div>
       <div class="radar-dot radar-dot-2"></div>
       <div class="radar-dot radar-dot-3"></div>
+      
+      <!-- 角度目盛りは動的に生成 -->
     </div>
   </div>
   
@@ -343,6 +385,58 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  // 角度目盛りの生成
+  function createRadarTicks() {
+    const radar = document.getElementById('radar');
+    
+    // 放射状の主線（12方向）
+    for (let i = 0; i < 12; i++) {
+      const angle = i * 30;
+      const line = document.createElement('div');
+      line.className = 'radar-grid-line';
+      line.style.transform = `rotate(${angle}deg)`;
+      radar.appendChild(line);
+      
+      // 角度数値の表示
+      if (i % 3 === 0) { // 90度ごとに数値表示
+        const label = document.createElement('div');
+        label.className = 'radar-label';
+        label.textContent = i * 30;
+        
+        // 位置調整
+        const labelRadius = 155; // ラベルの配置半径
+        const labelX = Math.sin(angle * Math.PI / 180) * labelRadius;
+        const labelY = -Math.cos(angle * Math.PI / 180) * labelRadius;
+        
+        label.style.transform = 'translate(-50%, -50%)';
+        label.style.left = `calc(50% + ${labelX}px)`;
+        label.style.top = `calc(50% + ${labelY}px)`;
+        
+        radar.appendChild(label);
+      }
+    }
+    
+    // 細かい目盛り（5度ごと）
+    for (let i = 0; i < 72; i++) {
+      if (i % 6 !== 0) { // 主線と重複しないよう
+        const angle = i * 5;
+        const tick = document.createElement('div');
+        tick.className = 'radar-tick';
+        
+        // 位置調整
+        const tickRadius = 150; // 目盛りの配置半径
+        const tickX = Math.sin(angle * Math.PI / 180) * tickRadius;
+        const tickY = -Math.cos(angle * Math.PI / 180) * tickRadius;
+        
+        tick.style.left = `calc(50% + ${tickX}px)`;
+        tick.style.top = `calc(50% + ${tickY}px)`;
+        tick.style.transform = `rotate(${angle + 90}deg)`;
+        
+        radar.appendChild(tick);
+      }
+    }
+  }
+  
   // AR初期化
   function initAR() {
     const sceneEl = document.getElementById('ar-scene');
@@ -370,7 +464,7 @@ document.addEventListener("DOMContentLoaded", function() {
       const radar = document.getElementById('radar');
       radar.classList.add('radar-flash');
       
-      // 点滅が終わったらフェードアウト
+      // 点滅後に0.5秒待ってからフェードアウト
       setTimeout(function() {
         // フェードアウト開始
         const screenFade = document.getElementById('screen-fade');
@@ -380,7 +474,7 @@ document.addEventListener("DOMContentLoaded", function() {
         setTimeout(function() {
           window.location.href = 'index.html';
         }, 1000); // フェードアウトの時間と合わせる
-      }, 600); // 点滅アニメーションが終わるまでの時間
+      }, 700); // 点滅(0.2秒×2) + 0.5秒待機 = 0.7秒
     });
   }
   
@@ -413,6 +507,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // アプリ初期化
   try {
     initCameraView();  // カメラビュー初期化
+    createRadarTicks(); // レーダー目盛り生成
     initAR();          // AR初期化
     
     // 動的にレーダードットを追加
