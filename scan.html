@@ -34,33 +34,174 @@
     z-index: 10; 
   }
   
-  /* SVGオーバーレイ - 画面全体をカバー */
-  .svg-overlay {
+  /* レーダーオーバーレイコンテナ */
+  .radar-container {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     z-index: 20;
+    pointer-events: none;
   }
   
-  /* スキャンライン - SVGアニメーション用 */
-  @keyframes scanDown {
-    from { transform: translateY(0); }
-    to { transform: translateY(100%); }
+  /* レーダー本体 */
+  .radar {
+    position: relative;
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    background-color: rgba(0, 10, 20, 0.5);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
   }
   
-  .scan-line {
+  /* レーダーの中心グリッド線 */
+  .radar::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1px;
+    height: 100%;
+    background-color: rgba(0, 255, 255, 0.3);
+  }
+  
+  .radar::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
     width: 100%;
+    height: 1px;
+    background-color: rgba(0, 255, 255, 0.3);
+  }
+  
+  /* レーダーの同心円 */
+  .radar-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+  }
+  
+  .radar-circle-1 {
+    width: 30%;
+    height: 30%;
+  }
+  
+  .radar-circle-2 {
+    width: 60%;
+    height: 60%;
+  }
+  
+  .radar-circle-3 {
+    width: 90%;
+    height: 90%;
+  }
+  
+  /* スキャン線（ドラゴンレーダーの走査線） */
+  .scan-line {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 50%;
     height: 2px;
+    background: linear-gradient(to right, rgba(0, 255, 255, 0.9), rgba(0, 255, 255, 0));
+    transform-origin: left center;
+    animation: radar-sweep 2s infinite linear;
+  }
+  
+  /* スキャン範囲（扇形の光るエリア） */
+  .scan-area {
     position: absolute;
     top: 0;
     left: 0;
-    background-color: rgba(0, 255, 255, 0.6);
-    box-shadow: 0 0 8px rgba(0, 255, 255, 0.8);
-    z-index: 25;
-    animation: scanDown 2s linear infinite;
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(50% 50%, 50% 0, 100% 0, 100% 50%);
+    background: radial-gradient(circle at 50% 50%, 
+                rgba(0, 255, 255, 0.1) 0%, 
+                rgba(0, 255, 255, 0.05) 50%, 
+                rgba(0, 255, 255, 0) 70%);
+    animation: radar-sweep 2s infinite linear;
+    transform-origin: center;
+  }
+  
+  @keyframes radar-sweep {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  /* 中心点 */
+  .radar-center {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    z-index: 5;
+  }
+  
+  /* 検出点（ランダムに点滅する点） */
+  .radar-dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgba(0, 255, 255, 0.8);
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+    opacity: 0;
+    z-index: 4;
+  }
+  
+  .radar-dot-1 {
+    top: 40%;
+    left: 30%;
+    animation: blink 3s infinite 1s;
+  }
+  
+  .radar-dot-2 {
+    top: 60%;
+    left: 70%;
+    animation: blink 4s infinite 2s;
+  }
+  
+  .radar-dot-3 {
+    top: 20%;
+    left: 65%;
+    animation: blink 5s infinite 0.5s;
+  }
+  
+  @keyframes blink {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 1; }
+  }
+  
+  /* グリッドオーバーレイ（画面全体） */
+  .grid-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: 
+      linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+    z-index: 15;
   }
   
   /* ガイドテキスト */
@@ -74,7 +215,7 @@
     text-align: center;
     z-index: 30;
     text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.5);
     padding: 8px 16px;
     border-radius: 4px;
     border: 1px solid rgba(0, 255, 255, 0.3);
@@ -98,6 +239,12 @@
   
   .success-message.visible {
     opacity: 1;
+    animation: pulse 1s infinite alternate;
+  }
+  
+  @keyframes pulse {
+    from { text-shadow: 0 0 10px rgba(0, 255, 255, 0.8); }
+    to { text-shadow: 0 0 20px rgba(0, 255, 255, 1); }
   }
   
   /* ARシーン (非表示) */
@@ -117,58 +264,32 @@
 <div id="scan-container">
   <video id="camera-view" autoplay playsinline muted></video>
   
-  <!-- SVGオーバーレイ -->
-  <svg class="svg-overlay" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <!-- グリッド線 - 横線 -->
-    <g stroke="rgba(0, 255, 255, 0.2)" stroke-width="0.1">
-      <line x1="0" y1="10" x2="100" y2="10" />
-      <line x1="0" y1="20" x2="100" y2="20" />
-      <line x1="0" y1="30" x2="100" y2="30" />
-      <line x1="0" y1="40" x2="100" y2="40" />
-      <line x1="0" y1="50" x2="100" y2="50" />
-      <line x1="0" y1="60" x2="100" y2="60" />
-      <line x1="0" y1="70" x2="100" y2="70" />
-      <line x1="0" y1="80" x2="100" y2="80" />
-      <line x1="0" y1="90" x2="100" y2="90" />
-    </g>
-    
-    <!-- グリッド線 - 縦線 -->
-    <g stroke="rgba(0, 255, 255, 0.2)" stroke-width="0.1">
-      <line x1="10" y1="0" x2="10" y2="100" />
-      <line x1="20" y1="0" x2="20" y2="100" />
-      <line x1="30" y1="0" x2="30" y2="100" />
-      <line x1="40" y1="0" x2="40" y2="100" />
-      <line x1="50" y1="0" x2="50" y2="100" />
-      <line x1="60" y1="0" x2="60" y2="100" />
-      <line x1="70" y1="0" x2="70" y2="100" />
-      <line x1="80" y1="0" x2="80" y2="100" />
-      <line x1="90" y1="0" x2="90" y2="100" />
-    </g>
-    
-    <!-- 対角線 -->
-    <g stroke="rgba(0, 255, 255, 0.15)" stroke-width="0.1">
-      <line x1="0" y1="0" x2="100" y2="100" />
-      <line x1="100" y1="0" x2="0" y2="100" />
-    </g>
-    
-    <!-- 円形要素 - コーナー装飾 -->
-    <circle cx="10" cy="10" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
-    <circle cx="90" cy="10" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
-    <circle cx="10" cy="90" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
-    <circle cx="90" cy="90" r="0.5" fill="rgba(0, 255, 255, 0.4)" />
-    
-    <!-- ランダムな点 - HUD装飾 -->
-    <g fill="rgba(0, 255, 255, 0.3)">
-      <circle cx="25" cy="15" r="0.2" />
-      <circle cx="75" cy="25" r="0.2" />
-      <circle cx="15" cy="65" r="0.2" />
-      <circle cx="85" cy="75" r="0.2" />
-      <circle cx="45" cy="85" r="0.2" />
-    </g>
-  </svg>
+  <!-- グリッドオーバーレイ -->
+  <div class="grid-overlay"></div>
   
-  <!-- スキャンライン -->
-  <div class="scan-line"></div>
+  <!-- レーダーオーバーレイ -->
+  <div class="radar-container">
+    <div class="radar">
+      <!-- 同心円 -->
+      <div class="radar-circle radar-circle-1"></div>
+      <div class="radar-circle radar-circle-2"></div>
+      <div class="radar-circle radar-circle-3"></div>
+      
+      <!-- スキャン範囲 -->
+      <div class="scan-area"></div>
+      
+      <!-- スキャン線 -->
+      <div class="scan-line"></div>
+      
+      <!-- 中心点 -->
+      <div class="radar-center"></div>
+      
+      <!-- 検出点 (ランダムに点滅) -->
+      <div class="radar-dot radar-dot-1"></div>
+      <div class="radar-dot radar-dot-2"></div>
+      <div class="radar-dot radar-dot-3"></div>
+    </div>
+  </div>
   
   <!-- ガイドテキスト -->
   <div class="guide-text">ロゴを画面内に映してください</div>
@@ -251,6 +372,37 @@ document.addEventListener("DOMContentLoaded", function() {
   try {
     initCameraView();  // カメラビュー初期化
     initAR();          // AR初期化
+    
+    // 動的にレーダードットを追加
+    setInterval(function() {
+      if (Math.random() > 0.9) { // 10%の確率で新しいドットを追加
+        const radar = document.querySelector('.radar');
+        const dot = document.createElement('div');
+        dot.className = 'radar-dot';
+        
+        // ランダムな位置
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 45 + 5; // 5%〜50%の距離（中心からの）
+        const x = 50 + Math.cos(angle) * distance;
+        const y = 50 + Math.sin(angle) * distance;
+        
+        dot.style.left = x + '%';
+        dot.style.top = y + '%';
+        
+        // アニメーション
+        dot.style.animation = `blink ${Math.random() * 2 + 2}s infinite ${Math.random() * 2}s`;
+        
+        radar.appendChild(dot);
+        
+        // 数秒後に削除
+        setTimeout(() => {
+          if (dot.parentNode) {
+            dot.parentNode.removeChild(dot);
+          }
+        }, 5000);
+      }
+    }, 1000);
+    
   } catch (error) {
     console.error("初期化エラー:", error);
   }
