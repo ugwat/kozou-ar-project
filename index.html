@@ -28,14 +28,15 @@
   .carousel {
     position: absolute; 
     width: 100%; 
-    height: 100%; /* フルハイトに変更 */
+    height: 100%; 
     transform-style: preserve-3d; 
-    transform: rotateX(20deg) translateY(-80px); /* Y軸方向に調整 */
+    /* 視点を上げて、カード全体が見えるように調整 */
+    transform: rotateX(5deg) translateY(-40px); 
   }
   .card-wrapper {
     position: absolute;
-    width: 336px;  /* カードサイズを維持 */
-    height: 491px; /* カードサイズを維持 */
+    width: 336px;  /* カードの幅 */
+    height: 491px; /* カードの高さ */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
@@ -44,22 +45,27 @@
     margin-top: -245.5px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+    /* 追加：カード表示エリアの明示的なセーフティマージン */
+    padding-bottom: 50px; 
   }
   .card {
     position: absolute;
     width: 100%;
-    height: 10px; /* 初期高さは維持 */
-    bottom: 0;    /* 底から成長するよう維持 */
+    height: 10px; /* 初期高さ - 成長アニメーション用 */
+    bottom: 0;    /* 底から成長する */
     background-repeat: no-repeat;
-    background-position: center bottom; /* 底揃えを維持 */
-    background-size: cover; /* カバーサイズを維持 */
+    background-position: center bottom; /* 底からの配置 */
+    background-size: contain; /* cover から contain に変更 - 表示領域内に全体を表示 */
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
     transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
     backface-visibility: hidden;
     will-change: height, opacity, filter;
-    transform-origin: bottom center; /* 成長の起点を明示 */
+    transform-origin: bottom center; /* 成長の起点 */
+    /* カードのサイズ変更による補正と位置確保 */
+    max-height: 491px; /* 最大高さを制限 */
+    transform: translateY(-20px); /* 少し上に持ち上げる */
   }
   /* 中央カードのみに適用する特別効果 */
   .card-wrapper.center .card {
@@ -274,6 +280,9 @@ function createCards() {
     updateCardPositions();
     setupSwipeEvents();
     
+    // デバイスごとの画面サイズに合わせて調整
+    adjustForScreenSize();
+    
     // カード成長アニメーション
     setTimeout(growCards, 500);
     
@@ -281,6 +290,32 @@ function createCards() {
     setTimeout(logElementInfo, 2500);
   } catch (err) {
     console.error('カード作成エラー:', err);
+  }
+}
+
+// 画面サイズに応じて調整する関数
+function adjustForScreenSize() {
+  try {
+    const windowHeight = window.innerHeight;
+    const carousel = document.querySelector('.carousel');
+    
+    // iPhone等の小さい画面向けの調整
+    if (windowHeight < 700) {
+      carousel.style.transform = 'rotateX(5deg) translateY(-20px)';
+      
+      // カードラッパーも小さい画面用に調整
+      const cardWrappers = document.querySelectorAll('.card-wrapper');
+      cardWrappers.forEach(wrapper => {
+        wrapper.style.transform = 'scale(0.85)';
+      });
+    }
+    
+    // 特に大きな画面向けの調整
+    if (windowHeight > 900) {
+      carousel.style.transform = 'rotateX(5deg) translateY(-50px)';
+    }
+  } catch (err) {
+    console.warn('画面サイズ調整エラー:', err);
   }
 }
 
@@ -292,6 +327,7 @@ function logElementInfo() {
     const cards = document.querySelectorAll('.card');
     
     console.log('Carousel位置:', carousel.getBoundingClientRect());
+    console.log('画面サイズ:', window.innerWidth, 'x', window.innerHeight);
     
     if (cardWrappers.length > 0) {
       console.log('Cardラッパー位置:', cardWrappers[0].getBoundingClientRect());
@@ -539,6 +575,13 @@ function finishSwipe() {
     console.warn('スワイプ終了エラー:', err);
   }
 }
+
+// リサイズイベントでの調整
+window.addEventListener('resize', function() {
+  // 画面サイズ変更時にもカードの位置調整
+  adjustForScreenSize();
+  updateCardPositions();
+});
 </script>
 
 </body>
