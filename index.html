@@ -14,49 +14,45 @@
   }
   #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
   #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
-  .scene { 
-    position: absolute; 
-    width: 100%; 
-    height: 100%; 
-    perspective: 1200px; 
-    z-index: 20;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
+  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
   .carousel {
     position: absolute; 
     width: 100%; 
     height: 100%; 
-    transform: rotateX(0deg) translateY(-40px); 
+    transform-style: preserve-3d; 
+    transform: rotateX(10deg) translateY(-80px); 
   }
   .card-wrapper {
     position: absolute;
     width: 336px;
     height: 491px;
+    transform-style: preserve-3d;
+    opacity: 1;
     left: 50%;
     top: 50%;
     margin-left: -168px;
     margin-top: -245.5px;
+    will-change: transform;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
-    perspective: 800px;
   }
   .card {
     position: absolute;
     width: 100%;
-    height: 10px;
-    bottom: 0;
+    height: 10px; /* 初期高さ維持 */
+    bottom: 0;    /* 底から成長を維持 */
     background-repeat: no-repeat;
     background-position: center bottom;
-    background-size: contain;
+    background-size: contain; /* 全体表示のために変更 */
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
     transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
+    backface-visibility: hidden;
+    will-change: height;
     transform-origin: bottom center;
   }
   .card-wrapper.center .card {
-    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8));
+    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
   }
   .center .card::after {
     content: '';
@@ -93,6 +89,30 @@
     z-index: 1000;
   }
 </style>
+<script>
+// ShowOneChildエラーの修正 - 先に定義してフレームワークが読み込む前に準備
+window.ShowOneChild = window.ShowOneChild || {
+  readRenderPromptFromStorage: function() { return null; },
+  getRenderPrompt: function() { return null; },
+  render: function() { return null; }
+};
+
+// localStorage拡張
+if (window.localStorage && !window.localStorage.getWithTTL) {
+  window.localStorage.getWithTTL = function(key) {
+    return window.localStorage.getItem(key);
+  };
+}
+
+// クリティカルなエラーのみ抑制
+window.addEventListener('error', function(e) {
+  if (e && e.message && typeof e.message === 'string' && 
+     (e.message.includes('ChromeMethodBFE') || e.message.includes('Unable to create writable file'))) {
+    console.warn('IO error suppressed:', e.message);
+    return true; // エラー伝播を停止
+  }
+}, true);
+</script>
 </head>
 
 <body>
@@ -103,6 +123,7 @@
 </div>
 
 <div id="ar-container">
+  <video id="camera-view" autoplay playsinline muted></video>
   <div class="overlay"></div>
   <div class="scene">
     <div class="carousel"></div>
@@ -111,180 +132,142 @@
 </div>
 
 <script>
-// エラーハンドリングのポリフィル - クラッシュ防止用
-(function() {
-  window.onerror = function(msg, url, line, col, error) {
-    console.warn('エラーが発生しましたが、実行は続行します:', msg);
-    return true; // エラーイベントをキャプチャして、アプリのクラッシュを防止
-  };
-  
-  window.addEventListener('unhandledrejection', function(event) {
-    console.warn('未処理のPromise rejection:', event.reason);
-    event.preventDefault();
-  });
-})();
-
-// グローバル変数 - 最小限に保つ
+// グローバル変数
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 let startX = 0;
 let currentX = 0;
 let isSwiping = false;
-let animationFrame = null;
+let floatAnimationFrame = null;
 
 // カード画像の設定
 const cardImages = [
-  './assets/1waku.png',
-  './assets/c2.png',
-  './assets/c3.png',
-  './assets/c4.png',
-  './assets/1waku.png'
+  './assets/1waku.png',  // カード1枚目
+  './assets/c2.png',     // カード2枚目
+  './assets/c3.png',     // カード3枚目
+  './assets/c4.png',     // カード4枚目
+  './assets/1waku.png'   // カード5枚目
 ];
 
 // 設定
 const config = {
-  cardSpacing: 300,
-  swipeSensitivity: 200,
-  cardRotation: 30,
-  centerZ: -400,
-  cardCount: 5
+  cardSpacing: 300,           // カード間の距離
+  swipeSensitivity: 200,      // スワイプの感度
+  cardRotation: 30,           // カードの回転角度
+  centerZ: -400,              // Z軸の奥行き
+  cardCount: 5                // カードの総数
 };
 
-// 初期化処理
-document.addEventListener("DOMContentLoaded", function() {
-  // ShowOneChildエラー対策
-  if (window.ShowOneChild === undefined) {
-    window.ShowOneChild = {};
-  }
-
-  // スタートボタンのイベントリスナー
-  document.getElementById('start-button').addEventListener('click', startExperience);
-});
-
-// AR体験の開始
-function startExperience() {
-  document.getElementById('loading-screen').style.display = 'none';
-  document.getElementById('ar-container').style.display = 'block';
-  
-  // カメラ処理は省略し、直接カードを表示
-  setTimeout(createCards, 100);
-}
-
-// カード生成処理
-function createCards() {
-  try {
-    const carousel = document.querySelector('.carousel');
-    carousel.innerHTML = '';
-    
-    // カードの描画処理は事前画像読み込みを行う
-    preloadImages(cardImages, function() {
-      // 画像の読み込み後にカードを作成
-      for (let i = 0; i < config.cardCount; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
-        wrapper.dataset.index = i;
-        
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.style.backgroundImage = `url(${cardImages[i] || './assets/1waku.png'})`;
-        
-        wrapper.appendChild(card);
-        carousel.appendChild(wrapper);
-      }
-      
-      // カウンター更新
-      updateCardCounter();
-      
-      // 初期配置設定
-      updateCardPositions();
-      
-      // スワイプイベント設定
-      setupSwipeEvents();
-      
-      // 画面サイズ調整
-      adjustForScreenSize();
-      
-      // カード成長アニメーション開始
-      setTimeout(growCards, 300);
-    });
-  } catch (err) {
-    console.warn('カード作成エラー:', err);
-    // エラー発生時のフォールバック処理
-    fallbackCardCreation();
-  }
-}
-
 // 画像の事前読み込み
-function preloadImages(sources, callback) {
-  let loadedCounter = 0;
-  const toLoad = sources.length;
-  
-  // 画像が1つもない場合や配列でない場合は即座にコールバック
-  if (!sources || !sources.length) {
+function preloadImages(images, callback) {
+  if (!images || images.length === 0) {
     callback();
     return;
   }
   
-  // 各画像を読み込み
-  sources.forEach(function(src) {
+  let loaded = 0;
+  
+  function imageLoaded() {
+    loaded++;
+    if (loaded === images.length) {
+      callback();
+    }
+  }
+  
+  for (let i = 0; i < images.length; i++) {
     const img = new Image();
-    img.onload = img.onerror = function() {
-      loadedCounter++;
-      if (loadedCounter >= toLoad) {
-        callback();
-      }
-    };
-    img.src = src;
+    img.onload = img.onerror = imageLoaded;
+    img.src = images[i];
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  document.getElementById('start-button').addEventListener('click', function() {
+    document.getElementById('loading-screen').style.display = 'none';
+    initAR();
+  });
+  
+  // 画面サイズに応じた調整
+  window.addEventListener('resize', adjustForScreenSize);
+});
+
+function initAR() {
+  document.getElementById('ar-container').style.display = 'block';
+  
+  // 画像を事前読み込み
+  preloadImages(cardImages, function() {
+    // カメラアクセス
+    try {
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(function(stream) {
+          const video = document.getElementById('camera-view');
+          video.srcObject = stream;
+          video.onloadedmetadata = function() {
+            video.play().then(createCards).catch(function() {
+              createCards(); // カメラエラー時もカード表示
+            });
+          };
+        })
+        .catch(function() {
+          createCards(); // カメラエラー時もカード表示
+        });
+    } catch (e) {
+      createCards(); // MediaDevicesがない場合もカード表示
+    }
   });
 }
 
-// エラー時のフォールバック処理
-function fallbackCardCreation() {
+function createCards() {
   const carousel = document.querySelector('.carousel');
-  carousel.innerHTML = ''; // 一旦クリア
+  carousel.innerHTML = '';
   
-  // 非常にシンプルな単一カードのみ表示
-  const wrapper = document.createElement('div');
-  wrapper.className = 'card-wrapper center';
-  wrapper.style.position = 'absolute';
-  wrapper.style.width = '336px';
-  wrapper.style.height = '491px';
-  wrapper.style.left = '50%';
-  wrapper.style.top = '50%';
-  wrapper.style.marginLeft = '-168px';
-  wrapper.style.marginTop = '-245.5px';
+  for (let i = 0; i < config.cardCount; i++) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'card-wrapper';
+    wrapper.dataset.index = i;
+    
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.backgroundImage = `url(${cardImages[i]})`;
+    
+    wrapper.appendChild(card);
+    carousel.appendChild(wrapper);
+  }
   
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.style.width = '100%';
-  card.style.height = '10px';
-  card.style.bottom = '0';
-  card.style.position = 'absolute';
-  card.style.backgroundColor = '#00a2ff';
-  card.style.borderRadius = '12px';
+  // カード数の表示を更新
+  updateCardCounter();
   
-  wrapper.appendChild(card);
-  carousel.appendChild(wrapper);
+  // 画面サイズに合わせた調整
+  adjustForScreenSize();
   
-  // 最小限のアニメーション
-  setTimeout(function() {
-    card.style.height = '491px';
-    card.style.opacity = '1';
-  }, 300);
+  // 初期位置の設定
+  updateCardPositions();
+  
+  // スワイプイベント設定
+  setupSwipeEvents();
+  
+  // カード成長アニメーション
+  setTimeout(growCards, 500);
 }
 
-// 画面サイズに応じて調整
+// 画面サイズに応じた調整
 function adjustForScreenSize() {
   const windowHeight = window.innerHeight;
-  const windowWidth = window.innerWidth;
   const carousel = document.querySelector('.carousel');
+  
+  if (!carousel) return;
   
   // 小さい画面向けの調整
   if (windowHeight < 700) {
-    const scale = Math.max(0.7, windowHeight / 900);
-    carousel.style.transform = `rotateX(0deg) translateY(-30px) scale(${scale})`;
-  } else {
-    carousel.style.transform = 'rotateX(0deg) translateY(-40px)';
+    carousel.style.transform = 'rotateX(5deg) translateY(-60px)';
+  } 
+  // 中サイズ画面
+  else if (windowHeight < 900) {
+    carousel.style.transform = 'rotateX(10deg) translateY(-80px)';
+  }
+  // 大きい画面
+  else {
+    carousel.style.transform = 'rotateX(15deg) translateY(-100px)';
   }
 }
 
@@ -295,63 +278,61 @@ function updateCardCounter() {
   counter.textContent = `カード数: ${count} / 現在のインデックス: ${activeCardIndex}`;
 }
 
-// カード成長アニメーション
+// ここがアニメーションの核心部分 - 絶対に変更しない
 function growCards() {
   const cards = document.querySelectorAll('.card');
   
-  // 各カードを順番に成長させる
   cards.forEach((card, i) => {
     setTimeout(() => {
-      card.style.height = '491px';
+      card.style.height = '491px'; // 上から下への成長
       card.style.opacity = '1';
     }, i * 200);
   });
   
-  // アニメーション完了後にスワイプを有効化
   setTimeout(() => {
     isSwipeEnabled = true;
     simulateFloat();
-  }, cards.length * 200 + 1000);
+  }, cards.length * 200 + 800);
 }
 
-// カード位置の更新
+// スライドを含めたカード位置の更新
 function updateCardPositions(offsetRatio = 0) {
   const wrappers = document.querySelectorAll('.card-wrapper');
   
-  // すべてのクラスをリセット
+  // すべてのクラスを一旦リセット
   wrappers.forEach(wrapper => {
     wrapper.classList.remove('center', 'left', 'right');
   });
   
   wrappers.forEach((wrapper, i) => {
-    // 相対位置計算
+    // カードの相対位置を計算
     let relativePos = i - activeCardIndex - offsetRatio;
     
-    // 循環表示の調整
+    // 循環表示のための調整
     if (relativePos < -2) relativePos += config.cardCount;
     if (relativePos > 2) relativePos -= config.cardCount;
     
-    // X軸位置
+    // X軸位置の計算
     const xPos = relativePos * config.cardSpacing;
     
-    // Z軸位置
+    // Z軸位置の計算（放物線状に）
     const zPos = config.centerZ - Math.abs(relativePos) * 100;
     
-    // 回転角度
+    // 回転角度の計算
     const rotationY = relativePos * config.cardRotation;
     
-    // 縮小率
+    // 縮小率の計算（1.0を基準に）
     const scale = 1.0 - Math.abs(relativePos) * 0.2;
     
-    // 不透明度
+    // 不透明度の計算
     const opacity = 1 - Math.abs(relativePos) * 0.3;
     
-    // スタイル適用 - パフォーマンスを考慮して最適化
+    // スタイルの適用 - 文字列連結を最小化
     wrapper.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg) scale(${scale})`;
     wrapper.style.opacity = opacity;
     wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
     
-    // 中央カードにクラスを付与
+    // 中央カードにクラスを追加
     if (Math.abs(relativePos) < 0.5) {
       wrapper.classList.add('center');
     } else if (relativePos < 0) {
@@ -361,134 +342,144 @@ function updateCardPositions(offsetRatio = 0) {
     }
   });
   
-  // カードカウンター更新
+  // カード数の表示を更新
   updateCardCounter();
   
-  // 浮遊アニメーション（スワイプ中でなければ）
+  // 浮遊効果のシミュレーション
   if (!isSwiping) {
     simulateFloat();
   }
 }
 
-// 浮遊アニメーション
+// 中央カードの浮遊感をシミュレートする関数
 let floatOffset = 0;
 let floatDirection = 1;
 function simulateFloat() {
-  // 既存のアニメーションをキャンセル
-  if (animationFrame) {
-    cancelAnimationFrame(animationFrame);
-    animationFrame = null;
+  // 既存のアニメーションフレームをキャンセル
+  if (floatAnimationFrame) {
+    cancelAnimationFrame(floatAnimationFrame);
+    floatAnimationFrame = null;
   }
   
-  // 浮遊アニメーション関数
+  // 中央カードの参照を取得
+  const centerCard = document.querySelector('.card-wrapper.center');
+  if (!centerCard) return;
+  
   function animate() {
-    try {
-      // 中央カードを取得
-      const centerCard = document.querySelector('.card-wrapper.center');
-      if (!centerCard) return;
+    floatOffset += 0.05 * floatDirection;
+    
+    // 方向転換
+    if (floatOffset > 5) floatDirection = -1;
+    if (floatOffset < -5) floatDirection = 1;
+    
+    // 現在のtransformを取得して、Y軸の移動だけ追加
+    const currentTransform = centerCard.style.transform;
+    if (currentTransform) {
+      let transform = currentTransform;
       
-      floatOffset += 0.05 * floatDirection;
-      
-      // 方向転換
-      if (floatOffset > 5) floatDirection = -1;
-      if (floatOffset < -5) floatDirection = 1;
-      
-      // 現在のtransformを取得
-      const currentTransform = centerCard.style.transform;
-      if (currentTransform) {
-        let transform = currentTransform;
-        
-        if (transform.includes('translateY(')) {
-          transform = transform.replace(/translateY\([^)]+\)/, `translateY(${floatOffset}px)`);
-        } else {
-          transform += ` translateY(${floatOffset}px)`;
-        }
-        
-        centerCard.style.transform = transform;
+      // translateYが既に含まれているかチェック
+      if (transform.includes('translateY(')) {
+        transform = transform.replace(/translateY\([^)]+\)/, `translateY(${floatOffset}px)`);
+      } else {
+        transform += ` translateY(${floatOffset}px)`;
       }
       
-      // アニメーションの続行（スワイプ中でなければ）
-      if (!isSwiping) {
-        animationFrame = requestAnimationFrame(animate);
-      }
-    } catch (err) {
-      console.warn('浮遊アニメーションエラー:', err);
+      centerCard.style.transform = transform;
+    }
+    
+    // 次のフレームをリクエスト（スワイプ中でなければ）
+    if (!isSwiping) {
+      floatAnimationFrame = requestAnimationFrame(animate);
     }
   }
   
-  // アニメーション開始
-  animationFrame = requestAnimationFrame(animate);
+  // アニメーションを開始
+  floatAnimationFrame = requestAnimationFrame(animate);
 }
 
-// スワイプイベントの設定
 function setupSwipeEvents() {
   // タッチイベント
-  document.addEventListener('touchstart', e => {
+  document.addEventListener('touchstart', function(e) {
     if (!isSwipeEnabled) return;
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = null;
+    
+    // アニメーションをキャンセル
+    if (floatAnimationFrame) {
+      cancelAnimationFrame(floatAnimationFrame);
+      floatAnimationFrame = null;
     }
+    
     startX = e.touches[0].clientX;
     currentX = startX;
     isSwiping = true;
   }, { passive: true });
   
-  document.addEventListener('touchmove', e => {
+  document.addEventListener('touchmove', function(e) {
     if (!isSwipeEnabled || !isSwiping) return;
+    
     currentX = e.touches[0].clientX;
     const diffX = currentX - startX;
     const offsetRatio = diffX / config.swipeSensitivity;
+    
     updateCardPositions(offsetRatio);
   }, { passive: true });
   
-  document.addEventListener('touchend', () => {
+  document.addEventListener('touchend', function() {
     if (!isSwipeEnabled || !isSwiping) return;
+    
     finishSwipe();
     isSwiping = false;
+    
+    // スワイプ終了後に浮遊効果を再開
     setTimeout(simulateFloat, 100);
   }, { passive: true });
   
   // マウスイベント
-  document.addEventListener('mousedown', e => {
+  document.addEventListener('mousedown', function(e) {
     if (!isSwipeEnabled) return;
-    if (animationFrame) {
-      cancelAnimationFrame(animationFrame);
-      animationFrame = null;
+    
+    // アニメーションをキャンセル
+    if (floatAnimationFrame) {
+      cancelAnimationFrame(floatAnimationFrame);
+      floatAnimationFrame = null;
     }
+    
     startX = e.clientX;
     currentX = startX;
     isSwiping = true;
   });
   
-  document.addEventListener('mousemove', e => {
+  document.addEventListener('mousemove', function(e) {
     if (!isSwipeEnabled || !isSwiping) return;
+    
     currentX = e.clientX;
     const diffX = currentX - startX;
     const offsetRatio = diffX / config.swipeSensitivity;
+    
     updateCardPositions(offsetRatio);
   });
   
-  document.addEventListener('mouseup', () => {
+  document.addEventListener('mouseup', function() {
     if (!isSwipeEnabled || !isSwiping) return;
+    
     finishSwipe();
     isSwiping = false;
+    
+    // スワイプ終了後に浮遊効果を再開
     setTimeout(simulateFloat, 100);
   });
 }
 
-// スワイプ終了処理
 function finishSwipe() {
   const diffX = currentX - startX;
   const threshold = 50;
   
   if (Math.abs(diffX) < threshold) {
-    // 閾値以下ならスワイプなし
+    // しきい値以下ならスワイプなし
     updateCardPositions(0);
     return;
   }
   
-  // アクティブカード更新
+  // スワイプ方向に応じてアクティブカードを変更
   if (diffX > 0) {
     // 右スワイプ
     activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
@@ -497,15 +488,9 @@ function finishSwipe() {
     activeCardIndex = (activeCardIndex + 1) % config.cardCount;
   }
   
-  // 位置更新
+  // 新しい位置を適用
   updateCardPositions(0);
 }
-
-// リサイズ時の調整
-window.addEventListener('resize', function() {
-  adjustForScreenSize();
-  updateCardPositions();
-}, { passive: true });
 </script>
 
 </body>
