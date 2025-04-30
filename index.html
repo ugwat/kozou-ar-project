@@ -18,15 +18,16 @@
   .carousel { 
     position: absolute; 
     width: 100%; 
-    height: 100%; /* 75%から100%に変更 - より広いエリアを使用 */
-    top: 0;       /* bottomプロパティの代わりにtopを使用 */
+    height: 100%; /* 全体領域使用 */
+    top: 0;
     transform-style: preserve-3d; 
-    transform: rotateX(20deg);
+    /* カードを上に移動させるため、translateYを追加 */
+    transform: rotateX(20deg) translateY(-100px);
   }
   .card-wrapper {
     position: absolute;
-    width: 343.2px;  /* 286px × 1.2 = 343.2px */
-    height: 589.2px; /* 491px × 1.2 = 589.2px */
+    width: 343.2px;  /* 286px × 1.2 */
+    height: 589.2px; /* 491px × 1.2 */
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
@@ -39,11 +40,11 @@
   .card {
     position: absolute;
     width: 100%;
-    height: 10px; /* 最初は小さい高さ、これを変えないことが重要 */
-    bottom: 0;    /* 底から成長するために必須 */
+    height: 10px; /* 最初は小さい高さ */
+    bottom: 0;    /* 底から成長 */
     background-repeat: no-repeat;
-    background-position: center bottom; /* 底揃えに変更 */
-    background-size: cover; /* 元のcover設定を維持 */
+    background-position: center bottom; /* 底揃え */
+    background-size: cover; /* カバー設定維持 */
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
@@ -209,6 +210,7 @@ document.addEventListener("DOMContentLoaded", function() {
   // 画面サイズに応じた調整
   window.addEventListener('resize', function() {
     if (document.getElementById('ar-container').style.display === 'block') {
+      adjustForScreenSize();
       updateCardPositions();
     }
   });
@@ -245,6 +247,26 @@ function initAR() {
   });
 }
 
+// 画面サイズに応じたカルーセル位置の調整
+function adjustForScreenSize() {
+  const windowHeight = window.innerHeight;
+  const carousel = document.querySelector('.carousel');
+  
+  if (carousel) {
+    // 画面の高さに応じてtranslateYの値を調整
+    if (windowHeight < 700) {
+      // 小さい画面（iPhoneミニなど）
+      carousel.style.transform = 'rotateX(20deg) translateY(-70px)';
+    } else if (windowHeight < 900) {
+      // 中サイズ画面（標準的なiPhoneなど）
+      carousel.style.transform = 'rotateX(20deg) translateY(-100px)';
+    } else {
+      // 大きい画面（iPadなど）
+      carousel.style.transform = 'rotateX(20deg) translateY(-130px)';
+    }
+  }
+}
+
 function createCards() {
   const carousel = document.querySelector('.carousel');
   carousel.innerHTML = '';
@@ -264,6 +286,9 @@ function createCards() {
   
   // カード数の表示を更新
   updateCardCounter();
+  
+  // 画面サイズに応じた調整
+  adjustForScreenSize();
   
   // 初期位置の設定
   updateCardPositions();
@@ -481,6 +506,19 @@ function finishSwipe() {
   // 新しい位置を適用
   updateCardPositions(0);
 }
+
+// カメラリソースのクリーンアップ
+window.addEventListener('beforeunload', function() {
+  const video = document.getElementById('camera-view');
+  if (video && video.srcObject) {
+    const tracks = video.srcObject.getTracks();
+    tracks.forEach(track => track.stop());
+  }
+  
+  if (floatAnimationFrame) {
+    cancelAnimationFrame(floatAnimationFrame);
+  }
+});
 </script>
 
 </body>
