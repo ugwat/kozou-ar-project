@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KOZOU+ AR スキャン</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; }
+  
+  /* スキャン画面のスタイル */
+  #scan-container { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    z-index: 1; 
+  }
+  
+  #camera-view { 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    z-index: 10; 
+  }
+  
+  /* スキャンオーバーレイ */
+  .scan-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 20;
+    pointer-events: none;
+  }
+  
+  /* スキャンフレーム */
+  .scan-frame {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 70%;
+    height: 40%;
+    transform: translate(-50%, -50%);
+    border: 2px solid #00a2ff;
+    box-shadow: 0 0 10px rgba(0, 162, 255, 0.8);
+    z-index: 30;
+  }
+  
+  /* スキャンライン */
+  .scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: rgba(0, 162, 255, 0.7);
+    box-shadow: 0 0 10px rgba(0, 162, 255, 0.8);
+    animation: scanAnimation 2s linear infinite;
+  }
+  
+  @keyframes scanAnimation {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+  
+  /* ガイドテキスト */
+  .guide-text {
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-size: 16px;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+    z-index: 40;
+    padding: 10px;
+  }
+  
+  /* スキャン成功メッセージ */
+  .scan-success {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: #00a2ff;
+    font-size: 24px;
+    font-weight: bold;
+    transform: translateY(-50%);
+    z-index: 50;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  
+  .scan-success.visible {
+    opacity: 1;
+  }
+  
+  /* エラーメッセージ */
+  .error-message {
+    position: absolute;
+    bottom: 50px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: #ff4444;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px;
+    font-size: 14px;
+    z-index: 60;
+    display: none;
+  }
+</style>
+
+<!-- MindAR とA-Frameのスクリプト読み込み -->
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
+<script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
+</head>
+
+<body>
+<!-- スキャン画面 -->
+<div id="scan-container">
+  <video id="camera-view" autoplay playsinline muted></video>
+  
+  <div class="scan-overlay">
+    <div class="scan-frame">
+      <div class="scan-line"></div>
+    </div>
+    <div class="guide-text">KOZOU+のロゴを枠内に収めてください</div>
+    <div class="scan-success" id="success-message">認識成功！</div>
+  </div>
+  
+  <div class="error-message" id="error-message"></div>
+</div>
+
+<!-- AR認識用のA-Frameシーン (非表示) -->
+<a-scene id="ar-scene" mindar-image="imageTargetSrc: ./targets.mind; autoStart: false" embedded color-space="sRGB" renderer="colorManagement: true" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false" style="display: none;">
+  <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+  <a-entity id="target-container" mindar-image-target="targetIndex: 0">
+    <!-- マーカー認識用の空のエンティティ -->
+  </a-entity>
+</a-scene>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // エラーメッセージ表示関数
+  function showError(message) {
+    const errorElement = document.getElementById('error-message');
+    errorElement.textContent = message;
+    errorElement.style.display = 'block';
+    
+    // 3秒後に消える
+    setTimeout(() => {
+      errorElement.style.display = 'none';
+    }, 3000);
+  }
+  
+  // AR初期化
+  function initAR() {
+    const sceneEl = document.getElementById('ar-scene');
+    
+    // シーンの読み込み完了イベント
+    sceneEl.addEventListener('loaded', function() {
+      console.log("ARシーン初期化完了");
+      
+      // MindARを開始
+      const mindARSystem = sceneEl.systems['mindar-image-system'];
+      
+      try {
+        mindARSystem.start()
+          .catch(error => {
+            console.error("MindARの開始エラー:", error);
+            showError("カメラへのアクセスに失敗しました。ブラウザの設定を確認してください。");
+          });
+      } catch (e) {
+        console.error("MindAR初期化エラー:", e);
+        showError("ARシステムの初期化に失敗しました。ブラウザをリロードしてください。");
+      }
+    });
+    
+    // ターゲット検出イベント
+    const targetContainer = document.getElementById('target-container');
+    
+    targetContainer.addEventListener('targetFound', function() {
+      console.log("ターゲット検出成功");
+      
+      // 成功メッセージを表示
+      const successMessage = document.getElementById('success-message');
+      successMessage.classList.add('visible');
+      
+      // 1秒後にindex.htmlに遷移
+      setTimeout(function() {
+        window.location.href = 'index.html';
+      }, 1000);
+    });
+    
+    // カメラエラー処理
+    sceneEl.addEventListener('camera-error', function() {
+      console.error("カメラエラー");
+      showError("カメラへのアクセスが拒否されました。設定からカメラへのアクセスを許可してください。");
+    });
+  }
+  
+  // 代替カメラアクセス (MindARと併用)
+  function initCameraView() {
+    const videoElement = document.getElementById('camera-view');
+    
+    // スマホの背面カメラを優先
+    const constraints = { 
+      video: { 
+        facingMode: 'environment',
+        width: { ideal: window.innerWidth },
+        height: { ideal: window.innerHeight }
+      } 
+    };
+    
+    navigator.mediaDevices.getUserMedia(constraints)
+      .then(function(stream) {
+        videoElement.srcObject = stream;
+        videoElement.onloadedmetadata = function() {
+          videoElement.play()
+            .then(() => console.log("カメラビュー開始"))
+            .catch(e => console.error("ビデオ再生エラー:", e));
+        };
+      })
+      .catch(function(error) {
+        console.error("カメラビューエラー:", error);
+        showError("カメラへのアクセスに失敗しました。");
+      });
+  }
+  
+  // アプリ初期化
+  try {
+    initCameraView(); // カメラビュー初期化
+    initAR();         // AR初期化
+  } catch (error) {
+    console.error("初期化エラー:", error);
+    showError("アプリの初期化に失敗しました。");
+  }
+});
+</script>
+
+</body>
+</html>
