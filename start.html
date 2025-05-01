@@ -518,7 +518,13 @@ let scanModeActive = true; // 初期状態はスキャンモード
 let videoStream = null;    // ビデオストリームを保持
 let markerFound = false;   // マーカー検出フラグ（二重検出防止用）
 
+// DOMContentLoadedイベントが完全に発火することを確認
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("DOM完全ロード - 初期化開始");
+  
+  // index.html読み込み時にar-containerを非表示に
+  document.getElementById('ar-container').style.display = 'none';
+  
   // スキャンモードの初期化
   initScanMode();
   
@@ -622,18 +628,24 @@ function startRadarDots() {
   }, 1000);
 }
 
-// スキャンモードの初期化
-function initScanMode() {
-  // カメラへのアクセスを一度だけ取得
-  initCamera();
-  
-  // ARの初期化
-  initAR();
-}
-
-// カメラアクセスの初期化（一度だけ）
+// カメラアクセスの初期化（一度だけ）- 優先度をあげる
 function initCamera() {
+  console.log("カメラ初期化開始");
+  
   const videoElement = document.getElementById('camera-view');
+  if (!videoElement) {
+    console.error("video要素が見つかりません");
+    return;
+  }
+  
+  // すでにストリームがあれば再利用
+  if (videoStream) {
+    console.log("既存のビデオストリームを使用");
+    videoElement.srcObject = videoStream;
+    videoElement.play()
+      .catch(e => console.error("ビデオ再生エラー:", e));
+    return;
+  }
   
   // スマホの背面カメラを優先
   const constraints = { 
@@ -644,85 +656,195 @@ function initCamera() {
     } 
   };
   
+  console.log("カメラへのアクセスを要求", constraints);
+  
+  // MediaDevicesのサポート確認
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    console.error("このブラウザはMediaDevices APIをサポートしていません");
+    alert("このブラウザはカメラアクセスをサポートしていません。最新のブラウザを使用してください。");
+    return;
+  }
+  
   navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
+      console.log("カメラアクセス成功");
       videoStream = stream; // グローバル変数に保持
       videoElement.srcObject = stream;
+      
       videoElement.onloadedmetadata = function() {
+        console.log("ビデオメタデータロード完了");
         videoElement.play()
+          .then(() => console.log("ビデオ再生開始"))
           .catch(e => console.error("ビデオ再生エラー:", e));
       };
     })
     .catch(function(error) {
       console.error("カメラアクセスエラー:", error);
+      alert("カメラへのアクセスに失敗しました: " + error.message);
     });
+}
+
+// スキャンモードの初期化
+function initScanMode() {
+  console.log("スキャンモード初期化");
+  
+  // video要素を表示
+  const videoElement = document.getElementById('camera-view');
+  if (videoElement) {
+    videoElement.style.display = 'block';
+  }
+  
+  // カメラへのアクセスを一度だけ取得
+  initCamera();
+  
+  // ARの初期化（遅延実行）
+  setTimeout(function() {
+    initAR();
+  }, 1000); // カメラ初期化の後に少し遅延させる
 }
 
 // ARの初期化
 function initAR() {
+  console.log("AR初期化開始");
+  
   const sceneEl = document.getElementById('ar-scene');
+  if (!sceneEl) {
+    console.error("ar-sceneが見つかりません");
+    return;
+  }
   
-  // シーンの読み込み完了イベント
-  sceneEl.addEventListener('loaded', function() {
-    console.log("ARシーン初期化完了");
-    
-    // MindARを開始
-    const mindARSystem = sceneEl.systems['mindar-image-system'];
-    
-    mindARSystem.start()
-      .catch(error => {
-        console.error("MindARの開始エラー:", error);
-      });
-  });
+  // A-Frame / MindARがすでに起動済みかチェック
+  if (sceneEl.hasLoaded) {
+    console.log("ARシーンはすでにロード済み");
+    startARDetection();
+  } else {
+    // シーンの読み込み完了イベント
+    console.log("ARシーンのロード待機中");
+    sceneEl.addEventListener('loaded', function() {
+      console.log("ARシーン初期化完了");
+      startARDetection();
+    });
+  }
+}
+
+// AR検出処理の開始
+function startARDetection() {
+  const sceneEl = document.getElementById('ar-scene');
+  if (!sceneEl) {
+    console.error("ar-sceneが見つかりません");
+    return;
+  }
   
-  // ターゲット検出イベント
+  // MindARを開始
+  const mindARSystem = sceneEl.systems['mindar-image-system'];
+  if (!mindARSystem) {
+    console.error("mindar-image-systemが見つかりません");
+    return;
+  }
+  
+  console.log("MindAR検出システム開始");
+  mindARSystem.start()
+    .then(() => {
+      console.log("MindAR検出システム開始成功");
+      // ターゲット検出イベントをセットアップ
+      setupTargetDetection();
+    })
+    .catch(error => {
+      console.error("MindARの開始エラー:", error);
+      alert("マーカー検出システムの起動に失敗しました。ページをリロードしてください。");
+    });
+}
+
+// ターゲット検出イベントの設定
+function setupTargetDetection() {
+  console.log("ターゲット検出イベントのセットアップ");
+  
   const targetContainer = document.getElementById('target-container');
+  if (!targetContainer) {
+    console.error("target-containerが見つかりません");
+    return;
+  }
   
   targetContainer.addEventListener('targetFound', function() {
     console.log("ターゲット検出成功");
     
     // すでにカルーセルモードに切り替わっている場合は何もしない
-    if (!scanModeActive || markerFound) return;
+    if (!scanModeActive || markerFound) {
+      console.log("すでに検出済みまたはモード切替済み");
+      return;
+    }
     
     // 二重検出防止フラグをセット
     markerFound = true;
     
     // レーダーを点滅させる
     const radar = document.getElementById('radar');
-    radar.classList.add('radar-flash');
+    if (radar) {
+      radar.classList.add('radar-flash');
+      console.log("レーダー点滅エフェクト開始");
+    }
     
     // 点滅後に0.5秒待ってからフェードアウト
     setTimeout(function() {
+      console.log("フェードアウト開始");
       // フェードアウト開始
       const screenFade = document.getElementById('screen-fade');
-      screenFade.classList.add('active');
+      if (screenFade) {
+        screenFade.classList.add('active');
+      }
       
       // 完全に暗くなったらカルーセルモードに切り替え
       setTimeout(function() {
+        console.log("カルーセルモードに切り替え");
         // スキャンモードを無効化
         scanModeActive = false;
         
         // スキャンモードのUIを非表示
-        document.getElementById('scan-container').classList.add('hidden');
+        const scanContainer = document.getElementById('scan-container');
+        if (scanContainer) {
+          scanContainer.classList.add('hidden');
+        }
         
         // カルーセルモードを表示
-        document.getElementById('ar-container').style.display = 'block';
+        const arContainer = document.getElementById('ar-container');
+        if (arContainer) {
+          arContainer.style.display = 'block';
+        }
         
         // スクリーンフェードを元に戻す
-        screenFade.classList.remove('active');
+        if (screenFade) {
+          screenFade.classList.remove('active');
+        }
         
         // カルーセルモードを初期化（既存のindex.htmlの処理を起動）
+        console.log("カルーセル初期化開始");
         initCarouselMode();
       }, 1500); // フェードアウトの時間
     }, 700); // 点滅(0.2秒×2) + 0.5秒待機 = 0.7秒
+  });
+  
+  // ターゲットロスト時のイベント（オプション）
+  targetContainer.addEventListener('targetLost', function() {
+    console.log("ターゲットロスト");
+    // すでにカルーセルモードに切り替わっている場合は何もしない
+    if (!scanModeActive || markerFound) {
+      return;
+    }
+    
+    // 必要に応じてここに処理を追加
   });
 }
 
 // カルーセルモードへの移行（既存のindex.htmlのロジックを起動）
 function initCarouselMode() {
+  console.log("カルーセルモード初期化");
   // 既存の処理と同等のコードを実行
   preloadImages(cardImages, function() {
+    console.log("カード画像プリロード完了、カード作成開始");
     createCards();
+    
+    // 画面サイズの調整も実行
+    adjustForScreenSize();
   });
 }
 </script>
