@@ -332,6 +332,9 @@ window.addEventListener('error', function(e) {
     return true; // エラー伝播を停止
   }
 }, true);
+
+// コンソールログ追加（デバッグ用）
+console.log("scan.html loaded");
 </script>
 
 <!-- MindAR とA-Frameのスクリプト読み込み -->
@@ -428,6 +431,8 @@ let videoStream = null;    // ビデオストリームを保持
 let markerFound = false;   // マーカー検出フラグ（二重検出防止用）
 
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("DOM loaded in scan.html");
+  
   // スキャンモードの初期化
   initScanMode();
   
@@ -533,6 +538,8 @@ function startRadarDots() {
 
 // スキャンモードの初期化
 function initScanMode() {
+  console.log("Initializing scan mode");
+  
   // カメラへのアクセスを一度だけ取得
   initCamera();
   
@@ -542,6 +549,7 @@ function initScanMode() {
 
 // カメラアクセスの初期化（一度だけ）
 function initCamera() {
+  console.log("Initializing camera");
   const videoElement = document.getElementById('camera-view');
   
   // スマホの背面カメラを優先
@@ -555,6 +563,7 @@ function initCamera() {
   
   navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
+      console.log("Camera access successful");
       videoStream = stream; // グローバル変数に保持
       videoElement.srcObject = stream;
       videoElement.onloadedmetadata = function() {
@@ -569,6 +578,7 @@ function initCamera() {
 
 // ARの初期化
 function initAR() {
+  console.log("Initializing AR");
   const sceneEl = document.getElementById('ar-scene');
   
   // シーンの読み込み完了イベント
@@ -579,6 +589,9 @@ function initAR() {
     const mindARSystem = sceneEl.systems['mindar-image-system'];
     
     mindARSystem.start()
+      .then(() => {
+        console.log("MindAR started successfully");
+      })
       .catch(error => {
         console.error("MindARの開始エラー:", error);
       });
@@ -591,7 +604,10 @@ function initAR() {
     console.log("ターゲット検出成功");
     
     // すでにカルーセルモードに切り替わっている場合は何もしない
-    if (!scanModeActive || markerFound) return;
+    if (!scanModeActive || markerFound) {
+      console.log("Already detected or mode switched");
+      return;
+    }
     
     // 二重検出防止フラグをセット
     markerFound = true;
@@ -602,15 +618,21 @@ function initAR() {
     
     // 点滅後に0.5秒待ってからフェードアウト
     setTimeout(function() {
+      console.log("Starting fade out");
       // フェードアウト開始
       const screenFade = document.getElementById('screen-fade');
       screenFade.classList.add('active');
       
       // 完全に暗くなったらindex.htmlに遷移
       setTimeout(function() {
+        console.log("Navigating to index.html");
         window.location.href = 'index.html';
       }, 1500); // フェードアウトの時間
     }, 700); // 点滅(0.2秒×2) + 0.5秒待機 = 0.7秒
+  });
+  
+  targetContainer.addEventListener('targetLost', function() {
+    console.log("ターゲットロスト");
   });
 }
 </script>

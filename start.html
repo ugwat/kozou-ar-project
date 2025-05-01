@@ -87,6 +87,9 @@ window.addEventListener('error', function(e) {
     return true; // エラー伝播を停止
   }
 }, true);
+
+// コンソールログ追加（デバッグ用）
+console.log("start.html loaded");
 </script>
 </head>
 
@@ -105,8 +108,11 @@ window.addEventListener('error', function(e) {
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("DOM loaded in start.html");
+  
   // ボタンクリックでscan.htmlに遷移
   document.getElementById('start-button').addEventListener('click', function() {
+    console.log("Button clicked, navigating to scan.html");
     window.location.href = 'scan.html';
   });
 });

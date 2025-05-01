@@ -6,6 +6,109 @@
 <title>KOZOU+ AR Experience</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; }
+  
+  /* エラー抑制用 */
+  #error-suppression-container {
+    display: none;
+    visibility: hidden;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+  
+  #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; }
+  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
+  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
+  .carousel { 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; /* 全体領域使用 */
+    top: 0;
+    transform-style: preserve-3d; 
+    /* カードを上に移動させるため、translateYを追加 */
+    transform: rotateX(20deg) translateY(-100px);
+  }
+  .card-wrapper {
+    position: absolute;
+    width: 343.2px;  /* 286px × 1.2 */
+    height: 589.2px; /* 491px × 1.2 */
+    transform-style: preserve-3d;
+    opacity: 1;
+    left: 50%;
+    top: 50%;
+    margin-left: -171.6px; /* 幅の半分 */
+    margin-top: -294.6px; /* 高さの半分 */
+    will-change: transform, opacity;
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+  }
+  .card {
+    position: absolute;
+    width: 100%;
+    height: 10px; /* 最初は小さい高さ */
+    bottom: 0;    /* 底から成長 */
+    background-repeat: no-repeat;
+    background-position: center bottom; /* 底揃え */
+    background-size: cover; /* カバー設定維持 */
+    border-radius: 12px;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
+    transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
+    backface-visibility: hidden;
+    will-change: height, opacity, filter;
+  }
+  /* 中央カードのみに適用する特別効果 */
+  .card-wrapper.center .card {
+    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
+  }
+  /* スキャンライン効果 */
+  .center .card::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: rgba(0,255,255,0.5);
+    animation: scanline 2s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scanline {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+  .overlay { 
+    position: absolute; top:0; left:0; width:100%; height:100%; 
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
+    z-index:15; pointer-events:none;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  /* デバッグ用のカウンター表示 */
+  #card-counter {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    color: white;
+    background: rgba(0,0,0,0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 14px;
+    z-index: 1000;
+  }
+
+  /* ShowOneChildエラーの修正用スタイル追加 */
+  #error-suppression-container {
+    display: none;
+    visibility: hidden;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
 </style>
 <script>
 // ShowOneChildエラーの修正 - 先に定義して対応
@@ -30,6 +133,9 @@ window.addEventListener('error', function(e) {
     return true; // エラー伝播を停止
   }
 }, true);
+
+// コンソールログ追加（デバッグ用）
+console.log("index.html loaded");
 </script>
 </head>
 
@@ -78,8 +184,11 @@ const config = {
 
 // ページロード時の初期化
 document.addEventListener("DOMContentLoaded", function() {
+  console.log("DOM loaded in index.html");
+  
   // 画像の事前読み込み
   preloadImages(cardImages, function() {
+    console.log("Images preloaded, creating cards");
     createCards();
   });
   
@@ -135,6 +244,7 @@ function adjustForScreenSize() {
 
 // カードの作成
 function createCards() {
+  console.log("Creating cards");
   const carousel = document.querySelector('.carousel');
   const cardCounter = document.getElementById('card-counter');
   
@@ -424,124 +534,9 @@ function changeActiveCard(direction) {
   updateCardPositions();
 }
 
-// モバイル環境でのカメラアクセス（既にスキャン画面でカメラ許可をもらっている前提）
-if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then(function(stream) {
-      const videoElement = document.getElementById('camera-view');
-      if (videoElement) {
-        videoElement.srcObject = stream;
-        videoElement.play()
-          .catch(e => console.error("ビデオ再生エラー:", e));
-      }
-    })
-    .catch(function(error) {
-      console.error("カメラアクセスエラー:", error);
-    });
-}
+// モバイル環境でのカメラアクセス
+// scan.htmlで既にカメラアクセスを要求しているので、直接アクセスする必要はありません
+// このコメントを残しておくことで、他の開発者が理解しやすくなります
 </script>
 </body>
 </html>
-  body { width: 100%; height: 100%; background: #000; overflow: hidden; position: fixed; }
-  
-  /* エラー抑制用 */
-  #error-suppression-container {
-    display: none;
-    visibility: hidden;
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-  }
-  
-  #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; }
-  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
-  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { 
-    position: absolute; 
-    width: 100%; 
-    height: 100%; /* 全体領域使用 */
-    top: 0;
-    transform-style: preserve-3d; 
-    /* カードを上に移動させるため、translateYを追加 */
-    transform: rotateX(20deg) translateY(-100px);
-  }
-  .card-wrapper {
-    position: absolute;
-    width: 343.2px;  /* 286px × 1.2 */
-    height: 589.2px; /* 491px × 1.2 */
-    transform-style: preserve-3d;
-    opacity: 1;
-    left: 50%;
-    top: 50%;
-    margin-left: -171.6px; /* 幅の半分 */
-    margin-top: -294.6px; /* 高さの半分 */
-    will-change: transform, opacity;
-    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
-  }
-  .card {
-    position: absolute;
-    width: 100%;
-    height: 10px; /* 最初は小さい高さ */
-    bottom: 0;    /* 底から成長 */
-    background-repeat: no-repeat;
-    background-position: center bottom; /* 底揃え */
-    background-size: cover; /* カバー設定維持 */
-    border-radius: 12px;
-    opacity: 0.8;
-    filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
-    transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
-    backface-visibility: hidden;
-    will-change: height, opacity, filter;
-  }
-  /* 中央カードのみに適用する特別効果 */
-  .card-wrapper.center .card {
-    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
-  }
-  /* スキャンライン効果 */
-  .center .card::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    height: 2px;
-    width: 100%;
-    background-color: rgba(0,255,255,0.5);
-    animation: scanline 2s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes scanline {
-    0% { top: 0; }
-    100% { top: 100%; }
-  }
-  .overlay { 
-    position: absolute; top:0; left:0; width:100%; height:100%; 
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
-    z-index:15; pointer-events:none;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  /* デバッグ用のカウンター表示 */
-  #card-counter {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    z-index: 1000;
-  }
-
-  /* ShowOneChildエラーの修正用スタイル追加 */
-  #error-suppression-container {
-    display: none;
-    visibility: hidden;
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-  }
