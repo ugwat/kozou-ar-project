@@ -299,97 +299,14 @@
     pointer-events: none;
   }
   
-  /* カルーセル関連のスタイル（既存のindex.htmlから） */
-  #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
-  #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
-  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { 
+  /* カメラビュー */
+  #camera-view { 
     position: absolute; 
     width: 100%; 
-    height: 100%; /* 全体領域使用 */
-    top: 0;
-    transform-style: preserve-3d; 
-    /* カードを上に移動させるため、translateYを追加 */
-    transform: rotateX(20deg) translateY(-100px);
-  }
-  .card-wrapper {
-    position: absolute;
-    width: 343.2px;  /* 286px × 1.2 */
-    height: 589.2px; /* 491px × 1.2 */
-    transform-style: preserve-3d;
-    opacity: 1;
-    left: 50%;
-    top: 50%;
-    margin-left: -171.6px; /* 幅の半分 */
-    margin-top: -294.6px; /* 高さの半分 */
-    will-change: transform, opacity;
-    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
-  }
-  .card {
-    position: absolute;
-    width: 100%;
-    height: 10px; /* 最初は小さい高さ */
-    bottom: 0;    /* 底から成長 */
-    background-repeat: no-repeat;
-    background-position: center bottom; /* 底揃え */
-    background-size: cover; /* カバー設定維持 */
-    border-radius: 12px;
-    opacity: 0.8;
-    filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
-    transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
-    backface-visibility: hidden;
-    will-change: height, opacity, filter;
-  }
-  /* 中央カードのみに適用する特別効果 */
-  .card-wrapper.center .card {
-    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
-  }
-  /* スキャンライン効果 */
-  .center .card::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    height: 2px;
-    width: 100%;
-    background-color: rgba(0,255,255,0.5);
-    animation: scanline 2s linear infinite;
-    pointer-events: none;
-  }
-  @keyframes scanline {
-    0% { top: 0; }
-    100% { top: 100%; }
-  }
-  .overlay { 
-    position: absolute; top:0; left:0; width:100%; height:100%; 
-    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
-    z-index:15; pointer-events:none;
-  }
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  /* デバッグ用のカウンター表示 */
-  #card-counter {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    color: white;
-    background: rgba(0,0,0,0.5);
-    padding: 5px 10px;
-    border-radius: 5px;
-    font-size: 14px;
-    z-index: 1000;
-  }
-
-  /* ShowOneChildエラーの修正用スタイル追加 */
-  #error-suppression-container {
-    display: none;
-    visibility: hidden;
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
+    height: 100%; 
+    object-fit: cover; 
+    z-index: 10; 
+    background: #000; 
   }
 </style>
 <script>
@@ -417,7 +334,7 @@ window.addEventListener('error', function(e) {
 }, true);
 </script>
 
-<!-- MindAR とA-Frameのスクリプト読み込み (スキャンモードのみに使用) -->
+<!-- MindAR とA-Frameのスクリプト読み込み -->
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image.prod.js"></script>
 <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.1/dist/mindar-image-aframe.prod.js"></script>
@@ -429,11 +346,14 @@ window.addEventListener('error', function(e) {
   <div id="ShowOneChild-dummy"></div>
 </div>
 
-<!-- カスタムスキャンオーバーレイ - MindARのデフォルトUIを代替するため -->
+<!-- カスタムスキャンオーバーレイ - MindARのデフォルトUIを代替 -->
 <div id="custom-scanning-overlay"></div>
 
 <!-- スキャンモードUI -->
 <div id="scan-container">
+  <!-- カメラビュー -->
+  <video id="camera-view" autoplay playsinline muted></video>
+  
   <!-- 背景オーバーレイ -->
   <div class="background-overlay"></div>
   
@@ -482,16 +402,6 @@ window.addEventListener('error', function(e) {
   <div id="screen-fade"></div>
 </div>
 
-<!-- カルーセルモード (既存のindex.htmlのそのまま) -->
-<div id="ar-container">
-  <video id="camera-view" autoplay playsinline muted></video>
-  <div class="overlay"></div>
-  <div class="scene">
-    <div class="carousel"></div>
-  </div>
-  <div id="card-counter">カード数: 0 / 現在のインデックス: 0</div>
-</div>
-
 <!-- AR認識用のA-Frameシーン - デフォルトUIを無効化 -->
 <a-scene id="ar-scene" 
   mindar-image="imageTargetSrc: ./targets.mind; 
@@ -511,20 +421,13 @@ window.addEventListener('error', function(e) {
   </a-entity>
 </a-scene>
 
-<!-- 統合スクリプト：スキャンモードからカルーセルモードへの切り替え -->
 <script>
 // フラグ変数
 let scanModeActive = true; // 初期状態はスキャンモード
 let videoStream = null;    // ビデオストリームを保持
 let markerFound = false;   // マーカー検出フラグ（二重検出防止用）
 
-// DOMContentLoadedイベントが完全に発火することを確認
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("DOM完全ロード - 初期化開始");
-  
-  // index.html読み込み時にar-containerを非表示に
-  document.getElementById('ar-container').style.display = 'none';
-  
   // スキャンモードの初期化
   initScanMode();
   
@@ -628,24 +531,18 @@ function startRadarDots() {
   }, 1000);
 }
 
-// カメラアクセスの初期化（一度だけ）- 優先度をあげる
+// スキャンモードの初期化
+function initScanMode() {
+  // カメラへのアクセスを一度だけ取得
+  initCamera();
+  
+  // ARの初期化
+  initAR();
+}
+
+// カメラアクセスの初期化（一度だけ）
 function initCamera() {
-  console.log("カメラ初期化開始");
-  
   const videoElement = document.getElementById('camera-view');
-  if (!videoElement) {
-    console.error("video要素が見つかりません");
-    return;
-  }
-  
-  // すでにストリームがあれば再利用
-  if (videoStream) {
-    console.log("既存のビデオストリームを使用");
-    videoElement.srcObject = videoStream;
-    videoElement.play()
-      .catch(e => console.error("ビデオ再生エラー:", e));
-    return;
-  }
   
   // スマホの背面カメラを優先
   const constraints = { 
@@ -656,559 +553,65 @@ function initCamera() {
     } 
   };
   
-  console.log("カメラへのアクセスを要求", constraints);
-  
-  // MediaDevicesのサポート確認
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    console.error("このブラウザはMediaDevices APIをサポートしていません");
-    alert("このブラウザはカメラアクセスをサポートしていません。最新のブラウザを使用してください。");
-    return;
-  }
-  
   navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
-      console.log("カメラアクセス成功");
       videoStream = stream; // グローバル変数に保持
       videoElement.srcObject = stream;
-      
       videoElement.onloadedmetadata = function() {
-        console.log("ビデオメタデータロード完了");
         videoElement.play()
-          .then(() => console.log("ビデオ再生開始"))
           .catch(e => console.error("ビデオ再生エラー:", e));
       };
     })
     .catch(function(error) {
       console.error("カメラアクセスエラー:", error);
-      alert("カメラへのアクセスに失敗しました: " + error.message);
     });
-}
-
-// スキャンモードの初期化
-function initScanMode() {
-  console.log("スキャンモード初期化");
-  
-  // video要素を表示
-  const videoElement = document.getElementById('camera-view');
-  if (videoElement) {
-    videoElement.style.display = 'block';
-  }
-  
-  // カメラへのアクセスを一度だけ取得
-  initCamera();
-  
-  // ARの初期化（遅延実行）
-  setTimeout(function() {
-    initAR();
-  }, 1000); // カメラ初期化の後に少し遅延させる
 }
 
 // ARの初期化
 function initAR() {
-  console.log("AR初期化開始");
-  
   const sceneEl = document.getElementById('ar-scene');
-  if (!sceneEl) {
-    console.error("ar-sceneが見つかりません");
-    return;
-  }
   
-  // A-Frame / MindARがすでに起動済みかチェック
-  if (sceneEl.hasLoaded) {
-    console.log("ARシーンはすでにロード済み");
-    startARDetection();
-  } else {
-    // シーンの読み込み完了イベント
-    console.log("ARシーンのロード待機中");
-    sceneEl.addEventListener('loaded', function() {
-      console.log("ARシーン初期化完了");
-      startARDetection();
-    });
-  }
-}
-
-// AR検出処理の開始
-function startARDetection() {
-  const sceneEl = document.getElementById('ar-scene');
-  if (!sceneEl) {
-    console.error("ar-sceneが見つかりません");
-    return;
-  }
+  // シーンの読み込み完了イベント
+  sceneEl.addEventListener('loaded', function() {
+    console.log("ARシーン初期化完了");
+    
+    // MindARを開始
+    const mindARSystem = sceneEl.systems['mindar-image-system'];
+    
+    mindARSystem.start()
+      .catch(error => {
+        console.error("MindARの開始エラー:", error);
+      });
+  });
   
-  // MindARを開始
-  const mindARSystem = sceneEl.systems['mindar-image-system'];
-  if (!mindARSystem) {
-    console.error("mindar-image-systemが見つかりません");
-    return;
-  }
-  
-  console.log("MindAR検出システム開始");
-  mindARSystem.start()
-    .then(() => {
-      console.log("MindAR検出システム開始成功");
-      // ターゲット検出イベントをセットアップ
-      setupTargetDetection();
-    })
-    .catch(error => {
-      console.error("MindARの開始エラー:", error);
-      alert("マーカー検出システムの起動に失敗しました。ページをリロードしてください。");
-    });
-}
-
-// ターゲット検出イベントの設定
-function setupTargetDetection() {
-  console.log("ターゲット検出イベントのセットアップ");
-  
+  // ターゲット検出イベント
   const targetContainer = document.getElementById('target-container');
-  if (!targetContainer) {
-    console.error("target-containerが見つかりません");
-    return;
-  }
   
   targetContainer.addEventListener('targetFound', function() {
     console.log("ターゲット検出成功");
     
     // すでにカルーセルモードに切り替わっている場合は何もしない
-    if (!scanModeActive || markerFound) {
-      console.log("すでに検出済みまたはモード切替済み");
-      return;
-    }
+    if (!scanModeActive || markerFound) return;
     
     // 二重検出防止フラグをセット
     markerFound = true;
     
     // レーダーを点滅させる
     const radar = document.getElementById('radar');
-    if (radar) {
-      radar.classList.add('radar-flash');
-      console.log("レーダー点滅エフェクト開始");
-    }
+    radar.classList.add('radar-flash');
     
     // 点滅後に0.5秒待ってからフェードアウト
     setTimeout(function() {
-      console.log("フェードアウト開始");
       // フェードアウト開始
       const screenFade = document.getElementById('screen-fade');
-      if (screenFade) {
-        screenFade.classList.add('active');
-      }
+      screenFade.classList.add('active');
       
-      // 完全に暗くなったらカルーセルモードに切り替え
+      // 完全に暗くなったらindex.htmlに遷移
       setTimeout(function() {
-        console.log("カルーセルモードに切り替え");
-        // スキャンモードを無効化
-        scanModeActive = false;
-        
-        // スキャンモードのUIを非表示
-        const scanContainer = document.getElementById('scan-container');
-        if (scanContainer) {
-          scanContainer.classList.add('hidden');
-        }
-        
-        // カルーセルモードを表示
-        const arContainer = document.getElementById('ar-container');
-        if (arContainer) {
-          arContainer.style.display = 'block';
-        }
-        
-        // スクリーンフェードを元に戻す
-        if (screenFade) {
-          screenFade.classList.remove('active');
-        }
-        
-        // カルーセルモードを初期化（既存のindex.htmlの処理を起動）
-        console.log("カルーセル初期化開始");
-        initCarouselMode();
+        window.location.href = 'index.html';
       }, 1500); // フェードアウトの時間
     }, 700); // 点滅(0.2秒×2) + 0.5秒待機 = 0.7秒
   });
-  
-  // ターゲットロスト時のイベント（オプション）
-  targetContainer.addEventListener('targetLost', function() {
-    console.log("ターゲットロスト");
-    // すでにカルーセルモードに切り替わっている場合は何もしない
-    if (!scanModeActive || markerFound) {
-      return;
-    }
-    
-    // 必要に応じてここに処理を追加
-  });
-}
-
-// カルーセルモードへの移行（既存のindex.htmlのロジックを起動）
-function initCarouselMode() {
-  console.log("カルーセルモード初期化");
-  // 既存の処理と同等のコードを実行
-  preloadImages(cardImages, function() {
-    console.log("カード画像プリロード完了、カード作成開始");
-    createCards();
-    
-    // 画面サイズの調整も実行
-    adjustForScreenSize();
-  });
-}
-</script>
-
-<!-- カルーセルモード用のスクリプト（既存のindex.htmlから変更なし） -->
-<script>
-// グローバル変数
-let activeCardIndex = 0;
-let isSwipeEnabled = false;
-let startX = 0;
-let currentX = 0;
-let isSwiping = false;
-let floatAnimationFrame = null;
-
-// カード画像の設定
-const cardImages = [
-  './assets/1waku.png',  // カード1枚目
-  './assets/c2.png',     // カード2枚目
-  './assets/c3.png',     // カード3枚目
-  './assets/c4.png',     // カード4枚目
-  './assets/1waku.png'   // カード5枚目
-];
-
-// 設定
-const config = {
-  cardSpacing: 300,           // カード間の距離
-  swipeSensitivity: 200,      // スワイプの感度
-  cardRotation: 30,           // カードの回転角度
-  centerZ: -400,              // Z軸の奥行き
-  cardCount: 5                // カードの総数
-};
-
-// 画像の事前読み込み
-function preloadImages(images, callback) {
-  if (!images || images.length === 0) {
-    callback();
-    return;
-  }
-  
-  let loaded = 0;
-  
-  function imageLoaded() {
-    loaded++;
-    if (loaded === images.length) {
-      callback();
-    }
-  }
-  
-  for (let i = 0; i < images.length; i++) {
-    const img = new Image();
-    img.onload = img.onerror = imageLoaded;
-    img.src = images[i];
-  }
-}
-
-// 画面サイズに応じたカルーセル位置の調整
-function adjustForScreenSize() {
-  const windowHeight = window.innerHeight;
-  const carousel = document.querySelector('.carousel');
-  
-  if (carousel) {
-    // 画面の高さに応じてtranslateYの値を調整
-    if (windowHeight < 700) {
-      // 小さい画面（iPhoneミニなど）
-      carousel.style.transform = 'rotateX(20deg) translateY(-70px)';
-    } else if (windowHeight < 900) {
-      // 中サイズ画面（標準的なiPhoneなど）
-      carousel.style.transform = 'rotateX(20deg) translateY(-100px)';
-    } else {
-      // 大きい画面（iPadなど）
-      carousel.style.transform = 'rotateX(20deg) translateY(-130px)';
-    }
-  }
-}
-
-// カードの作成
-function createCards() {
-  const carousel = document.querySelector('.carousel');
-  const cardCounter = document.getElementById('card-counter');
-  
-  // 既存のカードをクリア
-  carousel.innerHTML = '';
-  
-  // カードの数だけループ
-  for (let i = 0; i < config.cardCount; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'card-wrapper';
-    wrapper.id = `card-${i}`;
-    
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.style.backgroundImage = `url(${cardImages[i]})`;
-    
-    wrapper.appendChild(card);
-    carousel.appendChild(wrapper);
-  }
-  
-  // カードの位置を更新
-  updateCardPositions();
-  
-  // デバッグ情報更新
-  cardCounter.textContent = `カード数: ${config.cardCount} / 現在のインデックス: ${activeCardIndex}`;
-  
-  // 初期状態では中央カードをフルサイズに
-  setTimeout(function() {
-    const centerCard = document.querySelector('.card-wrapper.center .card');
-    if (centerCard) {
-      centerCard.style.height = '100%';
-      centerCard.style.opacity = '1';
-    }
-  }, 100);
-  
-  // イベントリスナーの設定
-  setupEventListeners();
-  
-  // 画面サイズに合わせて調整
-  adjustForScreenSize();
-  
-  // 浮遊アニメーションの開始
-  startFloatAnimation();
-  
-  // 10秒後にスワイプ機能を有効化
-  setTimeout(function() {
-    isSwipeEnabled = true;
-  }, 10000);
-}
-
-// カード位置の更新
-function updateCardPositions() {
-  const cards = document.querySelectorAll('.card-wrapper');
-  const totalCards = cards.length;
-  
-  cards.forEach((card, index) => {
-    // activeCardIndexからの相対位置を計算
-    let relativePos = index - activeCardIndex;
-    
-    // 配置が循環するように調整（例：最後のカードと最初のカードが隣接）
-    if (relativePos > totalCards / 2) relativePos -= totalCards;
-    if (relativePos < -totalCards / 2) relativePos += totalCards;
-    
-    // 回転角度を計算
-    const rotationY = relativePos * config.cardRotation;
-    
-    // Z軸の位置を計算（中央が最前面）
-    const zPos = config.centerZ - Math.abs(relativePos * 100);
-    
-    // X軸の位置を計算（回転に応じて横に移動）
-    const xPos = relativePos * config.cardSpacing;
-    
-    // スタイルを適用
-    card.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg)`;
-    
-    // activeCardIndexに基づいてクラスを設定
-    if (relativePos === 0) {
-      card.classList.add('center');
-    } else {
-      card.classList.remove('center');
-    }
-    
-    // 中央から離れるほど不透明度を下げる
-    const opacity = 1 - Math.min(Math.abs(relativePos) * 0.2, 0.6);
-    card.style.opacity = opacity;
-  });
-  
-  // カード高さの更新（中央のみフルサイズ、他は小さく）
-  updateCardHeights();
-  
-  // カウンター更新
-  document.getElementById('card-counter').textContent = `カード数: ${config.cardCount} / 現在のインデックス: ${activeCardIndex}`;
-}
-
-// カードの高さを更新（中央のカードだけ大きく表示）
-function updateCardHeights() {
-  const cards = document.querySelectorAll('.card');
-  
-  cards.forEach((card, index) => {
-    const wrapper = card.parentElement;
-    const isCenterCard = wrapper.classList.contains('center');
-    
-    // 中央のカードのみアニメーションで高さを100%に
-    if (isCenterCard) {
-      card.style.height = '100%'; // フルサイズ
-      card.style.opacity = '1';   // 完全不透明
-    } else {
-      card.style.height = '10px'; // 小さいサイズ（下部だけ表示）
-      card.style.opacity = '0.8';  // やや透明
-    }
-  });
-}
-
-// 浮遊アニメーション
-function startFloatAnimation() {
-  if (floatAnimationFrame) {
-    cancelAnimationFrame(floatAnimationFrame);
-  }
-  
-  let time = 0;
-  
-  function animate() {
-    time += 0.02;
-    
-    const centerCard = document.querySelector('.card-wrapper.center');
-    if (centerCard) {
-      // 軽微な浮遊感を演出
-      const floatY = Math.sin(time) * 5;
-      const floatX = Math.sin(time * 0.7) * 3;
-      const currentTransform = centerCard.style.transform;
-      
-      // 既存の変換に浮遊効果を追加
-      if (currentTransform.includes('translateX(')) {
-        // 既存のtranslateXを正規表現で抽出
-        const match = currentTransform.match(/translateX\(([^)]+)\)/);
-        if (match && match[1]) {
-          const baseX = parseFloat(match[1]);
-          // 新しいtranslateXを元の値に浮遊効果を加えて置換
-          centerCard.style.transform = currentTransform.replace(
-            /translateX\([^)]+\)/, 
-            `translateX(${baseX + floatX}px)`
-          );
-        }
-      }
-    }
-    
-    floatAnimationFrame = requestAnimationFrame(animate);
-  }
-  
-  floatAnimationFrame = requestAnimationFrame(animate);
-}
-
-// イベントリスナーのセットアップ
-function setupEventListeners() {
-  const scene = document.querySelector('.scene');
-  
-  // タッチイベント
-  scene.addEventListener('touchstart', handleTouchStart, { passive: true });
-  scene.addEventListener('touchmove', handleTouchMove, { passive: false });
-  scene.addEventListener('touchend', handleTouchEnd, { passive: true });
-  
-  // マウスイベント
-  scene.addEventListener('mousedown', handleMouseDown);
-  scene.addEventListener('mousemove', handleMouseMove);
-  scene.addEventListener('mouseup', handleMouseUp);
-  
-  // リサイズイベント
-  window.addEventListener('resize', function() {
-    adjustForScreenSize();
-    updateCardPositions();
-  });
-}
-
-// タッチイベントハンドラ
-function handleTouchStart(e) {
-  if (!isSwipeEnabled) return;
-  
-  startX = e.touches[0].clientX;
-  isSwiping = true;
-}
-
-function handleTouchMove(e) {
-  if (!isSwiping || !isSwipeEnabled) return;
-  
-  currentX = e.touches[0].clientX;
-  const diffX = currentX - startX;
-  
-  // スワイプ中の視覚的フィードバック
-  if (Math.abs(diffX) > 20) {
-    e.preventDefault(); // スクロール防止
-    
-    // カード全体を少し移動させる
-    const cards = document.querySelectorAll('.card-wrapper');
-    cards.forEach((card) => {
-      const currentTransform = card.style.transform;
-      const newTransform = currentTransform.replace(
-        /translateX\([^)]+\)/, 
-        `translateX(calc(${(currentTransform.match(/translateX\(([^)]+)\)/) || [,'0'])[1]} + ${diffX * 0.2}px))`
-      );
-      card.style.transform = newTransform;
-    });
-  }
-}
-
-function handleTouchEnd(e) {
-  if (!isSwiping || !isSwipeEnabled) return;
-  
-  const endX = e.changedTouches[0].clientX;
-  const diffX = endX - startX;
-  
-  // スワイプが一定以上の距離であれば、カードを切り替え
-  if (Math.abs(diffX) > config.swipeSensitivity) {
-    if (diffX > 0) {
-      // 右スワイプ
-      changeActiveCard(-1);
-    } else {
-      // 左スワイプ
-      changeActiveCard(1);
-    }
-  } else {
-    // スワイプが不十分な場合は元の位置に戻す
-    updateCardPositions();
-  }
-  
-  isSwiping = false;
-}
-
-// マウスイベントハンドラ
-function handleMouseDown(e) {
-  if (!isSwipeEnabled) return;
-  
-  startX = e.clientX;
-  isSwiping = true;
-  e.preventDefault();
-}
-
-function handleMouseMove(e) {
-  if (!isSwiping || !isSwipeEnabled) return;
-  
-  currentX = e.clientX;
-  const diffX = currentX - startX;
-  
-  // スワイプ中の視覚的フィードバック
-  if (Math.abs(diffX) > 20) {
-    // カード全体を少し移動させる
-    const cards = document.querySelectorAll('.card-wrapper');
-    cards.forEach((card) => {
-      const currentTransform = card.style.transform;
-      const newTransform = currentTransform.replace(
-        /translateX\([^)]+\)/, 
-        `translateX(calc(${(currentTransform.match(/translateX\(([^)]+)\)/) || [,'0'])[1]} + ${diffX * 0.2}px))`
-      );
-      card.style.transform = newTransform;
-    });
-  }
-}
-
-function handleMouseUp(e) {
-  if (!isSwiping || !isSwipeEnabled) return;
-  
-  const endX = e.clientX;
-  const diffX = endX - startX;
-  
-  // スワイプが一定以上の距離であれば、カードを切り替え
-  if (Math.abs(diffX) > config.swipeSensitivity) {
-    if (diffX > 0) {
-      // 右スワイプ
-      changeActiveCard(-1);
-    } else {
-      // 左スワイプ
-      changeActiveCard(1);
-    }
-  } else {
-    // スワイプが不十分な場合は元の位置に戻す
-    updateCardPositions();
-  }
-  
-  isSwiping = false;
-}
-
-// アクティブカードの変更
-function changeActiveCard(direction) {
-  // アクティブカードインデックスを更新
-  activeCardIndex = (activeCardIndex + direction + config.cardCount) % config.cardCount;
-  
-  // カード位置を更新
-  updateCardPositions();
 }
 </script>
 </body>
