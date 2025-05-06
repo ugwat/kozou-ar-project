@@ -52,76 +52,79 @@
     will-change: height, opacity, filter;
   }
   
-  /* カードタイプごとのパララックス背景設定 */
-  .card[data-card-type="1"] {
-    background-image: 
-      url('./assets/c1_t.png'),
-      url('./assets/c1.png');
-    background-size: 
-      contain, 
-      contain;
-    background-position: 
-      calc(center + var(--parallax-x) * 0.1) calc(center + var(--parallax-y) * 0.1),
-      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
-    background-repeat: no-repeat, no-repeat;
-  }
-  
-  .card[data-card-type="2"] {
-    background-image: 
-      url('./assets/c2_2.png'),
-      url('./assets/c2_t.png'),
-      url('./assets/c2.png');
-    background-size: 
-      contain, 
-      contain, 
-      contain;
-    background-position: 
-      calc(center + var(--parallax-x) * 0.12) calc(center + var(--parallax-y) * 0.12),
-      calc(center + var(--parallax-x) * 0.06) calc(center + var(--parallax-y) * 0.06),
-      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
-    background-repeat: no-repeat, no-repeat, no-repeat;
-  }
-  
-  .card[data-card-type="3"] {
-    background-image: 
-      url('./assets/c3_4.png'),
-      url('./assets/c3_3.png'),
-      url('./assets/c3_2.png'),
-      url('./assets/c3_1.png'),
-      url('./assets/c3_t.png'),
-      url('./assets/c3.png');
-    background-size: 
-      contain, 
-      contain, 
-      contain, 
-      contain, 
-      contain, 
-      contain;
-    background-position: 
-      calc(center + var(--parallax-x) * 0.15) calc(center + var(--parallax-y) * 0.15),
-      calc(center + var(--parallax-x) * 0.12) calc(center + var(--parallax-y) * 0.12),
-      calc(center + var(--parallax-x) * 0.09) calc(center + var(--parallax-y) * 0.09),
-      calc(center + var(--parallax-x) * 0.06) calc(center + var(--parallax-y) * 0.06),
-      calc(center + var(--parallax-x) * 0.04) calc(center + var(--parallax-y) * 0.04),
-      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
-    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-  }
-  
-  .card[data-card-type="4"] {
-    background-image: 
-      url('./assets/c4_1.png'),
-      url('./assets/c4_t.png'),
-      url('./assets/c4.png');
-    background-size: 
-      contain, 
-      contain, 
-      contain;
-    background-position: 
-      calc(center + var(--parallax-x) * 0.12) calc(center + var(--parallax-y) * 0.12),
-      calc(center + var(--parallax-x) * 0.06) calc(center + var(--parallax-y) * 0.06),
-      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
-    background-repeat: no-repeat, no-repeat, no-repeat;
-  }
+  /* カードタイプごとのパララックス背景設定 - 修正版 */
+.card[data-card-type="1"] {
+  background-image: 
+    url('./assets/c1_1.png'), /* ベーコン画像 */
+    url('./assets/c1_t.png'), /* テキスト */
+    url('./assets/c1.png');   /* 緑色の背景パネル */
+  background-size: 
+    60%, 
+    80%, 
+    100%;
+  background-position: 
+    center 75%, /* ベーコン - 下部中央 */
+    center 25%, /* テキスト - 上部中央 */
+    center;     /* 背景パネル - 中央 */
+  background-repeat: no-repeat, no-repeat, no-repeat;
+}
+
+.card[data-card-type="2"] {
+  background-image: 
+    url('./assets/c4_1.png'), /* ご飯の画像 */
+    url('./assets/c4_t.png'), /* テキスト */
+    url('./assets/c4.png');   /* 赤紫色の背景パネル */
+  background-size: 
+    50%, 
+    80%, 
+    100%;
+  background-position: 
+    center 70%, /* ご飯 - 下部中央 */
+    center 25%, /* テキスト - 上部中央 */
+    center;     /* 背景パネル - 中央 */
+  background-repeat: no-repeat, no-repeat, no-repeat;
+}
+
+.card[data-card-type="3"] {
+  background-image: 
+    url('./assets/c3_1.png'), /* 「12」の数字 */
+    url('./assets/c3_t.png'), /* テキスト */
+    url('./assets/c3.png');   /* 青色の背景パネル */
+  background-size: 
+    40%, 
+    80%, 
+    100%;
+  background-position: 
+    center 70%, /* 「12」の数字 - 下部中央 */
+    center 25%, /* テキスト - 上部中央 */
+    center;     /* 背景パネル - 中央 */
+  background-repeat: no-repeat, no-repeat, no-repeat;
+}
+
+.card[data-card-type="4"] {
+  background-image: 
+    url('./assets/c3_3.png'), /* タバスコ右 */
+    url('./assets/c3_4.png'), /* スナック菓子 下 */
+    url('./assets/c3_2.png'), /* ソース左 */
+    url('./assets/c3_1.png'), /* 調味料 中央 */
+    url('./assets/c3_t.png'), /* テキスト */
+    url('./assets/c3.png');   /* 茶色の背景パネル */
+  background-size: 
+    30%, 
+    40%, 
+    30%, 
+    35%, 
+    80%, 
+    100%;
+  background-position: 
+    right 20%,   /* タバスコ - 右上 */
+    center 85%,  /* スナック菓子 - 下部中央 */
+    left 30%,    /* ソース - 左上 */
+    left 60%,    /* 調味料 - 左中央 */
+    center 25%,  /* テキスト - 上部中央 */
+    center;      /* 背景パネル - 中央 */
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+}
   
   /* 中央カードのみに適用する特別効果 */
   .card-wrapper.center .card {
