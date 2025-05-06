@@ -35,15 +35,15 @@
     margin-top: -245.5px; /* 高さの半分 */
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+    /* パララックス効果用のCSS変数 */
+    --parallax-x: 0px;
+    --parallax-y: 0px;
   }
   .card {
     position: absolute;
     width: 100%;
     height: 10px; /* 最初は小さい高さ、これを変えないことが重要 */
     bottom: 0;    /* 底から成長するために必須 */
-    background-repeat: no-repeat;
-    background-position: center bottom; /* 底揃えに変更 */
-    background-size: cover; /* 元のcover設定を維持 */
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
@@ -51,6 +51,78 @@
     backface-visibility: hidden;
     will-change: height, opacity, filter;
   }
+  
+  /* カードタイプごとのパララックス背景設定 */
+  .card[data-card-type="1"] {
+    background-image: 
+      url('./assets/c1_t.png'),
+      url('./assets/c1.png');
+    background-size: 
+      contain, 
+      contain;
+    background-position: 
+      calc(center + var(--parallax-x) * 0.1) calc(center + var(--parallax-y) * 0.1),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+    background-repeat: no-repeat, no-repeat;
+  }
+  
+  .card[data-card-type="2"] {
+    background-image: 
+      url('./assets/c2_2.png'),
+      url('./assets/c2_t.png'),
+      url('./assets/c2.png');
+    background-size: 
+      contain, 
+      contain, 
+      contain;
+    background-position: 
+      calc(center + var(--parallax-x) * 0.12) calc(center + var(--parallax-y) * 0.12),
+      calc(center + var(--parallax-x) * 0.06) calc(center + var(--parallax-y) * 0.06),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+    background-repeat: no-repeat, no-repeat, no-repeat;
+  }
+  
+  .card[data-card-type="3"] {
+    background-image: 
+      url('./assets/c3_4.png'),
+      url('./assets/c3_3.png'),
+      url('./assets/c3_2.png'),
+      url('./assets/c3_1.png'),
+      url('./assets/c3_t.png'),
+      url('./assets/c3.png');
+    background-size: 
+      contain, 
+      contain, 
+      contain, 
+      contain, 
+      contain, 
+      contain;
+    background-position: 
+      calc(center + var(--parallax-x) * 0.15) calc(center + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.12) calc(center + var(--parallax-y) * 0.12),
+      calc(center + var(--parallax-x) * 0.09) calc(center + var(--parallax-y) * 0.09),
+      calc(center + var(--parallax-x) * 0.06) calc(center + var(--parallax-y) * 0.06),
+      calc(center + var(--parallax-x) * 0.04) calc(center + var(--parallax-y) * 0.04),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  }
+  
+  .card[data-card-type="4"] {
+    background-image: 
+      url('./assets/c4_1.png'),
+      url('./assets/c4_t.png'),
+      url('./assets/c4.png');
+    background-size: 
+      contain, 
+      contain, 
+      contain;
+    background-position: 
+      calc(center + var(--parallax-x) * 0.12) calc(center + var(--parallax-y) * 0.12),
+      calc(center + var(--parallax-x) * 0.06) calc(center + var(--parallax-y) * 0.06),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+    background-repeat: no-repeat, no-repeat, no-repeat;
+  }
+  
   /* 中央カードのみに適用する特別効果 */
   .card-wrapper.center .card {
     filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
@@ -91,6 +163,43 @@
     border-radius: 5px;
     font-size: 14px;
     z-index: 1000;
+  }
+
+  /* カメラボタン */
+  #camera-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(0, 162, 255, 0.7);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+  }
+  
+  #camera-button::before {
+    content: "";
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0, 162, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+  }
+  
+  #camera-button::after {
+    content: "";
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
   }
 
   /* ShowOneChildエラーの修正用スタイル追加 */
@@ -148,6 +257,7 @@ window.addEventListener('error', function(e) {
     <div class="carousel"></div>
   </div>
   <div id="card-counter">カード数: 0 / 現在のインデックス: 0</div>
+  <div id="camera-button" style="display: none;"></div>
 </div>
 
 <script>
@@ -182,14 +292,35 @@ let currentX = 0;
 let isSwiping = false;
 let floatAnimationFrame = null;
 
-// カード画像の設定
-const cardImages = [
-  './assets/1waku.png',  // カード1枚目
-  './assets/c2.png',     // カード2枚目
-  './assets/c3.png',     // カード3枚目
-  './assets/c4.png',     // カード4枚目
-  './assets/1waku.png'   // カード5枚目
+// カード画像のパス設定
+const cardBaseImages = [
+  './assets/c1.png',      // カード1のベース
+  './assets/c2.png',      // カード2のベース
+  './assets/c3.png',      // カード3のベース
+  './assets/c4.png'       // カード4のベース
 ];
+
+const cardTitleImages = [
+  './assets/c1_t.png',    // カード1のタイトル
+  './assets/c2_t.png',    // カード2のタイトル
+  './assets/c3_t.png',    // カード3のタイトル
+  './assets/c4_t.png'     // カード4のタイトル
+];
+
+const cardExtraImages = [
+  '',                     // カード1の追加画像（なし）
+  './assets/c2_2.png',    // カード2の追加画像
+  './assets/c3_1.png,./assets/c3_2.png,./assets/c3_3.png,./assets/c3_4.png', // カード3の追加画像（複数）
+  './assets/c4_1.png'     // カード4の追加画像
+];
+
+// すべての画像パスを結合
+const allImages = [
+  ...cardBaseImages,
+  ...cardTitleImages,
+].concat(
+  cardExtraImages.filter(path => path !== '').flatMap(paths => paths.split(','))
+);
 
 // 設定
 const config = {
@@ -197,7 +328,7 @@ const config = {
   swipeSensitivity: 200,      // スワイプの感度
   cardRotation: 30,           // カードの回転角度
   centerZ: -400,              // Z軸の奥行き
-  cardCount: 5                // カードの総数
+  cardCount: 4                // カードの総数
 };
 
 document.addEventListener("DOMContentLoaded", function() {
@@ -212,13 +343,33 @@ document.addEventListener("DOMContentLoaded", function() {
       updateCardPositions();
     }
   });
+  
+  // パララックス効果用のイベントリスナー
+  document.addEventListener('mousemove', updateParallaxEffect);
+  document.addEventListener('touchmove', updateParallaxEffect, { passive: true });
+  
+  // モバイルデバイス用の傾き検出
+  if (window.DeviceOrientationEvent) {
+    window.addEventListener('deviceorientation', function(event) {
+      if (!event.beta || !event.gamma) return;
+      
+      const tiltX = event.gamma / 3; // 左右の傾き
+      const tiltY = event.beta / 3;  // 前後の傾き
+      
+      const activeCard = document.querySelector('.card-wrapper.center');
+      if (activeCard) {
+        activeCard.style.setProperty('--parallax-x', `${tiltX}px`);
+        activeCard.style.setProperty('--parallax-y', `${tiltY}px`);
+      }
+    });
+  }
 });
 
 function initAR() {
   document.getElementById('ar-container').style.display = 'block';
   
   // 画像を事前読み込み
-  preloadImages(cardImages, function() {
+  preloadImages(allImages, function() {
     // カメラアクセス
     try {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -242,6 +393,14 @@ function initAR() {
       console.warn("MediaDevices API エラー:", e);
       createCards(); // MediaDevicesがない場合もカード表示
     }
+    
+    // カメラボタンを表示
+    document.getElementById('camera-button').style.display = 'flex';
+    
+    // カメラボタンのクリックイベント
+    document.getElementById('camera-button').addEventListener('click', function() {
+      captureImage();
+    });
   });
 }
 
@@ -256,7 +415,7 @@ function createCards() {
     
     const card = document.createElement('div');
     card.className = 'card';
-    card.style.backgroundImage = `url(${cardImages[i]})`;
+    card.dataset.cardType = i + 1; // カードタイプを設定（1〜4）
     
     wrapper.appendChild(card);
     carousel.appendChild(wrapper);
@@ -335,10 +494,21 @@ function updateCardPositions(offsetRatio = 0) {
     // 中央カードにクラスを追加（animationではなくクラスベースでスタイル適用）
     if (Math.abs(relativePos) < 0.5) {
       wrapper.classList.add('center');
+      
+      // 中央カードにのみパララックス効果を適用
+      updateParallaxEffect();
     } else if (relativePos < 0) {
       wrapper.classList.add('left');
+      
+      // 中央以外のカードはパララックスをリセット
+      wrapper.style.setProperty('--parallax-x', '0px');
+      wrapper.style.setProperty('--parallax-y', '0px');
     } else {
       wrapper.classList.add('right');
+      
+      // 中央以外のカードはパララックスをリセット
+      wrapper.style.setProperty('--parallax-x', '0px');
+      wrapper.style.setProperty('--parallax-y', '0px');
     }
   });
   
@@ -349,6 +519,35 @@ function updateCardPositions(offsetRatio = 0) {
   if (!isSwiping) {
     simulateFloat();
   }
+}
+
+// パララックス効果を更新する関数
+function updateParallaxEffect(event) {
+  // アクティブなカードを取得
+  const activeCard = document.querySelector('.card-wrapper.center');
+  if (!activeCard) return;
+  
+  // マウス/タッチ位置を取得
+  let mouseX, mouseY;
+  
+  if (event) {
+    mouseX = event.clientX || (event.touches && event.touches[0].clientX);
+    mouseY = event.clientY || (event.touches && event.touches[0].clientY);
+  } else {
+    // イベントがない場合（初期状態など）は中央値を使用
+    mouseX = window.innerWidth / 2;
+    mouseY = window.innerHeight / 2;
+  }
+  
+  // 中心からの相対位置を計算
+  const centerX = window.innerWidth / 2;
+  const centerY = window.innerHeight / 2;
+  const offsetX = (mouseX - centerX) / 25; // 係数で感度調整
+  const offsetY = (mouseY - centerY) / 25;
+  
+  // カード要素にパララックス値を適用
+  activeCard.style.setProperty('--parallax-x', `${offsetX}px`);
+  activeCard.style.setProperty('--parallax-y', `${offsetY}px`);
 }
 
 // 中央カードの浮遊感をシミュレートする関数
@@ -480,6 +679,62 @@ function finishSwipe() {
   
   // 新しい位置を適用
   updateCardPositions(0);
+  
+  // スワイプ後に、カード5（インデックス4）ならカメラボタンを強調表示
+  checkForPhotoCard();
+}
+
+// 写真撮影用のカードかチェック
+function checkForPhotoCard() {
+  // カード5（インデックス4）がアクティブならカメラボタンを強調表示
+  const cameraButton = document.getElementById('camera-button');
+  
+  if (activeCardIndex === 3) { // 0-indexedで4枚目は3
+    cameraButton.style.animation = 'pulse 1.5s infinite';
+    cameraButton.style.boxShadow = '0 0 25px rgba(0, 200, 255, 0.9)';
+  } else {
+    cameraButton.style.animation = 'none';
+    cameraButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.6)';
+  }
+}
+
+// 画像キャプチャ関数
+function captureImage() {
+  // 撮影時のフラッシュ効果
+  const flash = document.createElement('div');
+  flash.style.position = 'fixed';
+  flash.style.top = '0';
+  flash.style.left = '0';
+  flash.style.width = '100%';
+  flash.style.height = '100%';
+  flash.style.backgroundColor = 'white';
+  flash.style.opacity = '0.5';
+  flash.style.zIndex = '9999';
+  flash.style.transition = 'opacity 0.5s';
+  document.body.appendChild(flash);
+  
+  // フラッシュをフェードアウト
+  setTimeout(() => {
+    flash.style.opacity = '0';
+    setTimeout(() => {
+      document.body.removeChild(flash);
+    }, 500);
+  }, 100);
+  // 実際の撮影処理（モック）
+  // 実際の実装では、ここでCanvas要素を使用してビデオフレームを取得し、
+  // 撮影フレームを重ねるなどの処理を行います
+  
+  // カード4（撮影用フレーム）がアクティブでなければ自動的に移動
+  if (activeCardIndex !== 3) {
+    activeCardIndex = 3;
+    updateCardPositions(0);
+  }
+  
+  console.log("写真を撮影しました");
+  
+  // 撮影成功時の効果音（オプション）
+  const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+  audio.play();
 }
 </script>
 
