@@ -464,143 +464,16 @@ body {
   right: 0;
   border-bottom: 2px solid rgba(0, 200, 255, 0.8);
   border-right: 2px solid rgba(0, 200, 255, 0.8);
+  .photo-button {
+  pointer-events: auto !important;
+  z-index: 9999 !important;
+}
+
+#frame-camera-view {
+  pointer-events: none; /* スマホでは必須 */
+}
 }
 </style>
-<script>
-// ShowOneChildエラーの強化対策
-try {
-  window.ShowOneChild = window.ShowOneChild || {
-    readRenderPromptFromStorage: function() { return null; },
-    getRenderPrompt: function() { return null; },
-    render: function() { return null; }
-  };
-  
-  // localStorage拡張 - エラーが出ないように修正
-  window.localStorage = window.localStorage || {};
-  window.localStorage.getWithTTL = window.localStorage.getWithTTL || function(key) {
-    return null;
-  };
-} catch (e) {
-  console.warn("初期化スクリプトエラー:", e);
-}
-
-// IO errorの抑制
-window.addEventListener('error', function(e) {
-  if (e && e.message && typeof e.message === 'string' && 
-    (e.message.includes('ChromeMethodBFE') || 
-     e.message.includes('Unable to create writable file') ||
-     e.message.includes('ShowOneChild'))) {
-    console.warn('エラー抑制:', e.message);
-    return true; // エラー伝播を停止
-  }
-}, true);
-
-// 未捕捉のPromiseエラーを抑制
-window.addEventListener('unhandledrejection', function(event) {
-  if (event && event.reason && event.reason.message &&
-    (event.reason.message.includes('ChromeMethodBFE') || 
-     event.reason.message.includes('Unable to create writable') ||
-     event.reason.message.includes('ShowOneChild'))) {
-    console.warn('Promise エラー抑制:', event.reason.message);
-    event.preventDefault();
-    event.stopPropagation();
-  }
-}, true);
-// 写真ボタンのイベントリスナー
-photoButton.addEventListener('touchend', function(e) {
-  e.preventDefault(); // iOSでは必須
-  e.stopPropagation(); // 他に伝播しないように
-  
-  if (isProcessing) return;
-  isProcessing = true;
-  
-  console.log("スマホで写真ボタンがタッチされました");
-  showPhotoFrame();
-  
-  // 連続タップ防止
-  setTimeout(() => { isProcessing = false; }, 1000);
-}, { passive: false }); // これがないとpreventDefaultが効かない
-</script>
-</head>
-
-<body>
-<!-- エラー抑制用のダミー要素 -->
-<div id="error-suppression-container">
-  <div id="ShowOneChild-dummy"></div>
-</div>
-
-<div id="ar-container">
-  <video id="camera-view" autoplay playsinline muted></video>
-  <div class="overlay"></div>
-  <div class="scene">
-    <div class="carousel"></div>
-  </div>
-</div>
-
-<!-- フォトフレーム画面 -->
-<div id="photo-frame-container">
-  <!-- カメラビュー -->
-  <video id="frame-camera-view" autoplay playsinline muted></video>
-  
-  <!-- 1. 左上のロゴ -->
-  <div id="logo-container">
-    <img src="./assets/emblem-logo.png" alt="KOZOU+ Logo">
-  </div>
-  
-  <!-- 2. マゼルナキケンエフェクト - 上部テープ -->
-  <div class="marquee-container top">
-    <div class="marquee">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
-    </div>
-    <div class="marquee reverse">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- 3. 湯気エフェクト -->
-  <div id="enhanced-steam-container"></div>
-  
-  <!-- 4. マゼルナキケンエフェクト - 下部テープ -->
-  <div class="marquee-container bottom">
-    <div class="marquee">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
-    </div>
-    <div class="marquee reverse">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
-    </div>
-  </div>
-  
-  <!-- シャッターエフェクト -->
-  <div id="shutter-effect"></div>
-  
-  <!-- 戻るボタン -->
-  <button id="back-button">戻る</button>
-</div>
-
-<!-- 説明ポップアップ -->
-<div id="photo-instruction-popup">
-  <div id="popup-close-button">×</div>
-  <h3 id="popup-title">湯気に合わせて、ラーメンを配置して撮影せよ！</h3>
-  <p id="popup-subtitle">※撮影は画面のどこをタップしても可能</p>
-  
-  <!-- デザイン要素：スキャンライン -->
-  <div class="popup-scanline"></div>
-  
-  <!-- デザイン要素：角の飾り -->
-  <div class="popup-corner popup-corner-tl"></div>
-  <div class="popup-corner popup-corner-tr"></div>
-  <div class="popup-corner popup-corner-bl"></div>
-  <div class="popup-corner popup-corner-br"></div>
-</div>
-
 <script>
 // ShowOneChildエラーの強化対策
 try {
@@ -768,7 +641,7 @@ document.addEventListener("DOMContentLoaded", function() {
       e.stopPropagation();
       showPhotoFrame();
     }
-  }, false);
+  }, { passive: false });
 });
 
 function initAR() {
@@ -842,7 +715,7 @@ function createCards() {
         photoButton.style.backgroundPosition = 'center';
         photoButton.style.backgroundRepeat = 'no-repeat';
         photoButton.style.animation = 'pulse 1.5s infinite';
-        photoButton.style.zIndex = '200'; // z-indexを高く設定
+        photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
         photoButton.style.cursor = 'pointer';
         photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
         
@@ -865,19 +738,20 @@ function createCards() {
           setTimeout(() => { isProcessing = false; }, 1000);
         });
         
-        // タッチデバイス用
+        // タッチデバイス用（修正版）
         photoButton.addEventListener('touchend', function(e) {
+          e.preventDefault(); // iOSでは必須
+          e.stopPropagation(); // 他に伝播しないように
+          
           if (isProcessing) return;
           isProcessing = true;
           
-          console.log("写真ボタンがタッチされました（直接）");
-          e.preventDefault();
-          e.stopPropagation();
+          console.log("スマホで写真ボタンがタッチされました");
           showPhotoFrame();
           
-          // 連続タップ防止のためのクールダウン
+          // 連続タップ防止
           setTimeout(() => { isProcessing = false; }, 1000);
-        }, false);
+        }, { passive: false }); // これがないとpreventDefaultが効かない
         
         card.appendChild(photoButton);
         
@@ -1369,6 +1243,7 @@ function createSteamParticle(container) {
       }, duration * 1000);
     }
   } else {
+    // animate()がサポートされていない場合の代替手段
     // animate()がサポートされていない場合の代替手段
     particle.style.animation = `steam-animation ${duration}s ease-out forwards`;
     setTimeout(() => {
