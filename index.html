@@ -189,6 +189,100 @@
     border-radius: 5px;
     cursor: pointer;
   }
+  
+  /* 説明ポップアップのスタイル */
+  #photo-instruction-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 400px;
+    background-color: rgba(0, 20, 40, 0.85);
+    border: 2px solid rgba(0, 200, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(0, 200, 255, 0.5), inset 0 0 20px rgba(0, 200, 255, 0.2);
+    padding: 25px;
+    color: white;
+    text-align: center;
+    z-index: 3000;
+    backdrop-filter: blur(5px);
+    display: none;
+  }
+  
+  #popup-close-button {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0, 162, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: white;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+  }
+  
+  #popup-title {
+    margin-bottom: 15px;
+    font-size: 18px;
+    text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+  }
+  
+  #popup-subtitle {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-top: 15px;
+  }
+  
+  .popup-scanline {
+    position: absolute;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: rgba(0, 200, 255, 0.5);
+    animation: scanline 4s linear infinite;
+    pointer-events: none;
+  }
+  
+  .popup-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .popup-corner-tl {
+    top: 0;
+    left: 0;
+    border-top: 2px solid rgba(0, 200, 255, 0.8);
+    border-left: 2px solid rgba(0, 200, 255, 0.8);
+  }
+  
+  .popup-corner-tr {
+    top: 0;
+    right: 0;
+    border-top: 2px solid rgba(0, 200, 255, 0.8);
+    border-right: 2px solid rgba(0, 200, 255, 0.8);
+  }
+  
+  .popup-corner-bl {
+    bottom: 0;
+    left: 0;
+    border-bottom: 2px solid rgba(0, 200, 255, 0.8);
+    border-left: 2px solid rgba(0, 200, 255, 0.8);
+  }
+  
+  .popup-corner-br {
+    bottom: 0;
+    right: 0;
+    border-bottom: 2px solid rgba(0, 200, 255, 0.8);
+    border-right: 2px solid rgba(0, 200, 255, 0.8);
+  }
 
   /* ShowOneChildエラーの修正用スタイル追加 */
   #error-suppression-container {
@@ -270,6 +364,22 @@ window.addEventListener('error', function(e) {
   <button id="back-button">戻る</button>
 </div>
 
+<!-- 説明ポップアップ -->
+<div id="photo-instruction-popup">
+  <div id="popup-close-button">×</div>
+  <h3 id="popup-title">湯気に合わせて、ラーメンを配置して撮影せよ！</h3>
+  <p id="popup-subtitle">※撮影は画面のどこをタップしても可能</p>
+  
+  <!-- デザイン要素：スキャンライン -->
+  <div class="popup-scanline"></div>
+  
+  <!-- デザイン要素：角の飾り -->
+  <div class="popup-corner popup-corner-tl"></div>
+  <div class="popup-corner popup-corner-tr"></div>
+  <div class="popup-corner popup-corner-bl"></div>
+  <div class="popup-corner popup-corner-br"></div>
+</div>
+
 <script>
 // 画像の事前読み込み
 function preloadImages(images, callback) {
@@ -314,6 +424,7 @@ let startX = 0;
 let currentX = 0;
 let isSwiping = false;
 let floatAnimationFrame = null;
+let canTakePhoto = false; // 撮影可能フラグ
 
 // カード画像のパス設定 - 実在するパスを確認
 const allImages = [
@@ -355,6 +466,27 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('photo-frame-container').style.display = 'none';
     document.getElementById('ar-container').style.display = 'block';
   });
+  
+  // ポップアップの閉じるボタン
+  document.getElementById('popup-close-button').addEventListener('click', function() {
+    document.getElementById('photo-instruction-popup').style.display = 'none';
+    
+    // ポップアップを閉じたら撮影可能に
+    canTakePhoto = true;
+  });
+  
+  // フォトフレーム画面でのタップイベント
+  document.getElementById('photo-frame-container').addEventListener('click', function(e) {
+    // ポップアップ表示中かBackボタンのクリック時は何もしない
+    if (!canTakePhoto || 
+        e.target === document.getElementById('back-button') || 
+        document.getElementById('photo-instruction-popup').style.display === 'block') {
+      return;
+    }
+    
+    // 撮影処理
+    takePhoto();
+  });
 });
 
 function initAR() {
@@ -363,24 +495,13 @@ function initAR() {
   
   // デバッグ: 利用可能なアセットをリスト
   const assetsList = [
-    './assets/1waku.png',
     './assets/c1.png',
-    './assets/c1_1.png',
-    './assets/c1_t.png',
     './assets/c2.png',
-    './assets/c2_2.png',
-    './assets/c2_t.png',
     './assets/c3.png',
-    './assets/c3_1.png',
-    './assets/c3_2.png',
-    './assets/c3_3.png',
-    './assets/c3_4.png',
-    './assets/c3_t.png',
     './assets/c4.png',
-    './assets/c4_1.png',
-    './assets/c4_t.png',
     './assets/c5.png',
-    './assets/c5_1.png'
+    './assets/c5_1.png',
+    './assets/emblem-logo.png'
   ];
   
   // 画像を事前読み込み
@@ -628,104 +749,119 @@ function setupSwipeEvents() {
       floatAnimationFrame = null;
     }
     startX = e.clientX;
-    currentX = startX;
-    isSwiping = true;
-  });
-  
-  document.addEventListener('mousemove', function(e) {
-    if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.clientX;
-    const diffX = currentX - startX;
-    const offsetRatio = diffX / config.swipeSensitivity;
-    updateCardPositions(offsetRatio);
-  });
-  
-  document.addEventListener('mouseup', function() {
-    if (!isSwipeEnabled || !isSwiping) return;
-    finishSwipe();
-    isSwiping = false;
-    // スワイプ終了後に浮遊効果を再開
-    setTimeout(simulateFloat, 100);
-  });
+   const diffX = currentX - startX;
+   const offsetRatio = diffX / config.swipeSensitivity;
+   updateCardPositions(offsetRatio);
+ });
+ 
+ document.addEventListener('mouseup', function() {
+   if (!isSwipeEnabled || !isSwiping) return;
+   finishSwipe();
+   isSwiping = false;
+   // スワイプ終了後に浮遊効果を再開
+   setTimeout(simulateFloat, 100);
+ });
 }
 
 function finishSwipe() {
-  const diffX = currentX - startX;
-  const threshold = 50;
-  
-  if (Math.abs(diffX) < threshold) {
-    // しきい値以下ならスワイプなし
-    updateCardPositions(0);
-    return;
-  }
-  
-  // スワイプ方向に応じてアクティブカードを変更
-  if (diffX > 0) {
-    // 右スワイプ
-    activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
-  } else {
-    // 左スワイプ
-    activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-  }
-  
-  // 新しい位置を適用
-  updateCardPositions(0);
+ const diffX = currentX - startX;
+ const threshold = 50;
+ 
+ if (Math.abs(diffX) < threshold) {
+   // しきい値以下ならスワイプなし
+   updateCardPositions(0);
+   return;
+ }
+ 
+ // スワイプ方向に応じてアクティブカードを変更
+ if (diffX > 0) {
+   // 右スワイプ
+   activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+ } else {
+   // 左スワイプ
+   activeCardIndex = (activeCardIndex + 1) % config.cardCount;
+ }
+ 
+ // 新しい位置を適用
+ updateCardPositions(0);
 }
 
 // 写真撮影用のカードかチェック
 function checkForPhotoCard() {
-  // カード5（インデックス4）がアクティブならカメラボタンを強調表示
-  const cameraButton = document.getElementById('camera-button');
-  
-  if (activeCardIndex === 4) { // 0-indexedで5枚目は4
-    cameraButton.style.animation = 'pulse 1.5s infinite';
-    cameraButton.style.boxShadow = '0 0 25px rgba(0, 200, 255, 0.9)';
-  } else {
-    cameraButton.style.animation = 'none';
-    cameraButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.6)';
-  }
+ // カード5（インデックス4）がアクティブならカメラボタンを強調表示
+ const cameraButton = document.getElementById('camera-button');
+ 
+ if (activeCardIndex === 4) { // 0-indexedで5枚目は4
+   cameraButton.style.animation = 'pulse 1.5s infinite';
+   cameraButton.style.boxShadow = '0 0 25px rgba(0, 200, 255, 0.9)';
+ } else {
+   cameraButton.style.animation = 'none';
+   cameraButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.6)';
+ }
 }
 
 // フォトフレーム表示関数
 function showPhotoFrame() {
-  console.log("フォトフレーム表示");
-  // AR画面を非表示
-  document.getElementById('ar-container').style.display = 'none';
-  
-  // フォトフレーム画面を表示
-  document.getElementById('photo-frame-container').style.display = 'flex';
+ console.log("フォトフレーム表示");
+ 
+ // カメラボタンを非表示
+ document.getElementById('camera-button').style.display = 'none';
+ 
+ // AR画面を非表示
+ document.getElementById('ar-container').style.display = 'none';
+ 
+ // フォトフレーム画面を表示
+ document.getElementById('photo-frame-container').style.display = 'flex';
+ 
+ // 説明ポップアップを表示
+ document.getElementById('photo-instruction-popup').style.display = 'block';
+ 
+ // 撮影可能フラグをリセット（ポップアップ閉じるまで撮影不可）
+ canTakePhoto = false;
 }
 
-// 画像キャプチャ関数
-function captureImage() {
-  console.log("画像キャプチャ");
-  // 撮影時のフラッシュ効果
-  const flash = document.createElement('div');
-  flash.style.position = 'fixed';
-  flash.style.top = '0';
-  flash.style.left = '0';
-  flash.style.width = '100%';
-  flash.style.height = '100%';
-  flash.style.backgroundColor = 'white';
-  flash.style.opacity = '0.5';
-  flash.style.zIndex = '9999';
-  flash.style.transition = 'opacity 0.5s';
-  document.body.appendChild(flash);
-  
-  // フラッシュをフェードアウト
-  setTimeout(() => {
-    flash.style.opacity = '0';
+// 実際の写真撮影処理
+function takePhoto() {
+ console.log("写真撮影実行");
+ 
+ // 撮影時のフラッシュ効果
+ const flash = document.createElement('div');
+ flash.style.position = 'fixed';
+ flash.style.top = '0';
+ flash.style.left = '0';
+ flash.style.width = '100%';
+ flash.style.height = '100%';
+ flash.style.backgroundColor = 'white';
+ flash.style.opacity = '0.5';
+ flash.style.zIndex = '9999';
+ flash.style.transition = 'opacity 0.5s';
+ document.body.appendChild(flash);
+ 
+ // フラッシュをフェードアウト
+ setTimeout(() => {
+   flash.style.opacity = '0';
    setTimeout(() => {
      document.body.removeChild(flash);
      
-     // フォトフレームを表示
-     showPhotoFrame();
+     // ここで実際の撮影処理（例：画像保存）
+     console.log("写真撮影完了");
+     
+     // 撮影完了メッセージを表示
+     alert("写真を撮影しました！");
+     
    }, 500);
  }, 100);
  
  // 撮影成功時の効果音（オプション）
  const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
  audio.play();
+}
+
+// 画像キャプチャ関数
+function captureImage() {
+ console.log("画像キャプチャ");
+ showPhotoFrame();
 }
 </script>
 
