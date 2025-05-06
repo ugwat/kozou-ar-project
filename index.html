@@ -360,7 +360,6 @@ function preloadImages(images, callback) {
   function imageLoaded() {
     loaded++;
     if ((loaded + errors) === images.length) {
-      console.log(`画像の読み込み完了: 成功=${loaded}、失敗=${errors}`);
       callback();
     }
   }
@@ -369,7 +368,6 @@ function preloadImages(images, callback) {
     console.warn(`画像の読み込み失敗: ${this.src}`, e);
     errors++;
     if ((loaded + errors) === images.length) {
-      console.log(`画像の読み込み完了: 成功=${loaded}、失敗=${errors}`);
       callback();
     }
   }
@@ -411,8 +409,10 @@ const config = {
 };
 
 document.addEventListener("DOMContentLoaded", function() {
+  // スタートボタンクリック時にAR開始
   document.getElementById('start-button').addEventListener('click', function() {
     document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('ar-container').style.display = 'block';
     initAR();
   });
   
@@ -452,8 +452,6 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function initAR() {
-  document.getElementById('ar-container').style.display = 'block';
-  
   // 画像を事前読み込み
   preloadImages(allImages, function() {
     // カメラアクセス
@@ -755,33 +753,22 @@ function takePhoto() {
   
   // フラッシュをフェードアウト
   setTimeout(() => {
-     document.body.removeChild(flash);
-     
-     // iPhoneでの撮影対応
-     try {
-       // 実際の撮影機能実装（iPhoneでも動作する方法）
-       const frameElement = document.getElementById('photo-frame-container');
-       
-       // 簡易的な撮影成功メッセージ
-       alert("写真を撮影しました！");
-       
-       // 実際の実装では、以下のいずれかの方法を使用
-       // 1. navigator.mediaDevices.getDisplayMediaを使用してスクリーンキャプチャ
-       // 2. html2canvasライブラリを使用してDOM要素を画像として保存
-       // 3. Webビューの機能を使用してネイティブ側でスクリーンショットを実行
-     } catch (err) {
-       console.error("撮影エラー:", err);
-       alert("撮影に失敗しました。もう一度お試しください。");
-     }
-   }, 500);
- }, 100);
- 
- // 撮影成功時の効果音（オプション）
- try {
-   const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+    flash.style.opacity = '0';
+    setTimeout(() => {
+      document.body.removeChild(flash);
+      
+      // 撮影成功メッセージ
+      alert("写真を撮影しました！");
+      
+    }, 500);
+  }, 100);
+  
+  // 撮影成功時の効果音（オプション）
+  try {
+     const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
    audio.play();
- } catch (audioErr) {
-   console.warn("音声再生エラー:", audioErr);
+ } catch (e) {
+   console.warn("効果音再生エラー");
  }
 }
 </script>
