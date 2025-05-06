@@ -60,12 +60,12 @@
       url('./assets/c1_t.png'), /* テキスト */
       url('./assets/c1.png');   /* 青色の背景パネル */
     background-size: 
-      40%, 
-      80%, 
+      35%, 
+      85%, 
       100%;
     background-position: 
       center 75%, /* 「12」の数字 - 下部中央 */
-      center 30%, /* テキスト - 上部中央 */
+      center 35%, /* テキスト - 上部中央 */
       center;     /* 背景パネル - 中央 */
     background-repeat: no-repeat, no-repeat, no-repeat;
   }
@@ -77,12 +77,12 @@
       url('./assets/c2_t.png'), /* テキスト */
       url('./assets/c2.png');   /* 緑色の背景パネル */
     background-size: 
-      60%, 
-      80%, 
+      65%, 
+      85%, 
       100%;
     background-position: 
-      center 75%, /* ベーコン - 下部中央 */
-      center 30%, /* テキスト - 上部中央 */
+      center 72%, /* ベーコン - 下部中央 */
+      center 35%, /* テキスト - 上部中央 */
       center;     /* 背景パネル - 中央 */
     background-repeat: no-repeat, no-repeat, no-repeat;
   }
@@ -97,18 +97,18 @@
       url('./assets/c3_t.png'), /* テキスト */
       url('./assets/c3.png');   /* 茶色の背景パネル */
     background-size: 
-      30%, 
+      35%, 
       20%, 
       25%, 
-      20%, 
-      80%, 
+      25%, 
+      85%, 
       100%;
     background-position: 
       center 80%,  /* お菓子バケツ - 下部中央 */
-      right 75%,   /* タバスコ - 右下 */
-      right 30%,   /* 調味料ボトル2本 - 右上 */
-      left 30%,    /* レモン色調味料 - 左上 */
-      center 20%,  /* テキスト - 上部中央 */
+      right 70%,   /* タバスコ - 右下 */
+      90% 25%,     /* 調味料ボトル2本 - 右上 */
+      15% 25%,     /* レモン色調味料 - 左上 */
+      center 25%,  /* テキスト - 上部中央 */
       center;      /* 背景パネル - 中央 */
     background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
   }
@@ -121,45 +121,44 @@
       url('./assets/c4.png');   /* 赤紫色の背景パネル */
     background-size: 
       50%, 
-      80%, 
+      85%, 
       100%;
     background-position: 
-      center 75%, /* ご飯の茶碗 - 下部中央 */
-      center 30%, /* テキスト - 上部中央 */
+      center 70%, /* ご飯の茶碗 - 下部中央 */
+      center 35%, /* テキスト - 上部中央 */
       center;     /* 背景パネル - 中央 */
     background-repeat: no-repeat, no-repeat, no-repeat;
   }
   
   /* パララックス効果の強さを設定 */
-  .card-wrapper.center .card {
+  .card-wrapper.center .card[data-card-type="1"] {
     background-position: 
-      /* カード1 */
       calc(center + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
-      calc(center + var(--parallax-x) * 0.08) calc(30% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.08) calc(35% + var(--parallax-y) * 0.08),
       calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
   }
   
   .card-wrapper.center .card[data-card-type="2"] {
     background-position: 
-      calc(center + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
-      calc(center + var(--parallax-x) * 0.08) calc(30% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.15) calc(72% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(35% + var(--parallax-y) * 0.08),
       calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
   }
   
   .card-wrapper.center .card[data-card-type="3"] {
     background-position: 
       calc(center + var(--parallax-x) * 0.18) calc(80% + var(--parallax-y) * 0.18),
-      calc(right + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
-      calc(right + var(--parallax-x) * 0.12) calc(30% + var(--parallax-y) * 0.12),
-      calc(left + var(--parallax-x) * 0.15) calc(30% + var(--parallax-y) * 0.15),
-      calc(center + var(--parallax-x) * 0.08) calc(20% + var(--parallax-y) * 0.08),
+      calc(right + var(--parallax-x) * 0.15) calc(70% + var(--parallax-y) * 0.15),
+      calc(90% + var(--parallax-x) * 0.12) calc(25% + var(--parallax-y) * 0.12),
+      calc(15% + var(--parallax-x) * 0.15) calc(25% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(25% + var(--parallax-y) * 0.08),
       calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
   }
   
   .card-wrapper.center .card[data-card-type="4"] {
     background-position: 
-      calc(center + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
-      calc(center + var(--parallax-x) * 0.08) calc(30% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.15) calc(70% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(35% + var(--parallax-y) * 0.08),
       calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
   }
   
@@ -250,6 +249,22 @@
     width: 0;
     height: 0;
     overflow: hidden;
+  }
+  
+  /* パルスアニメーション */
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 30px rgba(0, 200, 255, 0.9);
+      transform: scale(1.1);
+    }
+    100% {
+      box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+      transform: scale(1);
+    }
   }
 </style>
 <script>
@@ -676,29 +691,29 @@ function setupSwipeEvents() {
     const diffX = currentX - startX;
     const offsetRatio = diffX / config.swipeSensitivity;
     updateCardPositions(offsetRatio);
-  });
-  
-  document.addEventListener('mouseup', function() {
-    if (!isSwipeEnabled || !isSwiping) return;
-    finishSwipe();
-    isSwiping = false;
-    // スワイプ終了後に浮遊効果を再開
-    setTimeout(simulateFloat, 100);
-  });
+ });
+ 
+ document.addEventListener('mouseup', function() {
+   if (!isSwipeEnabled || !isSwiping) return;
+   finishSwipe();
+   isSwiping = false;
+   // スワイプ終了後に浮遊効果を再開
+   setTimeout(simulateFloat, 100);
+ });
 }
 
 function finishSwipe() {
-  const diffX = currentX - startX;
-  const threshold = 50;
-  
-  if (Math.abs(diffX) < threshold) {
-    // しきい値以下ならスワイプなし
-    updateCardPositions(0);
-    return;
-  }
-  
-// スワイプ方向に応じてアクティブカードを変更
-if (diffX > 0) {
+ const diffX = currentX - startX;
+ const threshold = 50;
+ 
+ if (Math.abs(diffX) < threshold) {
+   // しきい値以下ならスワイプなし
+   updateCardPositions(0);
+   return;
+ }
+ 
+ // スワイプ方向に応じてアクティブカードを変更
+ if (diffX > 0) {
    // 右スワイプ
    activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
  } else {
@@ -766,25 +781,6 @@ function captureImage() {
  const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
  audio.play();
 }
-
-// パルスアニメーション
-const style = document.createElement('style');
-style.textContent = `
-@keyframes pulse {
- 0% {
-   box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
-   transform: scale(1);
- }
- 50% {
-   box-shadow: 0 0 30px rgba(0, 200, 255, 0.9);
-   transform: scale(1.1);
- }
- 100% {
-   box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
-   transform: scale(1);
- }
-}`;
-document.head.appendChild(style);
 </script>
 
 </body>
