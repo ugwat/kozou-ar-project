@@ -506,6 +506,20 @@ window.addEventListener('unhandledrejection', function(event) {
     event.stopPropagation();
   }
 }, true);
+// 写真ボタンのイベントリスナー
+photoButton.addEventListener('touchend', function(e) {
+  e.preventDefault(); // iOSでは必須
+  e.stopPropagation(); // 他に伝播しないように
+  
+  if (isProcessing) return;
+  isProcessing = true;
+  
+  console.log("スマホで写真ボタンがタッチされました");
+  showPhotoFrame();
+  
+  // 連続タップ防止
+  setTimeout(() => { isProcessing = false; }, 1000);
+}, { passive: false }); // これがないとpreventDefaultが効かない
 </script>
 </head>
 
