@@ -53,78 +53,115 @@
   }
   
   /* カードタイプごとのパララックス背景設定 - 修正版 */
-.card[data-card-type="1"] {
-  background-image: 
-    url('./assets/c1_1.png'), /* ベーコン画像 */
-    url('./assets/c1_t.png'), /* テキスト */
-    url('./assets/c1.png');   /* 緑色の背景パネル */
-  background-size: 
-    60%, 
-    80%, 
-    100%;
-  background-position: 
-    center 75%, /* ベーコン - 下部中央 */
-    center 25%, /* テキスト - 上部中央 */
-    center;     /* 背景パネル - 中央 */
-  background-repeat: no-repeat, no-repeat, no-repeat;
-}
-
-.card[data-card-type="2"] {
-  background-image: 
-    url('./assets/c4_1.png'), /* ご飯の画像 */
-    url('./assets/c4_t.png'), /* テキスト */
-    url('./assets/c4.png');   /* 赤紫色の背景パネル */
-  background-size: 
-    50%, 
-    80%, 
-    100%;
-  background-position: 
-    center 70%, /* ご飯 - 下部中央 */
-    center 25%, /* テキスト - 上部中央 */
-    center;     /* 背景パネル - 中央 */
-  background-repeat: no-repeat, no-repeat, no-repeat;
-}
-
-.card[data-card-type="3"] {
-  background-image: 
-    url('./assets/c3_1.png'), /* 「12」の数字 */
-    url('./assets/c3_t.png'), /* テキスト */
-    url('./assets/c3.png');   /* 青色の背景パネル */
-  background-size: 
-    40%, 
-    80%, 
-    100%;
-  background-position: 
-    center 70%, /* 「12」の数字 - 下部中央 */
-    center 25%, /* テキスト - 上部中央 */
-    center;     /* 背景パネル - 中央 */
-  background-repeat: no-repeat, no-repeat, no-repeat;
-}
-
-.card[data-card-type="4"] {
-  background-image: 
-    url('./assets/c3_3.png'), /* タバスコ右 */
-    url('./assets/c3_4.png'), /* スナック菓子 下 */
-    url('./assets/c3_2.png'), /* ソース左 */
-    url('./assets/c3_1.png'), /* 調味料 中央 */
-    url('./assets/c3_t.png'), /* テキスト */
-    url('./assets/c3.png');   /* 茶色の背景パネル */
-  background-size: 
-    30%, 
-    40%, 
-    30%, 
-    35%, 
-    80%, 
-    100%;
-  background-position: 
-    right 20%,   /* タバスコ - 右上 */
-    center 85%,  /* スナック菓子 - 下部中央 */
-    left 30%,    /* ソース - 左上 */
-    left 60%,    /* 調味料 - 左中央 */
-    center 25%,  /* テキスト - 上部中央 */
-    center;      /* 背景パネル - 中央 */
-  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
-}
+  /* カード1（青色パネル - 底の方からしっかり混ぜる） */
+  .card[data-card-type="1"] {
+    background-image: 
+      url('./assets/c1_1.png'), /* 「12」の数字 */
+      url('./assets/c1_t.png'), /* テキスト */
+      url('./assets/c1.png');   /* 青色の背景パネル */
+    background-size: 
+      40%, 
+      80%, 
+      100%;
+    background-position: 
+      center 75%, /* 「12」の数字 - 下部中央 */
+      center 30%, /* テキスト - 上部中央 */
+      center;     /* 背景パネル - 中央 */
+    background-repeat: no-repeat, no-repeat, no-repeat;
+  }
+  
+  /* カード2（緑色パネル - まずはそのまま食す） */
+  .card[data-card-type="2"] {
+    background-image: 
+      url('./assets/c2_2.png'), /* ベーコン画像 */
+      url('./assets/c2_t.png'), /* テキスト */
+      url('./assets/c2.png');   /* 緑色の背景パネル */
+    background-size: 
+      60%, 
+      80%, 
+      100%;
+    background-position: 
+      center 75%, /* ベーコン - 下部中央 */
+      center 30%, /* テキスト - 上部中央 */
+      center;     /* 背景パネル - 中央 */
+    background-repeat: no-repeat, no-repeat, no-repeat;
+  }
+  
+  /* カード3（茶色パネル - 自分好みにカスタマイズ） */
+  .card[data-card-type="3"] {
+    background-image: 
+      url('./assets/c3_4.png'), /* お菓子バケツ */
+      url('./assets/c3_2.png'), /* タバスコ */
+      url('./assets/c3_3.png'), /* 調味料ボトル2本 */
+      url('./assets/c3_1.png'), /* レモン色調味料 */
+      url('./assets/c3_t.png'), /* テキスト */
+      url('./assets/c3.png');   /* 茶色の背景パネル */
+    background-size: 
+      30%, 
+      20%, 
+      25%, 
+      20%, 
+      80%, 
+      100%;
+    background-position: 
+      center 80%,  /* お菓子バケツ - 下部中央 */
+      right 75%,   /* タバスコ - 右下 */
+      right 30%,   /* 調味料ボトル2本 - 右上 */
+      left 30%,    /* レモン色調味料 - 左上 */
+      center 20%,  /* テキスト - 上部中央 */
+      center;      /* 背景パネル - 中央 */
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  }
+  
+  /* カード4（赤紫色パネル - メにライスを入れて完食） */
+  .card[data-card-type="4"] {
+    background-image: 
+      url('./assets/c4_1.png'), /* ご飯の茶碗 */
+      url('./assets/c4_t.png'), /* テキスト */
+      url('./assets/c4.png');   /* 赤紫色の背景パネル */
+    background-size: 
+      50%, 
+      80%, 
+      100%;
+    background-position: 
+      center 75%, /* ご飯の茶碗 - 下部中央 */
+      center 30%, /* テキスト - 上部中央 */
+      center;     /* 背景パネル - 中央 */
+    background-repeat: no-repeat, no-repeat, no-repeat;
+  }
+  
+  /* パララックス効果の強さを設定 */
+  .card-wrapper.center .card {
+    background-position: 
+      /* カード1 */
+      calc(center + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(30% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+  }
+  
+  .card-wrapper.center .card[data-card-type="2"] {
+    background-position: 
+      calc(center + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(30% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+  }
+  
+  .card-wrapper.center .card[data-card-type="3"] {
+    background-position: 
+      calc(center + var(--parallax-x) * 0.18) calc(80% + var(--parallax-y) * 0.18),
+      calc(right + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
+      calc(right + var(--parallax-x) * 0.12) calc(30% + var(--parallax-y) * 0.12),
+      calc(left + var(--parallax-x) * 0.15) calc(30% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(20% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+  }
+  
+  .card-wrapper.center .card[data-card-type="4"] {
+    background-position: 
+      calc(center + var(--parallax-x) * 0.15) calc(75% + var(--parallax-y) * 0.15),
+      calc(center + var(--parallax-x) * 0.08) calc(30% + var(--parallax-y) * 0.08),
+      calc(center + var(--parallax-x) * 0.02) calc(center + var(--parallax-y) * 0.02);
+  }
   
   /* 中央カードのみに適用する特別効果 */
   .card-wrapper.center .card {
@@ -296,34 +333,23 @@ let isSwiping = false;
 let floatAnimationFrame = null;
 
 // カード画像のパス設定
-const cardBaseImages = [
-  './assets/c1.png',      // カード1のベース
-  './assets/c2.png',      // カード2のベース
-  './assets/c3.png',      // カード3のベース
-  './assets/c4.png'       // カード4のベース
-];
-
-const cardTitleImages = [
-  './assets/c1_t.png',    // カード1のタイトル
-  './assets/c2_t.png',    // カード2のタイトル
-  './assets/c3_t.png',    // カード3のタイトル
-  './assets/c4_t.png'     // カード4のタイトル
-];
-
-const cardExtraImages = [
-  '',                     // カード1の追加画像（なし）
-  './assets/c2_2.png',    // カード2の追加画像
-  './assets/c3_1.png,./assets/c3_2.png,./assets/c3_3.png,./assets/c3_4.png', // カード3の追加画像（複数）
-  './assets/c4_1.png'     // カード4の追加画像
-];
-
-// すべての画像パスを結合
 const allImages = [
-  ...cardBaseImages,
-  ...cardTitleImages,
-].concat(
-  cardExtraImages.filter(path => path !== '').flatMap(paths => paths.split(','))
-);
+  './assets/c1.png',
+  './assets/c1_t.png',
+  './assets/c1_1.png',
+  './assets/c2.png',
+  './assets/c2_t.png',
+  './assets/c2_2.png',
+  './assets/c3.png',
+  './assets/c3_t.png',
+  './assets/c3_1.png',
+  './assets/c3_2.png',
+  './assets/c3_3.png',
+  './assets/c3_4.png',
+  './assets/c4.png',
+  './assets/c4_t.png',
+  './assets/c4_1.png'
+];
 
 // 設定
 const config = {
@@ -671,74 +697,94 @@ function finishSwipe() {
     return;
   }
   
-  // スワイプ方向に応じてアクティブカードを変更
-  if (diffX > 0) {
-    // 右スワイプ
-    activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
-  } else {
-    // 左スワイプ
-    activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-  }
-  
-  // 新しい位置を適用
-  updateCardPositions(0);
-  
-  // スワイプ後に、カード5（インデックス4）ならカメラボタンを強調表示
-  checkForPhotoCard();
+// スワイプ方向に応じてアクティブカードを変更
+if (diffX > 0) {
+   // 右スワイプ
+   activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+ } else {
+   // 左スワイプ
+   activeCardIndex = (activeCardIndex + 1) % config.cardCount;
+ }
+ 
+ // 新しい位置を適用
+ updateCardPositions(0);
+ 
+ // スワイプ後に、5枚目のカード（インデックス4）ならカメラボタンを強調表示
+ checkForPhotoCard();
 }
 
 // 写真撮影用のカードかチェック
 function checkForPhotoCard() {
-  // カード5（インデックス4）がアクティブならカメラボタンを強調表示
-  const cameraButton = document.getElementById('camera-button');
-  
-  if (activeCardIndex === 3) { // 0-indexedで4枚目は3
-    cameraButton.style.animation = 'pulse 1.5s infinite';
-    cameraButton.style.boxShadow = '0 0 25px rgba(0, 200, 255, 0.9)';
-  } else {
-    cameraButton.style.animation = 'none';
-    cameraButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.6)';
-  }
+ // カード5（インデックス4）がアクティブならカメラボタンを強調表示
+ const cameraButton = document.getElementById('camera-button');
+ 
+ if (activeCardIndex === 3) { // 0-indexedで4枚目は3
+   cameraButton.style.animation = 'pulse 1.5s infinite';
+   cameraButton.style.boxShadow = '0 0 25px rgba(0, 200, 255, 0.9)';
+ } else {
+   cameraButton.style.animation = 'none';
+   cameraButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.6)';
+ }
 }
 
 // 画像キャプチャ関数
 function captureImage() {
-  // 撮影時のフラッシュ効果
-  const flash = document.createElement('div');
-  flash.style.position = 'fixed';
-  flash.style.top = '0';
-  flash.style.left = '0';
-  flash.style.width = '100%';
-  flash.style.height = '100%';
-  flash.style.backgroundColor = 'white';
-  flash.style.opacity = '0.5';
-  flash.style.zIndex = '9999';
-  flash.style.transition = 'opacity 0.5s';
-  document.body.appendChild(flash);
-  
-  // フラッシュをフェードアウト
-  setTimeout(() => {
-    flash.style.opacity = '0';
-    setTimeout(() => {
-      document.body.removeChild(flash);
-    }, 500);
-  }, 100);
-  // 実際の撮影処理（モック）
-  // 実際の実装では、ここでCanvas要素を使用してビデオフレームを取得し、
-  // 撮影フレームを重ねるなどの処理を行います
-  
-  // カード4（撮影用フレーム）がアクティブでなければ自動的に移動
-  if (activeCardIndex !== 3) {
-    activeCardIndex = 3;
-    updateCardPositions(0);
-  }
-  
-  console.log("写真を撮影しました");
-  
-  // 撮影成功時の効果音（オプション）
-  const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
-  audio.play();
+ // 撮影時のフラッシュ効果
+ const flash = document.createElement('div');
+ flash.style.position = 'fixed';
+ flash.style.top = '0';
+ flash.style.left = '0';
+ flash.style.width = '100%';
+ flash.style.height = '100%';
+ flash.style.backgroundColor = 'white';
+ flash.style.opacity = '0.5';
+ flash.style.zIndex = '9999';
+ flash.style.transition = 'opacity 0.5s';
+ document.body.appendChild(flash);
+ 
+ // フラッシュをフェードアウト
+ setTimeout(() => {
+   flash.style.opacity = '0';
+   setTimeout(() => {
+     document.body.removeChild(flash);
+   }, 500);
+ }, 100);
+ 
+ // 実際の撮影処理（モック）
+ // 実際の実装では、ここでCanvas要素を使用してビデオフレームを取得し、
+ // 撮影フレームを重ねるなどの処理を行います
+ 
+ // カード4（撮影用フレーム）がアクティブでなければ自動的に移動
+ if (activeCardIndex !== 3) {
+   activeCardIndex = 3;
+   updateCardPositions(0);
+ }
+ 
+ console.log("写真を撮影しました");
+ 
+ // 撮影成功時の効果音（オプション）
+ const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+ audio.play();
 }
+
+// パルスアニメーション
+const style = document.createElement('style');
+style.textContent = `
+@keyframes pulse {
+ 0% {
+   box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+   transform: scale(1);
+ }
+ 50% {
+   box-shadow: 0 0 30px rgba(0, 200, 255, 0.9);
+   transform: scale(1.1);
+ }
+ 100% {
+   box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+   transform: scale(1);
+ }
+}`;
+document.head.appendChild(style);
 </script>
 
 </body>
