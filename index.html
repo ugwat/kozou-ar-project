@@ -15,27 +15,30 @@
   #ar-container { width: 100%; height: 100%; position: fixed; top: 0; left: 0; z-index: 1; display: none; }
   #camera-view { position: absolute; width: 100%; height: 100%; object-fit: cover; z-index: 10; background: #000; }
   .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
-  .carousel { 
-    position: absolute; 
-    width: 100%; 
-    height: 100%; 
-    top: -10%; /* 上方向に移動して回転による下方シフトを相殺 */
-    transform-style: preserve-3d; 
-    transform: rotateX(20deg);
-  }
-  .card-wrapper {
-    position: absolute;
-    width: 343.2px;  /* 286px × 1.2 */
-    height: 589.2px; /* 491px × 1.2 */
-    transform-style: preserve-3d;
-    opacity: 1;
-    left: 50%;
-    top: 50%;
-    margin-left: -171.6px; /* 幅の半分 */
-    margin-top: -294.6px; /* 高さの半分 */
-    will-change: transform, opacity;
-    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
-  }
+  /* カルーセルの位置設定を変更 */
+.carousel { 
+  position: absolute; 
+  width: 100%; 
+  height: 100%; 
+  /* top: -10%を削除 */ 
+  transform-style: preserve-3d; 
+  transform: rotateX(20deg);
+}
+
+/* カードラッパーの位置調整を微調整 */
+.card-wrapper {
+  position: absolute;
+  width: 343.2px;  /* 286px × 1.2 */
+  height: 589.2px; /* 491px × 1.2 */
+  transform-style: preserve-3d;
+  opacity: 1;
+  left: 50%;
+  top: 40%;        /* 50%から40%に変更して上方向に移動 */
+  margin-left: -171.6px; /* 幅の半分 */
+  margin-top: -294.6px; /* 高さの半分 */
+  will-change: transform, opacity;
+  transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+}
   .card {
     position: absolute;
     width: 100%;
