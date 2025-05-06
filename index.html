@@ -733,6 +733,28 @@ document.addEventListener("DOMContentLoaded", function() {
     // 撮影処理
     takePhoto();
   });
+  
+  // カードのクリックを直接監視（イベント委譲）
+  document.addEventListener('click', function(e) {
+    // c5_1画像が含まれる要素を検索
+    const photoButton = e.target.closest('.photo-button');
+    if (photoButton) {
+      console.log("写真ボタンがクリックされました（委譲）");
+      e.stopPropagation();
+      showPhotoFrame();
+    }
+  });
+  
+  // タッチデバイス用のイベント委譲
+  document.addEventListener('touchend', function(e) {
+    const photoButton = e.target.closest('.photo-button');
+    if (photoButton) {
+      console.log("写真ボタンがタッチされました（委譲）");
+      e.preventDefault();
+      e.stopPropagation();
+      showPhotoFrame();
+    }
+  }, false);
 });
 
 function initAR() {
@@ -806,28 +828,56 @@ function createCards() {
         photoButton.style.backgroundPosition = 'center';
         photoButton.style.backgroundRepeat = 'no-repeat';
         photoButton.style.animation = 'pulse 1.5s infinite';
-        photoButton.style.zIndex = '3';
+        photoButton.style.zIndex = '200'; // z-indexを高く設定
         photoButton.style.cursor = 'pointer';
+        photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
         
-        // デバッグ用ボーダー（確認しやすいように）
+        // デバッグ用の視覚的サポート
         // photoButton.style.border = '1px solid rgba(255, 0, 0, 0.3)';
         
-        // ボタンにイベントリスナーを追加（PCユーザー向け）
+        // ダブルクリック防止用フラグ
+        let isProcessing = false;
+        
+        // ボタンにイベントリスナーを直接追加
         photoButton.addEventListener('click', function(e) {
-          console.log("写真ボタンがクリックされました");
+          if (isProcessing) return;
+          isProcessing = true;
+          
+          console.log("写真ボタンがクリックされました（直接）");
           e.stopPropagation(); // 親要素へのイベント伝播を止める
           showPhotoFrame();
+          
+          // 連続クリック防止のためのクールダウン
+          setTimeout(() => { isProcessing = false; }, 1000);
         });
         
         // タッチデバイス用
         photoButton.addEventListener('touchend', function(e) {
-          console.log("写真ボタンがタッチされました");
+          if (isProcessing) return;
+          isProcessing = true;
+          
+          console.log("写真ボタンがタッチされました（直接）");
           e.preventDefault();
           e.stopPropagation();
           showPhotoFrame();
+          
+          // 連続タップ防止のためのクールダウン
+          setTimeout(() => { isProcessing = false; }, 1000);
         }, false);
         
         card.appendChild(photoButton);
+        
+        // カード全体にもイベントを追加（フォールバック）
+        card.addEventListener('click', function(e) {
+          // c5_1.png画像の領域（カード下部）がクリックされたかチェック
+          const rect = card.getBoundingClientRect();
+          const y = e.clientY - rect.top;
+          
+          if (y > rect.height * 0.7) {
+            console.log("カード5の下部がクリックされました");
+            showPhotoFrame();
+          }
+        });
       }
       
       wrapper.appendChild(card);
