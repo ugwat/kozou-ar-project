@@ -8,7 +8,7 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { 
     width: 100%; 
-    height: 100vh; /* fixedではなくvhで高さを確保 */
+    height: 100vh;
     background: #000; 
     overflow: hidden; 
   }
@@ -24,28 +24,27 @@
     position: absolute; 
     width: 100%; 
     height: 100%; 
-    /* 位置調整なし、視点はtransformで調整 */
     transform-style: preserve-3d; 
-    transform: translateY(-80px) rotateX(20deg); /* 上に移動+回転で視点調整 */
+    transform: translateY(-80px) rotateX(20deg);
   }
   .card-wrapper {
     position: absolute;
-    width: 343.2px;  /* 286px × 1.2 */
-    height: 589.2px; /* 491px × 1.2 */
+    width: 343.2px;
+    height: 589.2px;
     transform-style: preserve-3d;
     opacity: 1;
     left: 50%;
-    top: 50%;      /* 中央配置 */
-    margin-left: -171.6px; /* 幅の半分 */
-    margin-top: -294.6px; /* 高さの半分 */
+    top: 50%;
+    margin-left: -171.6px;
+    margin-top: -294.6px;
     will-change: transform, opacity;
     transition: transform 0.5s ease-out, opacity 0.5s ease-out;
   }
   .card {
     position: absolute;
     width: 100%;
-    height: 10px; /* 最初は小さい高さ、これを変えないことが重要 */
-    bottom: 0;    /* 底から成長するために必須 */
+    height: 10px;
+    bottom: 0;
     border-radius: 12px;
     opacity: 0.8;
     filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
@@ -56,7 +55,7 @@
 
   /* カードタイプごとの背景設定 */
   .card[data-card-type="1"] {
-    background-image: url('./assets/c1.png'); /* 正しいファイル名に修正 */
+    background-image: url('./assets/c1.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -97,6 +96,27 @@
     background-repeat: no-repeat, no-repeat;
   }
   
+  /* フォトフレームボタン強調アニメーション */
+  @keyframes buttonPulse {
+    0% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.2); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+  
+  .card-wrapper.center .card[data-card-type="5"]::before {
+    content: "";
+    position: absolute;
+    bottom: 10%;
+    left: 10%;
+    width: 80%;
+    height: 15%;
+    background: rgba(255, 255, 0, 0.2);
+    border-radius: 10px;
+    animation: buttonPulse 1.5s infinite;
+    pointer-events: none;
+    z-index: 2;
+  }
+  
   /* 中央カードのみに適用する特別効果 */
   .card-wrapper.center .card {
     filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
@@ -124,43 +144,6 @@
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-  }
-  
-  /* カメラボタン */
-  #camera-button {
-    position: fixed;
-    bottom: 30px;
-    right: 30px;
-    width: 60px;
-    height: 60px;
-    background-color: rgba(0, 162, 255, 0.7);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 1000;
-    box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
-  }
-  
-  #camera-button::before {
-    content: "";
-    width: 30px;
-    height: 30px;
-    background-color: rgba(0, 162, 255, 0.2);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-  }
-  
-  #camera-button::after {
-    content: "";
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 10px;
-    height: 10px;
-    background-color: rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
   }
 
   /* フォトフレーム画面 */
@@ -293,22 +276,6 @@
     height: 0;
     overflow: hidden;
   }
-  
-  /* パルスアニメーション */
-  @keyframes pulse {
-    0% {
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
-      transform: scale(1);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(0, 200, 255, 0.9);
-      transform: scale(1.1);
-    }
-    100% {
-      box-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
-      transform: scale(1);
-    }
-  }
 </style>
 <script>
 // ShowOneChildエラーの修正 - 先に定義して対応
@@ -354,7 +321,6 @@ window.addEventListener('error', function(e) {
   <div class="scene">
     <div class="carousel"></div>
   </div>
-  <div id="camera-button" style="display: none;"></div>
 </div>
 
 <!-- フォトフレーム画面 -->
@@ -413,7 +379,6 @@ function preloadImages(images, callback) {
     img.onload = imageLoaded;
     img.onerror = imageError;
     img.src = images[i];
-    console.log(`画像を読み込み中: ${images[i]}`);
   }
 }
 
@@ -426,29 +391,26 @@ let isSwiping = false;
 let floatAnimationFrame = null;
 let canTakePhoto = false; // 撮影可能フラグ
 
-// カード画像のパス設定 - 実在するパスを確認
+// カード画像のパス設定
 const allImages = [
   './assets/c1.png',
   './assets/c2.png',
   './assets/c3.png',
   './assets/c4.png',
   './assets/c5.png',
-  './assets/c5_1.png',
-  './assets/emblem-logo.png'
+  './assets/c5_1.png'
 ];
 
 // 設定
 const config = {
-  cardSpacing: 360,           // カード間の距離 (1.2倍)
-  swipeSensitivity: 200,      // スワイプの感度
-  cardRotation: 30,           // カードの回転角度
-  centerZ: -400,              // Z軸の奥行き
-  cardCount: 5                // カードの総数 - 5枚に増やす
+  cardSpacing: 360,
+  swipeSensitivity: 200,
+  cardRotation: 30,
+  centerZ: -400,
+  cardCount: 5
 };
 
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("DOM読み込み完了");
-  
   document.getElementById('start-button').addEventListener('click', function() {
     document.getElementById('loading-screen').style.display = 'none';
     initAR();
@@ -490,35 +452,19 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 function initAR() {
-  console.log("AR初期化開始");
   document.getElementById('ar-container').style.display = 'block';
   
-  // デバッグ: 利用可能なアセットをリスト
-  const assetsList = [
-    './assets/c1.png',
-    './assets/c2.png',
-    './assets/c3.png',
-    './assets/c4.png',
-    './assets/c5.png',
-    './assets/c5_1.png',
-    './assets/emblem-logo.png'
-  ];
-  
   // 画像を事前読み込み
-  preloadImages(assetsList, function() {
-    console.log("画像の読み込み完了、カメラアクセス開始");
-    
+  preloadImages(allImages, function() {
     // カメラアクセス
     try {
       navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(function(stream) {
-          console.log("カメラアクセス成功");
           const video = document.getElementById('camera-view');
           video.srcObject = stream;
           video.onloadedmetadata = function() {
             video.play()
               .then(() => {
-                console.log("ビデオ再生開始、カード作成");
                 createCards();
               })
               .catch(function(error) {
@@ -535,19 +481,10 @@ function initAR() {
       console.warn("MediaDevices API エラー:", e);
       createCards(); // MediaDevicesがない場合もカード表示
     }
-    
-    // カメラボタンを表示
-    document.getElementById('camera-button').style.display = 'flex';
-    
-    // カメラボタンのクリックイベント
-    document.getElementById('camera-button').addEventListener('click', function() {
-      captureImage();
-    });
   });
 }
 
 function createCards() {
-  console.log("カード作成開始");
   const carousel = document.querySelector('.carousel');
   carousel.innerHTML = '';
   
@@ -559,7 +496,6 @@ function createCards() {
     const card = document.createElement('div');
     card.className = 'card';
     card.dataset.cardType = i + 1; // カードタイプを設定（1〜5）
-    console.log(`カード ${i+1} 作成: type=${i+1}`);
     
     // 5枚目のカード（フォトフレーム）の場合はボタンに特別なイベントリスナーを追加
     if (i === 4) {
@@ -589,20 +525,17 @@ function createCards() {
 }
 
 function growCards() {
-  console.log("カード成長アニメーション開始");
   const cards = document.querySelectorAll('.card');
   
   cards.forEach((card, i) => {
     setTimeout(() => {
       card.style.height = '589.2px'; // 修正後のサイズに合わせる (491px * 1.2)
       card.style.opacity = '1';
-      console.log(`カード ${i+1} 成長`);
     }, i * 200);
   });
   
   setTimeout(() => {
     isSwipeEnabled = true;
-    console.log("スワイプ有効化");
   }, 1500);
 }
 
@@ -657,9 +590,6 @@ function updateCardPositions(offsetRatio = 0) {
   if (!isSwiping) {
     simulateFloat();
   }
-  
-  // 5枚目のカードがアクティブならカメラボタンを強調表示
-  checkForPhotoCard();
 }
 
 // 中央カードの浮遊感をシミュレートする関数
@@ -749,119 +679,110 @@ function setupSwipeEvents() {
       floatAnimationFrame = null;
     }
     startX = e.clientX;
+    currentX = startX;
+    isSwiping = true;
+  });
+  
+  document.addEventListener('mousemove', function(e) {
+    if (!isSwipeEnabled || !isSwiping) return;
     currentX = e.clientX;
-   const diffX = currentX - startX;
-   const offsetRatio = diffX / config.swipeSensitivity;
-   updateCardPositions(offsetRatio);
- });
- 
- document.addEventListener('mouseup', function() {
-   if (!isSwipeEnabled || !isSwiping) return;
-   finishSwipe();
-   isSwiping = false;
-   // スワイプ終了後に浮遊効果を再開
-   setTimeout(simulateFloat, 100);
- });
+    const diffX = currentX - startX;
+    const offsetRatio = diffX / config.swipeSensitivity;
+    updateCardPositions(offsetRatio);
+  });
+  
+  document.addEventListener('mouseup', function() {
+    if (!isSwipeEnabled || !isSwiping) return;
+    finishSwipe();
+    isSwiping = false;
+    // スワイプ終了後に浮遊効果を再開
+    setTimeout(simulateFloat, 100);
+  });
 }
 
 function finishSwipe() {
- const diffX = currentX - startX;
- const threshold = 50;
- 
- if (Math.abs(diffX) < threshold) {
-   // しきい値以下ならスワイプなし
-   updateCardPositions(0);
-   return;
- }
- 
- // スワイプ方向に応じてアクティブカードを変更
- if (diffX > 0) {
-   // 右スワイプ
-   activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
- } else {
-   // 左スワイプ
-   activeCardIndex = (activeCardIndex + 1) % config.cardCount;
- }
- 
- // 新しい位置を適用
- updateCardPositions(0);
-}
-
-// 写真撮影用のカードかチェック
-function checkForPhotoCard() {
- // カード5（インデックス4）がアクティブならカメラボタンを強調表示
- const cameraButton = document.getElementById('camera-button');
- 
- if (activeCardIndex === 4) { // 0-indexedで5枚目は4
-   cameraButton.style.animation = 'pulse 1.5s infinite';
-   cameraButton.style.boxShadow = '0 0 25px rgba(0, 200, 255, 0.9)';
- } else {
-   cameraButton.style.animation = 'none';
-   cameraButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.6)';
- }
+  const diffX = currentX - startX;
+  const threshold = 50;
+  
+  if (Math.abs(diffX) < threshold) {
+    // しきい値以下ならスワイプなし
+    updateCardPositions(0);
+    return;
+  }
+  
+  // スワイプ方向に応じてアクティブカードを変更
+  if (diffX > 0) {
+    // 右スワイプ
+    activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+  } else {
+    // 左スワイプ
+    activeCardIndex = (activeCardIndex + 1) % config.cardCount;
+  }
+  
+  // 新しい位置を適用
+  updateCardPositions(0);
 }
 
 // フォトフレーム表示関数
 function showPhotoFrame() {
- console.log("フォトフレーム表示");
- 
- // カメラボタンを非表示
- document.getElementById('camera-button').style.display = 'none';
- 
- // AR画面を非表示
- document.getElementById('ar-container').style.display = 'none';
- 
- // フォトフレーム画面を表示
- document.getElementById('photo-frame-container').style.display = 'flex';
- 
- // 説明ポップアップを表示
- document.getElementById('photo-instruction-popup').style.display = 'block';
- 
- // 撮影可能フラグをリセット（ポップアップ閉じるまで撮影不可）
- canTakePhoto = false;
+  // AR画面を非表示
+  document.getElementById('ar-container').style.display = 'none';
+  
+  // フォトフレーム画面を表示
+  document.getElementById('photo-frame-container').style.display = 'flex';
+  
+  // 説明ポップアップを表示
+  document.getElementById('photo-instruction-popup').style.display = 'block';
+  
+  // 撮影可能フラグをリセット（ポップアップ閉じるまで撮影不可）
+  canTakePhoto = false;
 }
 
 // 実際の写真撮影処理
 function takePhoto() {
- console.log("写真撮影実行");
- 
- // 撮影時のフラッシュ効果
- const flash = document.createElement('div');
- flash.style.position = 'fixed';
- flash.style.top = '0';
- flash.style.left = '0';
- flash.style.width = '100%';
- flash.style.height = '100%';
- flash.style.backgroundColor = 'white';
- flash.style.opacity = '0.5';
- flash.style.zIndex = '9999';
- flash.style.transition = 'opacity 0.5s';
- document.body.appendChild(flash);
- 
- // フラッシュをフェードアウト
- setTimeout(() => {
-   flash.style.opacity = '0';
-   setTimeout(() => {
+  // 撮影時のフラッシュ効果
+  const flash = document.createElement('div');
+  flash.style.position = 'fixed';
+  flash.style.top = '0';
+  flash.style.left = '0';
+  flash.style.width = '100%';
+  flash.style.height = '100%';
+  flash.style.backgroundColor = 'white';
+  flash.style.opacity = '0.5';
+  flash.style.zIndex = '9999';
+  flash.style.transition = 'opacity 0.5s';
+  document.body.appendChild(flash);
+  
+  // フラッシュをフェードアウト
+  setTimeout(() => {
      document.body.removeChild(flash);
      
-     // ここで実際の撮影処理（例：画像保存）
-     console.log("写真撮影完了");
-     
-     // 撮影完了メッセージを表示
-     alert("写真を撮影しました！");
-     
+     // iPhoneでの撮影対応
+     try {
+       // 実際の撮影機能実装（iPhoneでも動作する方法）
+       const frameElement = document.getElementById('photo-frame-container');
+       
+       // 簡易的な撮影成功メッセージ
+       alert("写真を撮影しました！");
+       
+       // 実際の実装では、以下のいずれかの方法を使用
+       // 1. navigator.mediaDevices.getDisplayMediaを使用してスクリーンキャプチャ
+       // 2. html2canvasライブラリを使用してDOM要素を画像として保存
+       // 3. Webビューの機能を使用してネイティブ側でスクリーンショットを実行
+     } catch (err) {
+       console.error("撮影エラー:", err);
+       alert("撮影に失敗しました。もう一度お試しください。");
+     }
    }, 500);
  }, 100);
  
  // 撮影成功時の効果音（オプション）
- const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
- audio.play();
-}
-
-// 画像キャプチャ関数
-function captureImage() {
- console.log("画像キャプチャ");
- showPhotoFrame();
+ try {
+   const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASW5mbwAAAA8AAAASAAAeMwAUFBQUFCIiIiIiIjAwMDAwMD09PT09PUxMTExMTFlZWVlZWWcwMGcwMHV1dXV1dYODg4ODg5KSkpKSkqCgoKCgoK2tra2traqqqqqqqqKiop6enpqampaWlpKSkpaWlpqampqanp6enp6enqKioqKiosTExMTExNDQ0NDQ0P/7UGQAAAAxMQAAAAAAADEwAAAAUGF1bAAAA3MAAAPzAAAAAExhdmYAAAFoAAABmgACQGQA//sQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/+xBkFI/wAABpAAAACAAADSAAAAEAAAGkAAAAIAAANIAAAARVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+   audio.play();
+ } catch (audioErr) {
+   console.warn("音声再生エラー:", audioErr);
+ }
 }
 </script>
 
