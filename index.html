@@ -805,18 +805,43 @@ function createCards() {
       card.className = 'card';
       card.dataset.cardType = i + 1; // カードタイプを設定（1〜5）
       
-      // 5枚目のカード（フォトフレーム）の場合はボタンに特別なイベントリスナーを追加
+      // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-        card.addEventListener('click', function(e) {
-          // クリックイベントが発生した位置が、ボタンの領域内かチェック
-          const rect = card.getBoundingClientRect();
-          const y = e.clientY - rect.top;
-          
-          // ボタン領域（下部中央付近）内のクリックのみを処理
-          if (y > rect.height * 0.7) {
-            showPhotoFrame();
-          }
+        // 写真撮影ボタンを追加
+        const photoButton = document.createElement('div');
+        photoButton.className = 'photo-button';
+        photoButton.style.position = 'absolute';
+        photoButton.style.bottom = '10%';
+        photoButton.style.left = '10%';
+        photoButton.style.width = '80%';
+        photoButton.style.height = '20%';
+        photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
+        photoButton.style.backgroundSize = 'contain';
+        photoButton.style.backgroundPosition = 'center';
+        photoButton.style.backgroundRepeat = 'no-repeat';
+        photoButton.style.animation = 'pulse 1.5s infinite';
+        photoButton.style.zIndex = '3';
+        photoButton.style.cursor = 'pointer';
+        
+        // デバッグ用ボーダー（確認しやすいように）
+        // photoButton.style.border = '1px solid rgba(255, 0, 0, 0.3)';
+        
+        // ボタンにイベントリスナーを追加（PCユーザー向け）
+        photoButton.addEventListener('click', function(e) {
+          console.log("写真ボタンがクリックされました");
+          e.stopPropagation(); // 親要素へのイベント伝播を止める
+          showPhotoFrame();
         });
+        
+        // タッチデバイス用
+        photoButton.addEventListener('touchend', function(e) {
+          console.log("写真ボタンがタッチされました");
+          e.preventDefault();
+          e.stopPropagation();
+          showPhotoFrame();
+        }, false);
+        
+        card.appendChild(photoButton);
       }
       
       wrapper.appendChild(card);
@@ -1119,6 +1144,8 @@ function finishSwipe() {
 // フォトフレーム表示関数
 function showPhotoFrame() {
   try {
+    console.log("showPhotoFrame関数が呼び出されました");
+    
     // AR画面を非表示
     document.getElementById('ar-container').style.display = 'none';
     
@@ -1136,6 +1163,8 @@ function showPhotoFrame() {
     
     // 撮影可能フラグをリセット（ポップアップ閉じるまで撮影不可）
     canTakePhoto = false;
+    
+    console.log("フォトフレーム表示完了");
   } catch (e) {
     console.warn("フォトフレーム表示エラー:", e);
   }
@@ -1149,11 +1178,17 @@ function setupFrameCamera() {
     const frameCameraView = document.getElementById('frame-camera-view');
     
     if (mainCameraView && mainCameraView.srcObject && frameCameraView) {
+      console.log("カメラストリームを転送します");
       // ストリームをコピー
       frameCameraView.srcObject = mainCameraView.srcObject;
       frameCameraView.play().catch(e => {
         console.warn("フレームカメラ再生エラー:", e);
       });
+    } else {
+      console.warn("カメラストリームが取得できません", 
+        mainCameraView ? "メインカメラあり" : "メインカメラなし", 
+        mainCameraView && mainCameraView.srcObject ? "ストリームあり" : "ストリームなし",
+        frameCameraView ? "フレームビューあり" : "フレームビューなし");
     }
   } catch (e) {
     console.warn("フレームカメラ設定エラー:", e);
@@ -1163,7 +1198,10 @@ function setupFrameCamera() {
 // 湯気エフェクトの初期化
 function initSteamEffect() {
   const container = document.getElementById('enhanced-steam-container');
-  if (!container) return;
+  if (!container) {
+    console.warn("湯気コンテナが見つかりません");
+    return;
+  }
   
   container.innerHTML = '';
   
@@ -1197,6 +1235,8 @@ function initSteamEffect() {
       }, 300);
     }
   }, 800);
+  
+  console.log("湯気エフェクト初期化完了");
 }
 
 // 湯気パーティクルの作成
@@ -1292,6 +1332,7 @@ function createSteamParticle(container) {
 // 写真撮影処理
 function takePhoto() {
   try {
+    console.log("写真撮影処理を開始");
     // 撮影時のフラッシュ効果
     const shutterEffect = document.getElementById('shutter-effect');
     shutterEffect.style.opacity = '0.8';
