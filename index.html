@@ -550,379 +550,7 @@
   <div class="popup-corner popup-corner-bl"></div>
   <div class="popup-corner popup-corner-br"></div>
 </div>
-<script>
-  // ShowOneChildエラーの強化対策
-  try {
-    window.ShowOneChild = window.ShowOneChild || {
-      readRenderPromptFromStorage: function() { return null; },
-      getRenderPrompt: function() { return null; },
-      render: function() { return null; }
-    };
-    
-    // localStorage拡張 - エラーが出ないように修正
-    window.localStorage = window.localStorage || {};
-    window.localStorage.getWithTTL = window.localStorage.getWithTTL || function(key) {
-      return null;
-    };
-  } catch (e) {
-    console.warn("初期化スクリプトエラー:", e);
-  }
-  
-  // IO errorの抑制
-  window.addEventListener('error', function(e) {
-    if (e && e.message && typeof e.message === 'string' && 
-      (e.message.includes('ChromeMethodBFE') || 
-       e.message.includes('Unable to create writable file') ||
-       e.message.includes('ShowOneChild'))) {
-      console.warn('エラー抑制:', e.message);
-      return true; // エラー伝播を停止
-    }
-  }, true);
-  
-  // 未捕捉のPromiseエラーを抑制
-  window.addEventListener('unhandledrejection', function(event) {
-    if (event && event.reason && event.reason.message &&
-      (event.reason.message.includes('ChromeMethodBFE') || 
-       event.reason.message.includes('Unable to create writable') ||
-       event.reason.message.includes('ShowOneChild'))) {
-      console.warn('Promise エラー抑制:', event.reason.message);
-      event.preventDefault();
-      event.stopPropagation();
-    }
-  }, true);
-  
-  // 最小限の画像の事前読み込み
-  function preloadImages(images, callback) {
-    if (!images || images.length === 0) {
-      callback();
-      return;
-    }
-    
-    let loaded = 0;
-    let errors = 0;
-    
-    function imageLoaded() {
-      loaded++;
-      if ((loaded + errors) === images.length) {
-        callback();
-      }
-    }
-    
-    function imageError() {
-      errors++;
-      if ((loaded + errors) === images.length) {
-        callback();
-      }
-    }
-    
-    for (let i = 0; i < images.length; i++) {
-      const img = new Image();
-      img.onload = imageLoaded;
-      img.onerror = imageError;
-      img.src = images[i];
-    }
-  }
-  
-  // グローバル変数
-  let activeCardIndex = 0;
-  let isSwipeEnabled = false;
-  let startX = 0;
-  let currentX = 0;
-  let isSwiping = false;
-  let floatAnimationFrame = null;
-  let canTakePhoto = false; // 撮影可能フラグ
-  let steamGenerationInterval = null; // 湯気生成用インターバル
-  
-  // カード画像のパス設定
-  const allImages = [
-    './assets/c1.png',
-    './assets/c2.png',
-    './assets/c3.png',
-    './assets/c4.png',
-    './assets/c5.png',
-    './assets/c5_1.png'
-  ];
-  
-  // 設定
-  const config = {
-    cardSpacing: 360,
-    swipeSensitivity: 200,
-    cardRotation: 30,
-    centerZ: -400,
-    cardCount: 5
-  };
-  
-  document.addEventListener("DOMContentLoaded", function() {
-    // ページ読み込み時に直接ARを開始
-    document.getElementById('ar-container').style.display = 'block';
-    
-    // 遅延なしですぐにカメラアクセスを要求
-    initAR();
-    
-    // ----------------
-    // フォトフレーム関連のイベントリスナー
-    // ----------------
-    
-    // 「戻る」ボタンのイベントリスナー
-    document.getElementById('back-button').addEventListener('click', function() {
-      document.getElementById('photo-frame-container').style.display = 'none';
-      document.getElementById('ar-container').style.display = 'block';
-      
-      // 湯気エフェクトのクリーンアップ
-      if (steamGenerationInterval) {
-        clearInterval(steamGenerationInterval);
-        steamGenerationInterval = null;
-      }
-    });
-    
-    // ポップアップの閉じるボタン
-    document.getElementById('popup-close-button').addEventListener('click', function() {
-      document.getElementById('photo-instruction-popup').style.display = 'none';
-      
-      // ポップアップを閉じたら撮影可能に
-      canTakePhoto = true;
-    });
-    
-    // フォトフレーム画面でのタップイベント
-    document.getElementById('photo-frame-container').addEventListener('click', function(e) {
-      // ポップアップ表示中かBackボタンのクリック時は何もしない
-      if (!canTakePhoto || 
-          e.target === document.getElementById('back-button') || 
-          e.target === document.getElementById('popup-close-button') ||
-          document.getElementById('photo-instruction-popup').style.display !== 'none') {
-        return;
-      }
-      
-      // 撮影処理
-      takePhoto();
-    });
-    
-    // カードのクリックを直接監視（イベント委譲）
-    document.addEventListener('click', function(e) {
-      // c5_1画像が含まれる要素を検索
-      // 既存のphotoButtonの作成部分を、以下のコードに置き換えてください
-// createCards関数内のi === 4の条件部分を修正
-
-if (i === 4) {
-  // カード全体をクリック可能に
-  card.style.cursor = 'pointer';
-  card.style.pointerEvents = 'auto'; // これが重要
-  
-  // カード全体にイベントリスナーを追加
-  card.addEventListener('click', function() {
-    console.log("カード5がクリックされました");
-    showPhotoFrame();
-  });
-  
-  // 写真撮影ボタンを追加（見た目のみ - 実際のクリックはカード全体で処理）
-  const photoButton = document.createElement('div');
-  photoButton.className = 'photo-button';
-  photoButton.style.position = 'absolute';
-  photoButton.style.bottom = '10%';
-  photoButton.style.left = '50%';
-  photoButton.style.transform = 'translateX(-50%)';
-  photoButton.style.width = '60%';
-  photoButton.style.height = '80px';
-  photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
-  photoButton.style.backgroundSize = 'contain';
-  photoButton.style.backgroundRepeat = 'no-repeat';
-  photoButton.style.backgroundPosition = 'center';
-  photoButton.style.border = 'none';
-  photoButton.style.pointerEvents = 'none'; // これを追加 - ボタン自体はクリック不可に
-  photoButton.style.animation = 'pulse 1.5s infinite';
-  
-  
-    
-    // タッチデバイス用のイベント委譲
-    document.addEventListener('touchend', function(e) {
-      const photoButton = e.target.closest('.photo-button');
-      if (photoButton) {
-        console.log("写真ボタンがタッチされました（委譲）");
-        e.preventDefault();
-        e.stopPropagation();
-        showPhotoFrame();
-      }
-    }, { passive: false });
-  };
-  
-  function initAR() {
-    // 画像を事前読み込み
-    preloadImages(allImages, function() {
-      // カメラアクセス
-      try {
-        navigator.mediaDevices.getUserMedia({ 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: window.innerWidth },
-            height: { ideal: window.innerHeight }
-          } 
-        })
-        .then(function(stream) {
-          const video = document.getElementById('camera-view');
-          video.srcObject = stream;
-          video.onloadedmetadata = function() {
-            try {
-              video.play()
-                .then(createCards)
-                .catch(function(error) {
-                  console.warn("ビデオ再生エラー:", error);
-                  createCards(); // カメラエラー時もカード表示
-                });
-            } catch(e) {
-              console.warn("ビデオ再生例外:", e);
-              createCards(); // 例外発生時もカード表示
-            }
-          };
-        })
-        .catch(function(error) {
-          console.warn("カメラエラー:", error);
-          createCards(); // カメラエラー時もカード表示
-        });
-      } catch (e) {
-        console.warn("MediaDevices API エラー:", e);
-        createCards(); // MediaDevicesがない場合もカード表示
-      }
-    });
-  }
-  
-  function createCards() {
-    try {
-      const carousel = document.querySelector('.carousel');
-      if (!carousel) return;
-      
-      carousel.innerHTML = '';
-      
-      for (let i = 0; i < config.cardCount; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'card-wrapper';
-        wrapper.dataset.index = i;
-        
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.dataset.cardType = i + 1; // カードタイプを設定（1〜5）
-        
-        // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
-        if (i === 4) {
-          // 写真撮影ボタンを追加
-          const photoButton = document.createElement('div');
-          photoButton.className = 'photo-button';
-          photoButton.style.position = 'absolute';
-          photoButton.style.bottom = '10%';
-          photoButton.style.left = '10%';
-          photoButton.style.width = '80%';
-          photoButton.style.height = '20%';
-          photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
-          photoButton.style.backgroundSize = 'contain';
-          photoButton.style.backgroundPosition = 'center';
-          photoButton.style.backgroundRepeat = 'no-repeat';
-          photoButton.style.animation = 'pulse 1.5s infinite';
-          photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
-          photoButton.style.cursor = 'pointer';
-          photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
-          
-          // デバッグ用の視覚的サポート
-          // photoButton.style.border = '1px solid rgba(255, 0, 0, 0.3)';
-          
-          // ダブルクリック防止用フラグ
-          let isProcessing = false;
-          
-          // ボタンにイベントリスナーを直接追加
-          photoButton.addEventListener('click', function(e) {
-            if (isProcessing) return;
-            isProcessing = true;
-            
-            console.log("写真ボタンがクリックされました（直接）");
-            e.stopPropagation(); // 親要素へのイベント伝播を止める
-            showPhotoFrame();
-            
-            // 連続クリック防止のためのクールダウン
-            setTimeout(() => { isProcessing = false; }, 1000);
-          });
-          
-          // タッチデバイス用（修正版）
-          photoButton.addEventListener('touchend', function(e) {
-            e.preventDefault(); // iOSでは必須
-            e.stopPropagation(); // 他に伝播しないように
-            
-            if (isProcessing) return;
-            isProcessing = true;
-            
-            console.log("スマホで写真ボタンがタッチされました");
-            showPhotoFrame();
-            
-            // 連続タップ防止
-            setTimeout(() => { isProcessing = false; }, 1000);
-          }, { passive: false }); // これがないとpreventDefaultが効かない
-          
-          card.appendChild(photoButton);
-          
-          // カード全体にもイベントを追加（フォールバック）
-          card.addEventListener('click', function(e) {
-            // c5_1.png画像の領域（カード下部）がクリックされたかチェック
-            const rect = card.getBoundingClientRect();
-            const y = e.clientY - rect.top;
-            
-            if (y > rect.height * 0.7) {
-              console.log("カード5の下部がクリックされました");
-              showPhotoFrame();
-            }
-          });
-        }
-        
-        wrapper.appendChild(card);
-        carousel.appendChild(wrapper);
-      }
-      
-      // 初期位置の設定
-      updateCardPositions();
-      setupSwipeEvents();
-      
-      // カード成長アニメーション
-      setTimeout(growCards, 500);
-    } catch (e) {
-      console.warn("カード作成エラー:", e);
-    }
-  }
-  
-  function growCards() {
-    try {
-      const cards = document.querySelectorAll('.card');
-      
-      cards.forEach((card, i) => {
-        setTimeout(() => {
-          card.style.height = '589.2px'; // 修正後のサイズ
-          card.style.opacity = '1';
-        }, i * 200);
-      });
-      
-      setTimeout(() => {
-        isSwipeEnabled = true;
-      }, 1500);
-    } catch (e) {
-      console.warn("カード成長エラー:", e);
-    }
-  }
-  
-  // スライドを含めたカード位置の更新
-  function updateCardPositions(offsetRatio = 0) {
-    try {
-      const wrappers = document.querySelectorAll('.card-wrapper');
-      if (!wrappers || wrappers.length === 0) return;
-      
-      // すべてのクラスを一旦リセット
-      wrappers.forEach(wrapper => {
-        wrapper.classList.remove('center', 'left', 'right');
-      });
-      
-      wrappers.forEach((wrapper, i) => {
-        // カードの相対位置を計算（offsetRatioを含む）
-        let relativePos = i - activeCardIndex - offsetRatio;
-        
-        // 循環表示のための調整
-        if (relativePos < -2) relativePos += config.cardCount;
-        if (relativePos > 2) relativePos -= config.cardCount;
-        
-        // X軸位置の計算
+// X軸位置の計算
         const xPos = relativePos * config.cardSpacing;
         
         // Z軸位置の計算（放物線状に）
@@ -1354,63 +982,60 @@ if (i === 4) {
     }
   }
   
-// 写真撮影処理
-function takePhoto() {
-  try {
-    console.log("写真撮影処理を開始");
-    // 撮影時のフラッシュ効果
-    const shutterEffect = document.getElementById('shutter-effect');
-    shutterEffect.style.opacity = '0.8';
-    
-    // カメラのキャプチャ
-    const video = document.getElementById('frame-camera-view');
-    
-    setTimeout(() => {
-      // フラッシュ効果を消す
-      shutterEffect.style.opacity = '0';
+  // 写真撮影処理
+  function takePhoto() {
+    try {
+      console.log("写真撮影処理を開始");
+      // 撮影時のフラッシュ効果
+      const shutterEffect = document.getElementById('shutter-effect');
+      shutterEffect.style.opacity = '0.8';
       
-      try {
-        // キャンバスの作成
-        const canvas = document.createElement('canvas');
+      // カメラのキャプチャ
+      const video = document.getElementById('frame-camera-view');
+      
+      setTimeout(() => {
+        // フラッシュ効果を消す
+        shutterEffect.style.opacity = '0';
         
-        // ビデオが動作している場合
-        if (video.videoWidth && video.videoHeight) {
-          const width = video.videoWidth;
-          const height = video.videoHeight;
-          canvas.width = width;
-          canvas.height = height;
+        try {
+          // キャンバスの作成
+          const canvas = document.createElement('canvas');
           
-          // ビデオの現在のフレームを描画
-          const context = canvas.getContext('2d');
-          context.drawImage(video, 0, 0, width, height);
-          
-          // 画像をBase64形式に変換
-          try {
-            const imageDataURL = canvas.toDataURL('image/jpeg');
-            console.log("撮影成功", imageDataURL.substring(0, 50) + "...");
+          // ビデオが動作している場合
+          if (video.videoWidth && video.videoHeight) {
+            const width = video.videoWidth;
+            const height = video.videoHeight;
+            canvas.width = width;
+            canvas.height = height;
             
-            // 撮影成功メッセージ
-            alert("写真を撮影しました！");
+            // ビデオの現在のフレームを描画
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, width, height);
             
-          } catch (e) {
-            console.warn("画像変換エラー:", e);
+            // 画像をBase64形式に変換
+            try {
+              const imageDataURL = canvas.toDataURL('image/jpeg');
+              console.log("撮影成功", imageDataURL.substring(0, 50) + "...");
+              
+              // 撮影成功メッセージ
+              alert("写真を撮影しました！");
+              
+            } catch (e) {
+              console.warn("画像変換エラー:", e);
+              alert("写真撮影しました！");
+            }
+          } else {
+            console.warn("ビデオが再生されていません");
             alert("写真撮影しました！");
           }
-        } else {
-          console.warn("ビデオが再生されていません");
+        } catch (e) {
+          console.warn("カメラキャプチャエラー:", e);
           alert("写真撮影しました！");
         }
-      } catch (e) {
-        console.warn("カメラキャプチャエラー:", e);
-        alert("写真撮影しました！");
-      }
-    }, 200); // フラッシュ効果の表示時間
-  } catch (e) {
-    console.warn("撮影エラー:", e);
-    alert("撮影しました！");
+      }, 200); // フラッシュ効果の表示時間
+    } catch (e) {
+      console.warn("撮影エラー:", e);
+      alert("撮影しました！");
+    }
   }
-}
 </script>
-
-</body>
-</html>
