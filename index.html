@@ -341,6 +341,25 @@
     z-index: 9999 !important;
   }
 
+  /* カード番号スタイル */
+  .card-number {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 200, 255, 0.8);
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+  }
+
   @keyframes pulse {
     0% { transform: scale(1); filter: brightness(1); }
     50% { transform: scale(1.05); filter: brightness(1.2); }
@@ -550,6 +569,7 @@
   <div class="popup-corner popup-corner-bl"></div>
   <div class="popup-corner popup-corner-br"></div>
 </div>
+
 <script>
   // ShowOneChildエラーの強化対策
   try {
@@ -659,6 +679,40 @@
     // 遅延なしですぐにカメラアクセスを要求
     initAR();
     
+    // フォトフレーム移動用の固定ボタン
+    const photoModeButton = document.createElement('button');
+    photoModeButton.textContent = '📷 写真を撮影する';
+    photoModeButton.style.position = 'fixed';
+    photoModeButton.style.top = '20px';
+    photoModeButton.style.right = '20px';
+    photoModeButton.style.padding = '10px 15px';
+    photoModeButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
+    photoModeButton.style.color = 'black';
+    photoModeButton.style.border = 'none';
+    photoModeButton.style.borderRadius = '5px';
+    photoModeButton.style.fontWeight = 'bold';
+    photoModeButton.style.fontSize = '16px';
+    photoModeButton.style.zIndex = '99999';
+    photoModeButton.style.display = 'none';
+    photoModeButton.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.5)';
+
+    // クリックイベント
+    photoModeButton.onclick = function() {
+      showPhotoFrame();
+    };
+
+    // bodyに追加
+    document.body.appendChild(photoModeButton);
+
+    // activeCardIndexの監視のためのインターバル
+    setInterval(function() {
+      if (activeCardIndex === 4) {
+        photoModeButton.style.display = 'block';
+      } else {
+        photoModeButton.style.display = 'none';
+      }
+    }, 300);
+    
     // ----------------
     // フォトフレーム関連のイベントリスナー
     // ----------------
@@ -753,6 +807,13 @@
         const card = document.createElement('div');
         card.className = 'card';
         card.dataset.cardType = i + 1; // カードタイプを設定（1〜5）
+        
+        // カード番号を追加
+        const cardNumber = document.createElement('div');
+        cardNumber.className = 'card-number';
+        cardNumber.textContent = (i + 1).toString();
+        
+        card.appendChild(cardNumber);
         
         // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
         if (i === 4) {
@@ -883,6 +944,16 @@
           wrapper.classList.add('right');
         }
       });
+      
+      // photoModeButtonの表示/非表示を更新
+      const photoModeButton = document.querySelector('button[style*="fixed"]');
+      if (photoModeButton) {
+        if (activeCardIndex === 4) {
+          photoModeButton.style.display = 'block';
+        } else {
+          photoModeButton.style.display = 'none';
+        }
+      }
       
       // 浮遊効果のシミュレーション
       if (!isSwiping) {
