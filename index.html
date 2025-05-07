@@ -469,15 +469,7 @@
     border-bottom: 2px solid rgba(0, 200, 255, 0.8);
     border-right: 2px solid rgba(0, 200, 255, 0.8);
   }
-  /* カード5のアニメーション無効化 */
-  .card.no-animation::before {
-    content: none !important; /* スキャンラインを無効化 */
-    animation: none !important;
-  }
 
-  .card-wrapper.center .card.no-animation {
-    filter: none !important; /* 発光エフェクトを無効化 */
-  }
 </style>
 </head>
 
@@ -806,9 +798,31 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-        // 基本的なスタイルだけ設定 - ここはそのまま
-        card.style.position = 'relative';
-      }
+  const photoButton = document.createElement('div');
+  photoButton.className = 'photo-button';
+  photoButton.style.position = 'absolute';
+  photoButton.style.bottom = '10%';
+  photoButton.style.left = '10%';
+  photoButton.style.width = '80%';
+  photoButton.style.height = '20%';
+  photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
+  photoButton.style.backgroundSize = 'contain';
+  photoButton.style.backgroundPosition = 'center';
+  photoButton.style.backgroundRepeat = 'no-repeat';
+  photoButton.style.animation = 'pulse 1.5s infinite';
+  photoButton.style.zIndex = '9999'; 
+  photoButton.style.cursor = 'pointer';
+  photoButton.style.pointerEvents = 'auto';
+  
+  // イベントリスナーの追加
+  photoButton.addEventListener('click', function(e) {
+    console.log("写真ボタンがクリックされました");
+    e.stopPropagation();
+    showPhotoFrame();
+  });
+  
+  card.appendChild(photoButton);
+}
       
       wrapper.appendChild(card);
       carousel.appendChild(wrapper);
