@@ -798,37 +798,56 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-  const photoButton = document.createElement('button'); // ← buttonタグに変更
+  // 写真撮影ボタンを追加
+  const photoButton = document.createElement('div');
   photoButton.className = 'photo-button';
   photoButton.style.position = 'absolute';
   photoButton.style.bottom = '10%';
-  photoButton.style.left = '50%';
-  photoButton.style.transform = 'translateX(-50%)';
-  photoButton.style.width = '60%';
-  photoButton.style.height = '80px';
+  photoButton.style.left = '10%';
+  photoButton.style.width = '80%';
+  photoButton.style.height = '20%';
   photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
   photoButton.style.backgroundSize = 'contain';
-  photoButton.style.backgroundRepeat = 'no-repeat';
   photoButton.style.backgroundPosition = 'center';
-  photoButton.style.border = 'none';
-  photoButton.style.cursor = 'pointer';
-  photoButton.style.zIndex = '9999';
-  photoButton.style.pointerEvents = 'auto';
+  photoButton.style.backgroundRepeat = 'no-repeat';
   photoButton.style.animation = 'pulse 1.5s infinite';
-
-  // イベント追加（PCでもスマホでも対応）
-  photoButton.addEventListener('click', (e) => {
-    e.stopPropagation();
+  photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
+  photoButton.style.cursor = 'pointer';
+  photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
+  
+  // ダブルクリック防止用フラグ
+  let isProcessing = false;
+  
+  // ボタンにイベントリスナーを直接追加
+  photoButton.addEventListener('click', function(e) {
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    console.log("写真ボタンがクリックされました（直接）");
+    e.stopPropagation(); // 親要素へのイベント伝播を止める
     showPhotoFrame();
+    
+    // 連続クリック防止のためのクールダウン
+    setTimeout(() => { isProcessing = false; }, 1000);
   });
-
-  photoButton.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+  
+  // タッチデバイス用（修正版）
+  photoButton.addEventListener('touchend', function(e) {
+    e.preventDefault(); // iOSでは必須
+    e.stopPropagation(); // 他に伝播しないように
+    
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    console.log("スマホで写真ボタンがタッチされました");
     showPhotoFrame();
-  }, { passive: false });
-
+    
+    // 連続タップ防止
+    setTimeout(() => { isProcessing = false; }, 1000);
+  }, { passive: false }); // これがないとpreventDefaultが効かない
+  
   card.appendChild(photoButton);
+
 
   // カード全体にもフォールバッククリック処理（任意）
   card.addEventListener('click', function(e) {
