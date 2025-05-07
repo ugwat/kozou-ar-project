@@ -798,6 +798,7 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
+  // 写真撮影ボタンを追加
   const photoButton = document.createElement('div');
   photoButton.className = 'photo-button';
   photoButton.style.position = 'absolute';
@@ -810,16 +811,40 @@ function createCards() {
   photoButton.style.backgroundPosition = 'center';
   photoButton.style.backgroundRepeat = 'no-repeat';
   photoButton.style.animation = 'pulse 1.5s infinite';
-  photoButton.style.zIndex = '9999'; 
+  photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
   photoButton.style.cursor = 'pointer';
-  photoButton.style.pointerEvents = 'auto';
+  photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
   
-  // イベントリスナーの追加
+  // ダブルクリック防止用フラグ
+  let isProcessing = false;
+  
+  // ボタンにイベントリスナーを直接追加
   photoButton.addEventListener('click', function(e) {
-    console.log("写真ボタンがクリックされました");
-    e.stopPropagation();
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    console.log("写真ボタンがクリックされました（直接）");
+    e.stopPropagation(); // 親要素へのイベント伝播を止める
     showPhotoFrame();
+    
+    // 連続クリック防止のためのクールダウン
+    setTimeout(() => { isProcessing = false; }, 1000);
   });
+  
+  // タッチデバイス用（修正版）
+  photoButton.addEventListener('touchend', function(e) {
+    e.preventDefault(); // iOSでは必須
+    e.stopPropagation(); // 他に伝播しないように
+    
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    console.log("スマホで写真ボタンがタッチされました");
+    showPhotoFrame();
+    
+    // 連続タップ防止
+    setTimeout(() => { isProcessing = false; }, 1000);
+  }, { passive: false }); // これがないとpreventDefaultが効かない
   
   card.appendChild(photoButton);
 }
