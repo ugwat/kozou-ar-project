@@ -771,42 +771,9 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-  // カード5を完全に別実装に変更
-  // 通常のカードスタイルをクリア
-  card.style = ""; // すべてのスタイルをリセット
-  
-  // 基本的なスタイルだけ再設定
-  card.style.position = 'absolute';
-  card.style.width = '100%';
-  card.style.height = '100%';
-  card.style.borderRadius = '12px';
-  card.style.backgroundImage = 'url(./assets/c5.png)';
-  card.style.backgroundSize = 'cover';
-  card.style.backgroundPosition = 'center';
-  
-  // 最前面に表示
-  wrapper.style.zIndex = '50000';
-  
-  // 直接showPhotoFrame関数を呼び出し
-  wrapper.addEventListener('click', function() {
-    showPhotoFrame();
-  });
-  
-  // ダミー要素を追加
-  const dummy = document.createElement('div');
-  dummy.textContent = "タップして写真を撮影";
-  dummy.style.position = 'absolute';
-  dummy.style.bottom = '15%';
-  dummy.style.left = '0';
-  dummy.style.width = '100%';
-  dummy.style.textAlign = 'center';
-  dummy.style.color = '#000';
-  dummy.style.backgroundColor = 'rgba(255, 255, 0, 0.8)';
-  dummy.style.padding = '10px';
-  dummy.style.fontWeight = 'bold';
-  
-  card.appendChild(dummy);
-}
+        // 基本的なスタイルだけ設定 - ここはそのまま
+        card.style.position = 'relative';
+      }
       
       wrapper.appendChild(card);
       carousel.appendChild(wrapper);
@@ -818,32 +785,58 @@ function createCards() {
     
     // カード成長アニメーション
     setTimeout(growCards, 500);
+    
+    // ここから新しいコードを追加 -------
+    // カルーセル外に完全に独立したボタンを配置
+    const floatingButton = document.createElement('button');
+    floatingButton.innerText = "📷 写真を撮影する";
+    floatingButton.style.position = 'fixed';
+    floatingButton.style.top = '20px';
+    floatingButton.style.right = '20px';
+    floatingButton.style.padding = '10px 15px';
+    floatingButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
+    floatingButton.style.color = 'black';
+    floatingButton.style.fontWeight = 'bold';
+    floatingButton.style.border = 'none';
+    floatingButton.style.borderRadius = '5px';
+    floatingButton.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+    floatingButton.style.zIndex = '99999';
+    floatingButton.style.cursor = 'pointer';
+    floatingButton.style.display = 'none'; // 初期状態では非表示
+
+    // カード5が中央に来たら表示するようにする
+    function updateButtonVisibility() {
+      if (activeCardIndex === 4) {
+        floatingButton.style.display = 'block';
+      } else {
+        floatingButton.style.display = 'none';
+      }
+    }
+
+    // カード位置更新時に呼び出す
+    const originalUpdateCardPositions = updateCardPositions;
+    updateCardPositions = function(offsetRatio = 0) {
+      originalUpdateCardPositions(offsetRatio);
+      updateButtonVisibility();
+    };
+
+    // クリックイベント
+    floatingButton.onclick = function() {
+      showPhotoFrame();
+    };
+
+    // bodyに追加
+    document.body.appendChild(floatingButton);
+    // ここまで新しいコード -------
+    
   } catch (e) {
     console.warn("カード作成エラー:", e);
   }
 }
 
-function growCards() {
-  try {
-    const cards = document.querySelectorAll('.card');
-    
-    cards.forEach((card, i) => {
-      setTimeout(() => {
-        card.style.height = '589.2px'; // 修正後のサイズ
-        card.style.opacity = '1';
-      }, i * 200);
-    });
-    
-    setTimeout(() => {
-      isSwipeEnabled = true;
-    }, 1500);
-  } catch (e) {
-    console.warn("カード成長エラー:", e);
-  }
-}
-
 // スライドを含めたカード位置の更新
 function updateCardPositions(offsetRatio = 0) {
+  // この関数の前に新しいコードを追加
   try {
     const wrappers = document.querySelectorAll('.card-wrapper');
     if (!wrappers || wrappers.length === 0) return;
