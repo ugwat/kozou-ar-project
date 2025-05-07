@@ -703,30 +703,49 @@
       // 既存のphotoButtonの作成部分を、以下のコードに置き換えてください
 // createCards関数内のi === 4の条件部分を修正
 
-// 写真撮影ボタンを追加 - シンプル版
-const photoButton = document.createElement('button');
-photoButton.innerHTML = "写真を撮る";
-photoButton.className = 'photo-button';
-photoButton.style.position = 'absolute';
-photoButton.style.bottom = '10%';
-photoButton.style.left = '50%';
-photoButton.style.transform = 'translateX(-50%)';
-photoButton.style.padding = '15px 30px';
-photoButton.style.backgroundColor = 'rgba(0, 162, 255, 0.8)';
-photoButton.style.color = 'white';
-photoButton.style.border = 'none';
-photoButton.style.borderRadius = '5px';
-photoButton.style.fontSize = '18px';
-photoButton.style.cursor = 'pointer';
-photoButton.style.zIndex = '9999';
-photoButton.style.fontWeight = 'bold';
-photoButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.7)';
+if (i === 4) {
+  const photoButton = document.createElement('button'); // ← buttonタグに変更
+  photoButton.className = 'photo-button';
+  photoButton.style.position = 'absolute';
+  photoButton.style.bottom = '10%';
+  photoButton.style.left = '50%';
+  photoButton.style.transform = 'translateX(-50%)';
+  photoButton.style.width = '60%';
+  photoButton.style.height = '80px';
+  photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
+  photoButton.style.backgroundSize = 'contain';
+  photoButton.style.backgroundRepeat = 'no-repeat';
+  photoButton.style.backgroundPosition = 'center';
+  photoButton.style.border = 'none';
+  photoButton.style.cursor = 'pointer';
+  photoButton.style.zIndex = '9999';
+  photoButton.style.pointerEvents = 'auto';
+  photoButton.style.animation = 'pulse 1.5s infinite';
 
-// イベントリスナーを単純化
-photoButton.onclick = function() {
-  console.log("写真ボタンがクリックされました");
-  showPhotoFrame();
-};
+  // イベント追加（PCでもスマホでも対応）
+  photoButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showPhotoFrame();
+  });
+
+  photoButton.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    showPhotoFrame();
+  }, { passive: false });
+
+  card.appendChild(photoButton);
+
+  // カード全体にもフォールバッククリック処理（任意）
+  card.addEventListener('click', function(e) {
+    const rect = card.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    if (y > rect.height * 0.7) {
+      showPhotoFrame();
+    }
+  });
+}
+
 
 card.appendChild(photoButton);
     });
