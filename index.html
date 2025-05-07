@@ -469,6 +469,15 @@
     border-bottom: 2px solid rgba(0, 200, 255, 0.8);
     border-right: 2px solid rgba(0, 200, 255, 0.8);
   }
+  /* カード5のアニメーション無効化 */
+  .card.no-animation::before {
+    content: none !important; /* スキャンラインを無効化 */
+    animation: none !important;
+  }
+
+  .card-wrapper.center .card.no-animation {
+    filter: none !important; /* 発光エフェクトを無効化 */
+  }
 </style>
 </head>
 
@@ -762,57 +771,48 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-        // カード自体にクリックイベントを追加
-        card.style.position = 'relative'; // 位置基準を設定
-        card.style.cursor = 'pointer';
-        card.style.overflow = 'visible'; // 重要: オーバーフロー表示を許可
-        
-        // 写真ボタンを追加 - 明確な見た目のボタン
-        const photoButton = document.createElement('button');
-        photoButton.innerText = "フォトフレームを表示"; // テキストを追加
-        photoButton.className = 'photo-button';
-        photoButton.style.position = 'absolute';
-        photoButton.style.bottom = '15%';
-        photoButton.style.left = '50%';
-        photoButton.style.transform = 'translateX(-50%)';
-        photoButton.style.padding = '10px 20px';
-        photoButton.style.backgroundColor = 'rgba(255, 255, 50, 0.9)'; // 黄色背景
-        photoButton.style.color = '#000'; // 黒色テキスト
-        photoButton.style.fontWeight = 'bold';
-        photoButton.style.fontSize = '16px';
-        photoButton.style.border = 'none';
-        photoButton.style.borderRadius = '5px';
-        photoButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.7)';
-        photoButton.style.cursor = 'pointer';
-        photoButton.style.zIndex = '20000'; // 極めて高いz-index
-        photoButton.style.pointerEvents = 'auto';
-        
-        // イベント追加 - オンクリックをメインに
-        photoButton.onclick = function(e) {
-          if (e) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
-          console.log("写真ボタンがクリックされました");
-          showPhotoFrame();
-        };
-        
-        // 念のためタッチイベントも追加
-        photoButton.addEventListener('touchend', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log("写真ボタンがタッチされました");
-          showPhotoFrame();
-        }, { passive: false });
-        
-        // カード全体にもイベントを追加（バックアップ）
-        card.onclick = function() {
-          console.log("カード5がクリックされました");
-          showPhotoFrame();
-        };
-        
-        card.appendChild(photoButton);
-      }
+  // カード5には特別な処理
+  card.style.position = 'relative';
+  card.style.cursor = 'pointer';
+  
+  // カード5専用のスタイル - アニメーション効果を無効化
+  card.style.overflow = 'visible';
+  card.style.zIndex = '1000'; // 高いz-index
+  
+  // 重要: スキャンラインを無効化（::before擬似要素を無効に）
+  card.classList.add('no-animation');
+  
+  // フォトボタンを追加
+  const photoButton = document.createElement('button');
+  photoButton.innerText = "フォトフレームを表示";
+  photoButton.className = 'photo-button';
+  photoButton.style.position = 'absolute';
+  photoButton.style.bottom = '15%';
+  photoButton.style.left = '50%';
+  photoButton.style.transform = 'translateX(-50%)';
+  photoButton.style.padding = '10px 20px';
+  photoButton.style.backgroundColor = 'rgba(255, 255, 50, 0.9)';
+  photoButton.style.color = '#000';
+  photoButton.style.fontWeight = 'bold';
+  photoButton.style.fontSize = '16px';
+  photoButton.style.borderRadius = '5px';
+  photoButton.style.border = 'none';
+  photoButton.style.cursor = 'pointer';
+  photoButton.style.zIndex = '2000'; // ボタンは特に高いz-index
+  
+  // 直接カード全体をクリックでも動作するように
+  card.onclick = function() {
+    showPhotoFrame();
+  };
+  
+  // ボタンもクリック可能に
+  photoButton.onclick = function(e) {
+    e.stopPropagation(); // 親へのイベント伝播を止める
+    showPhotoFrame();
+  };
+  
+  card.appendChild(photoButton);
+}
       
       wrapper.appendChild(card);
       carousel.appendChild(wrapper);
