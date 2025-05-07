@@ -771,47 +771,41 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-  // カード5には特別な処理
-  card.style.position = 'relative';
-  card.style.cursor = 'pointer';
+  // カード5を完全に別実装に変更
+  // 通常のカードスタイルをクリア
+  card.style = ""; // すべてのスタイルをリセット
   
-  // カード5専用のスタイル - アニメーション効果を無効化
-  card.style.overflow = 'visible';
-  card.style.zIndex = '1000'; // 高いz-index
+  // 基本的なスタイルだけ再設定
+  card.style.position = 'absolute';
+  card.style.width = '100%';
+  card.style.height = '100%';
+  card.style.borderRadius = '12px';
+  card.style.backgroundImage = 'url(./assets/c5.png)';
+  card.style.backgroundSize = 'cover';
+  card.style.backgroundPosition = 'center';
   
-  // 重要: スキャンラインを無効化（::before擬似要素を無効に）
-  card.classList.add('no-animation');
+  // 最前面に表示
+  wrapper.style.zIndex = '50000';
   
-  // フォトボタンを追加
-  const photoButton = document.createElement('button');
-  photoButton.innerText = "フォトフレームを表示";
-  photoButton.className = 'photo-button';
-  photoButton.style.position = 'absolute';
-  photoButton.style.bottom = '15%';
-  photoButton.style.left = '50%';
-  photoButton.style.transform = 'translateX(-50%)';
-  photoButton.style.padding = '10px 20px';
-  photoButton.style.backgroundColor = 'rgba(255, 255, 50, 0.9)';
-  photoButton.style.color = '#000';
-  photoButton.style.fontWeight = 'bold';
-  photoButton.style.fontSize = '16px';
-  photoButton.style.borderRadius = '5px';
-  photoButton.style.border = 'none';
-  photoButton.style.cursor = 'pointer';
-  photoButton.style.zIndex = '2000'; // ボタンは特に高いz-index
-  
-  // 直接カード全体をクリックでも動作するように
-  card.onclick = function() {
+  // 直接showPhotoFrame関数を呼び出し
+  wrapper.addEventListener('click', function() {
     showPhotoFrame();
-  };
+  });
   
-  // ボタンもクリック可能に
-  photoButton.onclick = function(e) {
-    e.stopPropagation(); // 親へのイベント伝播を止める
-    showPhotoFrame();
-  };
+  // ダミー要素を追加
+  const dummy = document.createElement('div');
+  dummy.textContent = "タップして写真を撮影";
+  dummy.style.position = 'absolute';
+  dummy.style.bottom = '15%';
+  dummy.style.left = '0';
+  dummy.style.width = '100%';
+  dummy.style.textAlign = 'center';
+  dummy.style.color = '#000';
+  dummy.style.backgroundColor = 'rgba(255, 255, 0, 0.8)';
+  dummy.style.padding = '10px';
+  dummy.style.fontWeight = 'bold';
   
-  card.appendChild(photoButton);
+  card.appendChild(dummy);
 }
       
       wrapper.appendChild(card);
