@@ -704,7 +704,18 @@
 // createCards関数内のi === 4の条件部分を修正
 
 if (i === 4) {
-  const photoButton = document.createElement('button'); // ← buttonタグに変更
+  // カード全体をクリック可能に
+  card.style.cursor = 'pointer';
+  card.style.pointerEvents = 'auto'; // これが重要
+  
+  // カード全体にイベントリスナーを追加
+  card.addEventListener('click', function() {
+    console.log("カード5がクリックされました");
+    showPhotoFrame();
+  });
+  
+  // 写真撮影ボタンを追加（見た目のみ - 実際のクリックはカード全体で処理）
+  const photoButton = document.createElement('div');
   photoButton.className = 'photo-button';
   photoButton.style.position = 'absolute';
   photoButton.style.bottom = '10%';
@@ -717,38 +728,10 @@ if (i === 4) {
   photoButton.style.backgroundRepeat = 'no-repeat';
   photoButton.style.backgroundPosition = 'center';
   photoButton.style.border = 'none';
-  photoButton.style.cursor = 'pointer';
-  photoButton.style.zIndex = '9999';
-  photoButton.style.pointerEvents = 'auto';
+  photoButton.style.pointerEvents = 'none'; // これを追加 - ボタン自体はクリック不可に
   photoButton.style.animation = 'pulse 1.5s infinite';
-
-  // イベント追加（PCでもスマホでも対応）
-  photoButton.addEventListener('click', (e) => {
-    e.stopPropagation();
-    showPhotoFrame();
-  });
-
-  photoButton.addEventListener('touchend', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    showPhotoFrame();
-  }, { passive: false });
-
-  card.appendChild(photoButton);
-
-  // カード全体にもフォールバッククリック処理（任意）
-  card.addEventListener('click', function(e) {
-    const rect = card.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    if (y > rect.height * 0.7) {
-      showPhotoFrame();
-    }
-  });
-}
-
-
-card.appendChild(photoButton);
-    });
+  
+  
     
     // タッチデバイス用のイベント委譲
     document.addEventListener('touchend', function(e) {
@@ -760,7 +743,7 @@ card.appendChild(photoButton);
         showPhotoFrame();
       }
     }, { passive: false });
-  });
+  };
   
   function initAR() {
     // 画像を事前読み込み
