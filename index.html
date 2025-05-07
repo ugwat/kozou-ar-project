@@ -674,6 +674,41 @@ document.addEventListener("DOMContentLoaded", function() {
   // 遅延なしですぐにカメラアクセスを要求
   initAR();
   
+  // 浮動ボタンの作成 - ここから新しいコード
+  const floatingButton = document.createElement('button');
+  floatingButton.innerText = "📷 写真を撮影する";
+  floatingButton.style.position = 'fixed';
+  floatingButton.style.top = '20px';
+  floatingButton.style.right = '20px';
+  floatingButton.style.padding = '10px 15px';
+  floatingButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
+  floatingButton.style.color = 'black';
+  floatingButton.style.fontWeight = 'bold';
+  floatingButton.style.border = 'none';
+  floatingButton.style.borderRadius = '5px';
+  floatingButton.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+  floatingButton.style.zIndex = '99999';
+  floatingButton.style.cursor = 'pointer';
+  floatingButton.style.display = 'none'; // 初期状態では非表示
+
+  // クリックイベント
+  floatingButton.onclick = function() {
+    showPhotoFrame();
+  };
+
+  // bodyに追加
+  document.body.appendChild(floatingButton);
+
+  // activeCardIndexの監視関数を追加
+  setInterval(function() {
+    if (activeCardIndex === 4) {
+      floatingButton.style.display = 'block';
+    } else {
+      floatingButton.style.display = 'none';
+    }
+  }, 500); // 500ミリ秒ごとにチェック
+  // ここまで新しいコード
+  
   // ----------------
   // フォトフレーム関連のイベントリスナー
   // ----------------
