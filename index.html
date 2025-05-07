@@ -700,12 +700,35 @@
     // カードのクリックを直接監視（イベント委譲）
     document.addEventListener('click', function(e) {
       // c5_1画像が含まれる要素を検索
-      const photoButton = e.target.closest('.photo-button');
-      if (photoButton) {
-        console.log("写真ボタンがクリックされました（委譲）");
-        e.stopPropagation();
-        showPhotoFrame();
-      }
+      // 既存のphotoButtonの作成部分を、以下のコードに置き換えてください
+// createCards関数内のi === 4の条件部分を修正
+
+// 写真撮影ボタンを追加 - シンプル版
+const photoButton = document.createElement('button');
+photoButton.innerHTML = "写真を撮る";
+photoButton.className = 'photo-button';
+photoButton.style.position = 'absolute';
+photoButton.style.bottom = '10%';
+photoButton.style.left = '50%';
+photoButton.style.transform = 'translateX(-50%)';
+photoButton.style.padding = '15px 30px';
+photoButton.style.backgroundColor = 'rgba(0, 162, 255, 0.8)';
+photoButton.style.color = 'white';
+photoButton.style.border = 'none';
+photoButton.style.borderRadius = '5px';
+photoButton.style.fontSize = '18px';
+photoButton.style.cursor = 'pointer';
+photoButton.style.zIndex = '9999';
+photoButton.style.fontWeight = 'bold';
+photoButton.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.7)';
+
+// イベントリスナーを単純化
+photoButton.onclick = function() {
+  console.log("写真ボタンがクリックされました");
+  showPhotoFrame();
+};
+
+card.appendChild(photoButton);
     });
     
     // タッチデバイス用のイベント委譲
