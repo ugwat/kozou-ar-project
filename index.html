@@ -120,9 +120,14 @@
 
 .marquee--inner {
   display: inline-block;
-  white-space: nowrap;
+  padding-left: 0;       /* 👈 不要な余白を削除 */
+  padding-right: 0;
   animation: scroll-left var(--marquee-duration) linear infinite;
+  font-size: clamp(24px, 5vw, 40px);
+  font-weight: 900;
+  font-family: "BIZ UDPGothic", sans-serif;
 }
+
 
 .marquee.reverse .marquee--inner {
   animation: scroll-right var(--marquee-duration) linear infinite;
@@ -527,7 +532,13 @@
   <div class="marquee-container bottom">
     <div class="marquee">
       <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+       <!-- before: 4回 -->
+<p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+
+<!-- after: 10回以上推奨 -->
+<p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+<p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+
       </div>
     </div>
     <div class="marquee reverse">
