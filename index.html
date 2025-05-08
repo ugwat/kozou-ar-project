@@ -85,7 +85,7 @@
 /* ✅マゼルナキケン テープ 改善版CSS */
 .marquee-container {
   position: absolute;
-  width: 100%;
+  width: 100vw; /* ← 明示的にビューポート幅を指定 */
   overflow: hidden;
   z-index: 2110;
 }
@@ -123,10 +123,11 @@
   padding-left: 0;       /* 👈 不要な余白を削除 */
   padding-right: 0;
   animation: scroll-left var(--marquee-duration) linear infinite;
-  font-size: clamp(24px, 5vw, 40px);
-  font-weight: 900;
-  font-family: "BIZ UDPGothic", sans-serif;
+  font-size: clamp(24px, 5vw, 40px);  /* 👈 テープに収まる範囲で文字を大きく */
+  font-weight: 900;                   /* 👈 太字を強調 */
+  font-family: "BIZ UDPGothic", sans-serif; /* 👈 読みやすく太いゴシック体に */
 }
+
 
 
 .marquee.reverse .marquee--inner {
@@ -146,7 +147,7 @@
 
 @keyframes scroll-left {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+  100% { transform: translateX(-50%); }
 }
 
 @keyframes scroll-right {
@@ -544,7 +545,9 @@
     <div class="marquee reverse">
       <div class="marquee--inner">
         <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
       </div>
+      
     </div>
   </div>
   
