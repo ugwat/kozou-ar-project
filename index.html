@@ -96,20 +96,21 @@
 .marquee {
   --marquee-color: #f3bb0b;
   --marquee-duration: 20s;
-  height: 40px;
-  line-height: 40px;
-  font-size: 22px;
-  font-family: "BIZ UDPGothic", sans-serif;
-  font-weight: 900;
-  white-space: nowrap;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  transform: rotate(-5deg);
   background: var(--marquee-color);
   color: black;
-  width: 100%;
+  overflow: hidden;
+  transform: rotate(-5deg);
+  white-space: nowrap;
+  width: 110%;
+  margin-left: -5%;
+  height: 40px;
+  margin-bottom: 5px;
+
+  font-size: clamp(24px, 5vw, 40px); /* 👈ここが重要な変更 */
+  font-weight: 900;
+  font-family: "BIZ UDPGothic", sans-serif;
 }
+
 
 .marquee.reverse {
   background: none;
@@ -524,12 +525,18 @@
   
   <!-- 4. マゼルナキケンエフェクト - 下部テープ -->
   <div class="marquee-container bottom">
+    <div class="marquee">
+      <div class="marquee--inner">
+        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      </div>
+    </div>
     <div class="marquee reverse">
       <div class="marquee--inner">
         <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
       </div>
     </div>
   </div>
+  
   
   
   <!-- シャッターエフェクト -->
