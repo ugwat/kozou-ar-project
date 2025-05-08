@@ -85,13 +85,14 @@
 /* ✅マゼルナキケン テープ 改善版CSS */
 .marquee-container {
   position: absolute;
-  width: 100vw; /* ← 明示的にビューポート幅を指定 */
-  overflow: hidden;
-  z-index: 2110;
+  width: 120%; /* 幅を広げる */
+  left: -10%; /* 左にずらす */
+  overflow: visible; /* overflow: hiddenを解除 */
+  z-index: 2500; /* z-indexを高くする */
 }
 
-.marquee-container.top { top: 110px; }
-.marquee-container.bottom { bottom: 20px; }
+.marquee-container.top { top: 100px; }
+.marquee-container.bottom { bottom: 10px; }
 
 .marquee {
   --marquee-color: #f3bb0b;
@@ -100,17 +101,17 @@
   color: black;
   overflow: hidden;
   transform: rotate(-5deg);
+  transform-origin: center center; /* 👈 これを追加 */
   white-space: nowrap;
-  width: 110%;
-  margin-left: -5%;
+  width: 120%;
+  margin-left: 0%;
   height: 40px;
   margin-bottom: 5px;
 
-  font-size: clamp(24px, 5vw, 40px); /* 👈ここが重要な変更 */
+  font-size: clamp(24px, 5vw, 40px);
   font-weight: 900;
   font-family: "BIZ UDPGothic", sans-serif;
 }
-
 
 .marquee.reverse {
   background: none;
