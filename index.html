@@ -743,17 +743,17 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // フォトフレーム移動用の固定ボタン - HUD風にアップデート
   const photoModeButton = document.createElement('button');
-  photoModeButton.innerHTML = '📷 写真を撮影する';
+  photoModeButton.innerHTML = 'フォトフレームを表示';
   photoModeButton.style.position = 'fixed';
   photoModeButton.style.bottom = '15%'; // カード下部に配置
-  photoModeButton.style.left = '50%';
+  photoModeButton.style.left = '40%'; // 左寄りに調整（50%から40%に）
   photoModeButton.style.transform = 'translateX(-50%)';
-  photoModeButton.style.width = '80%'; // 幅を広く
+  photoModeButton.style.width = '60%'; // 幅を調整
   photoModeButton.style.height = '50px'; // 高さを固定
   photoModeButton.style.backgroundColor = '#ffff00'; // 黄色背景
   photoModeButton.style.color = '#000000'; // 黒テキスト
   photoModeButton.style.border = 'none';
-  photoModeButton.style.borderRadius = '5px';
+  photoModeButton.style.borderRadius = '0'; // 角丸をなくす
   photoModeButton.style.fontWeight = 'bold';
   photoModeButton.style.fontSize = '18px';
   photoModeButton.style.zIndex = '99999';
@@ -761,7 +761,8 @@ document.addEventListener("DOMContentLoaded", function() {
   photoModeButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.5)';
   photoModeButton.style.cursor = 'pointer';
   photoModeButton.style.animation = 'pulse 1.5s infinite';
-  photoModeButton.textContent = 'フォトフレームを表示'; // テキスト変更
+  photoModeButton.style.textAlign = 'left'; // テキストを左寄せに
+  photoModeButton.style.paddingLeft = '20px'; // 左側に余白追加
 
   // クリックイベント
   photoModeButton.onclick = function() {
@@ -782,6 +783,10 @@ document.addEventListener("DOMContentLoaded", function() {
       if (card5) {
         const cardRect = card5.getBoundingClientRect();
         photoModeButton.style.bottom = `${window.innerHeight - cardRect.bottom + 100}px`;
+        
+        // 横位置も調整
+        photoModeButton.style.left = `${cardRect.left + (cardRect.width * 0.4)}px`; // カードの左端から40%の位置
+        photoModeButton.style.transform = 'translateX(-50%)'; // 中心調整
       }
     } else {
       photoModeButton.style.display = 'none';
