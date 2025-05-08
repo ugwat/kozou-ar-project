@@ -632,12 +632,8 @@ function isSafari() {
   );
 }
 
-// Safari用の簡易モード判定
-const safeMode = isSafari();
-console.log("Safe mode (Safari/iOS):", safeMode);
-
 // コンソールログ追加（デバッグ用）
-console.log("script loaded");
+console.log("script loaded, Safari mode: " + isSafari());
 
 // グローバル変数
 let activeCardIndex = 0;
@@ -674,10 +670,18 @@ document.addEventListener("DOMContentLoaded", function() {
   // ページ読み込み時に直接ARを開始
   document.getElementById('ar-container').style.display = 'block';
   
+  // フォトフレームボタンの作成
+  createPhotoFrameButton();
+  
   // 遅延なしですぐにカメラアクセスを要求
   initAR();
   
-  // フォトフレームボタンの作成
+  // イベントリスナー設定
+  setupEventListeners();
+});
+
+// フォトフレームボタンの作成
+function createPhotoFrameButton() {
   const photoFrameButton = document.createElement('div');
   photoFrameButton.id = 'photo-frame-button';
   photoFrameButton.innerHTML = '📷 フォトフレームを表示';
@@ -701,11 +705,13 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // ホバーエフェクト
   photoFrameButton.onmouseover = function() {
+    if (isSafari()) return; // Safariではアニメーションを削減
     this.style.backgroundColor = 'rgba(255, 255, 0, 1)';
     this.style.boxShadow = '0 0 20px rgba(255, 255, 0, 0.9)';
   };
   
   photoFrameButton.onmouseout = function() {
+    if (isSafari()) return; // Safariではアニメーションを削減
     this.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
     this.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
   };
@@ -725,20 +731,22 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // ボタンを追加
   document.getElementById('ar-container').appendChild(photoFrameButton);
+}
+
+// ボタン表示の確認
+function checkPhotoButtonVisibility() {
+  const photoFrameButton = document.getElementById('photo-frame-button');
+  if (!photoFrameButton) return;
   
-  // ボタン表示の監視
-  setInterval(function() {
-    if (activeCardIndex === 4) {
-      photoFrameButton.style.display = 'block';
-    } else {
-      photoFrameButton.style.display = 'none';
-    }
-  }, 500);
-  
-  // ----------------
-  // フォトフレーム関連のイベントリスナー
-  // ----------------
-  
+  if (activeCardIndex === 4) {
+    photoFrameButton.style.display = 'block';
+  } else {
+    photoFrameButton.style.display = 'none';
+  }
+}
+
+// イベントリスナー設定
+function setupEventListeners() {
   // ポップアップの閉じるボタン
   document.getElementById('popup-close-button').addEventListener('click', function() {
     document.getElementById('photo-instruction-popup').style.display = 'none';
@@ -760,70 +768,93 @@ document.addEventListener("DOMContentLoaded", function() {
     // 撮影処理
     takePhoto();
   });
-});
+}
 
 function initAR() {
   console.log("initAR called");
   
-  // カード画像の事前読み込みのみ行い、カメラ初期化は分離
+  // カード画像の事前読み込み
   preloadImages(allImages, function() {
     console.log("Images preloaded");
     initCamera();
   });
 }
 
-// Safari専用のカメラアクセス処理
+// カメラ初期化の改善
 function initCamera() {
   try {
-    // Safariの場合は最もシンプルな制約を使用
-    const constraints = safeMode ? 
-      { video: true } : // Safariは最小限の設定（環境指定なし）
-      { video: { facingMode: 'environment' } }; // 他のブラウザは環境指定あり
+    // フェイルオーバー方式でカメラを指定
+    const constraints = isSafari()
+      ? { video: { facingMode: "environment" } } // exactを使わない（Safari用）
+      : { video: { facingMode: { exact: "environment" } } }; // 他ブラウザ用
     
     console.log("Getting user media with constraints:", JSON.stringify(constraints));
     
     navigator.mediaDevices.getUserMedia(constraints)
-    .then(function(stream) {
-      console.log("Camera access successful");
-      const video = document.getElementById('camera-view');
-      
-      // Safariではloadedmetadataイベントがトリガーされないことがある
-      if (safeMode) {
-        // Safariでは直接ストリームを設定し、遅延してカードを表示
+      .then(function(stream) {
+        console.log("Camera access successful");
+        const video = document.getElementById('camera-view');
+        
+        // ストリームを設定
         video.srcObject = stream;
-        setTimeout(function() {
-          try {
-            video.play().catch(e => console.warn("Video play error:", e));
-          } catch(e) {
-            console.warn("Video play exception:", e);
-          }
-          // 少し遅延してからカード表示
-          setTimeout(createCards, 1000);
-        }, 500);
-      } else {
-        // 他のブラウザは通常通り
-        video.srcObject = stream;
-        video.onloadedmetadata = function() {
-          console.log("Video metadata loaded");
-          try {
-            video.play()
-              .then(() => setTimeout(createCards, 300))
-              .catch(e => {
-                console.warn("Video play error:", e);
-                setTimeout(createCards, 300);
-              });
-          } catch(e) {
-            console.warn("Video play exception:", e);
-            setTimeout(createCards, 300);
-          }
-        };
-      }
-    })
-    .catch(function(error) {
-      console.warn("Camera access error:", error);
-      // カメラなしでもカードを表示
-      setTimeout(createCards, 500);
-    });
+        
+        // Safariの場合は、メタデータ読み込みを待たずに遅延処理
+        if (isSafari()) {
+          // メタデータロード前の早すぎる再生を避ける
+          setTimeout(function() {
+            // play()を呼ぶ前にさらに少し待つ
+            try {
+              video.play().catch(e => console.warn("Video play error:", e));
+              // さらに遅延してからカード生成
+              setTimeout(createCards, 500);
+            } catch(e) {
+              console.warn("Video play exception:", e);
+              setTimeout(createCards, 500);
+            }
+          }, 300);
+        } else {
+          // 他のブラウザは通常通り
+          video.onloadedmetadata = function() {
+            console.log("Video metadata loaded");
+            try {
+              video.play()
+                .then(() => setTimeout(createCards, 300))
+                .catch(e => {
+                  console.warn("Video play error:", e);
+                  setTimeout(createCards, 300);
+                });
+            } catch(e) {
+              console.warn("Video play exception:", e);
+              setTimeout(createCards, 300);
+            }
+          };
+        }
+      })
+      .catch(function(error) {
+        console.warn("Camera access error:", error);
+        
+        // バックアップとして最小限の制約で再試行
+        const basicConstraints = { video: true };
+        
+        navigator.mediaDevices.getUserMedia(basicConstraints)
+          .then(function(stream) {
+            console.log("Basic camera access successful");
+            const video = document.getElementById('camera-view');
+            video.srcObject = stream;
+            
+            // 遅延してからカード生成（直接setTimeout）
+            setTimeout(function() {
+              try {
+                video.play().catch(e => {});
+              } catch(e) {}
+              setTimeout(createCards, 300);
+            }, 300);
+          })
+          .catch(function() {
+            // カメラなしでもカードを表示
+            setTimeout(createCards, 500);
+          });
+      });
   } catch (e) {
     console.warn("Media devices error:", e);
     setTimeout(createCards, 500);
@@ -932,6 +963,7 @@ function createCards() {
       setTimeout(() => {
         isSwipeEnabled = true;
         console.log("Cards animation complete, swipe enabled");
+        checkPhotoButtonVisibility(); // 明示的にチェック
       }, 1500);
     }, 500);
   } catch (e) {
@@ -992,6 +1024,9 @@ function updateCardPositions(offsetRatio = 0) {
     if (!isSwiping) {
       simulateFloat();
     }
+    
+    // ボタン表示をチェック
+    checkPhotoButtonVisibility();
   } catch (e) {
     console.warn("Card position update error:", e);
   }
@@ -1002,13 +1037,15 @@ let floatOffset = 0;
 let floatDirection = 1;
 function simulateFloat() {
   // Safariモードではアニメーションを簡素化
-  if (safeMode) {
+  if (isSafari()) {
     // 中央カードの参照を取得
     const centerCard = document.querySelector('.card-wrapper.center');
     if (!centerCard) return;
     
-    // シンプルな定位置
-    centerCard.style.transform = centerCard.style.transform.replace(/translateY\([^)]+\)/, '') + ' translateY(0px)';
+    // シンプルな定位置（固定）
+    if (centerCard.style.transform.includes('translateY(')) {
+      centerCard.style.transform = centerCard.style.transform.replace(/translateY\([^)]+\)/, '') + ' translateY(0px)';
+    }
     return;
   }
   
@@ -1071,7 +1108,7 @@ function simulateFloat() {
 
 function setupSwipeEvents() {
   // Safariではタッチイベントを簡素化
-  const options = safeMode ? {} : { passive: true };
+  const options = isSafari() ? {} : { passive: true };
   
   // iOSでのパフォーマンス問題対策として、アクティブなタッチポインタのみ追跡
   let activePointerId = null;
@@ -1100,7 +1137,7 @@ function setupSwipeEvents() {
     if (!isSwipeEnabled || !isSwiping) return;
     
     // Safariではシンプルに処理
-    if (safeMode) {
+    if (isSafari()) {
       currentX = e.touches[0].clientX;
       const diffX = currentX - startX;
       const offsetRatio = diffX / config.swipeSensitivity;
@@ -1131,7 +1168,7 @@ function setupSwipeEvents() {
     if (!isSwipeEnabled || !isSwiping) return;
     
     // Safariではシンプルに処理
-    if (safeMode) {
+    if (isSafari()) {
       finishSwipe();
       isSwiping = false;
       activePointerId = null;
@@ -1174,7 +1211,7 @@ function setupSwipeEvents() {
   
   // マウスイベント - iOSではあまり関係ないが、PC用に残す
   // Safariではマウスイベントを軽量化
-  if (!safeMode) {
+  if (!isSafari()) {
     document.addEventListener('mousedown', function(e) {
       if (!isSwipeEnabled) return;
       
@@ -1245,22 +1282,28 @@ function showPhotoFrame() {
   try {
     console.log("showPhotoFrame function called");
     
-    // AR画面を非表示
+    // ビデオの位置とカメラを再利用するため、まずARコンテナとカメラを維持
+    const video = document.getElementById('camera-view');
+    
+    // ARコンテナを非表示
     document.getElementById('ar-container').style.display = 'none';
     
-    // 必要に応じてカメラを再設定
-    setupFrameCamera();
+    // ビデオをフォトフレームコンテナに移動（再割り当てではなく移動）
+    const frameContainer = document.getElementById('photo-frame-container');
+    frameContainer.style.display = 'block';
     
-    // フォトフレーム画面を表示
-    document.getElementById('photo-frame-container').style.display = 'block';
+    // 新しいアプローチ：CSS位置調整でカメラを共有
+    video.style.position = 'absolute';
+    video.style.zIndex = '2010'; // フレームコンテナ内のzIndexに合わせる
+    frameContainer.appendChild(video);
     
     // 説明ポップアップを表示
     document.getElementById('photo-instruction-popup').style.display = 'block';
     
-    // エフェクトの初期化
+    // 湯気エフェクトの初期化
     initSteamEffect();
     
-    // 撮影可能フラグをリセット（ポップアップ閉じるまで撮影不可）
+    // 撮影可能フラグをリセット
     canTakePhoto = false;
     
     // ロゴをクリックで戻れるようにイベントリスナー追加
@@ -1268,8 +1311,14 @@ function showPhotoFrame() {
     if (logoContainer) {
       logoContainer.style.cursor = 'pointer';
       logoContainer.onclick = function() {
+        // フォトフレームモードを終了
         document.getElementById('photo-frame-container').style.display = 'none';
-        document.getElementById('ar-container').style.display = 'block';
+        
+        // カメラビデオをARコンテナに戻す
+        const arContainer = document.getElementById('ar-container');
+        arContainer.style.display = 'block';
+        video.style.zIndex = '10'; // 元のzIndexに戻す
+        arContainer.appendChild(video);
         
         // 湯気エフェクトのクリーンアップ
         if (steamGenerationInterval) {
@@ -1291,32 +1340,7 @@ function showPhotoFrame() {
   }
 }
 
-// フォトフレーム用カメラのセットアップ
-function setupFrameCamera() {
-  try {
-    // メインの画面からのカメラビデオストリームを再利用
-    const mainCameraView = document.getElementById('camera-view');
-    const frameCameraView = document.getElementById('frame-camera-view');
-    
-    if (mainCameraView && mainCameraView.srcObject && frameCameraView) {
-      console.log("Transferring camera stream");
-      // ストリームをコピー
-      frameCameraView.srcObject = mainCameraView.srcObject;
-      frameCameraView.play().catch(e => {
-        console.warn("Frame camera playback error:", e);
-      });
-    } else {
-      console.warn("Camera stream not available", 
-        mainCameraView ? "Main camera exists" : "Main camera missing", 
-        mainCameraView && mainCameraView.srcObject ? "Stream exists" : "Stream missing",
-        frameCameraView ? "Frame view exists" : "Frame view missing");
-    }
-  } catch (e) {
-    console.warn("Frame camera setup error:", e);
-  }
-}
-
-// 湯気エフェクトの初期化
+// 湯気エフェクトの初期化 - Safari最適化
 function initSteamEffect() {
   const container = document.getElementById('enhanced-steam-container');
   if (!container) {
@@ -1340,10 +1364,13 @@ function initSteamEffect() {
   glow.style.filter = 'blur(8px)';
   container.appendChild(glow);
   
-  // 初期パーティクルをいくつか作成 - Safariでは数を減らす
-  const particleCount = safeMode ? 3 : 8;
+  // Safariでは湯気を大幅に削減
+  const particleCount = isSafari() ? 2 : 5; // さらに少なく
+  const particleInterval = isSafari() ? 2000 : 800; // さらに長く
+  
+  // 初期パーティクルをいくつか作成
   for (let i = 0; i < particleCount; i++) {
-    setTimeout(() => createSteamParticle(container), i * 300);
+    setTimeout(() => createSteamParticle(container), i * 500);
   }
   
   // 既存のインターバルをクリア
@@ -1351,112 +1378,75 @@ function initSteamEffect() {
     clearInterval(steamGenerationInterval);
   }
   
-  // 定期的にパーティクルを生成 - Safariでは頻度を下げる
-  steamGenerationInterval = setInterval(() => {
-    // パーティクル生成
-    createSteamParticle(container);
-    
-    // Safariではランダム追加を省略
-    if (!safeMode && Math.random() > 0.7) {
-      setTimeout(() => {
-        for (let i = 0; i < 3; i++) {
-          setTimeout(() => createSteamParticle(container), i * 100);
-        }
-      }, 300);
-    }
-  }, safeMode ? 1000 : 600); // Safariではインターバルを長く
-  
-  console.log("Steam effect initialized");
-}
-
-// 湯気パーティクルの作成 - 改良版 & Safari最適化
-function createSteamParticle(container) {
-  if (!container) return;
-  
-  // Safariでの負荷を低減するためにパーティクル数を制限
-  if (safeMode) {
-     // 既存のパーティクル数が多すぎる場合は作成しない
-     const existingParticles = container.querySelectorAll('.steam-particle');
-     if (existingParticles.length > 10) {
-       return; // 最大10個のパーティクルに制限
+  // 定期的にパーティクルを生成
+ steamGenerationInterval = setInterval(() => {
+   // 既存のパーティクル数をチェック（上限設定）
+   const existingParticles = container.querySelectorAll('.steam-particle');
+   if (existingParticles.length > (isSafari() ? 5 : 10)) {
+     // 上限に達していたら古いものを削除
+     if (existingParticles[0].parentNode) {
+       existingParticles[0].parentNode.removeChild(existingParticles[0]);
      }
    }
+   
+   // パーティクル生成
+   createSteamParticle(container);
+ }, particleInterval);
+ 
+ console.log("Steam effect initialized");
+}
+
+// 湯気パーティクル作成 - さらに最適化
+function createSteamParticle(container) {
+ if (!container) return;
  
  const particle = document.createElement('div');
  particle.className = 'steam-particle';
  
- // ランダムな初期位置（より広範囲）
- const startX = Math.random() * 160 - 80; // -80px〜80px
+ // ランダムな初期位置
+ const startX = Math.random() * 120 - 60; // 範囲を狭める
  particle.style.left = `calc(50% + ${startX}px)`;
  
- // ランダムなサイズ（より大きく）
- const size = Math.random() * 60 + 40; // 40px〜100px
+ // ランダムなサイズ - Safariではより小さく
+ const size = isSafari() ? 
+   (Math.random() * 40 + 30) : // 30px〜70px (Safari)
+   (Math.random() * 60 + 40);  // 40px〜100px (他)
+ 
  particle.style.width = `${size}px`;
  particle.style.height = `${size}px`;
  
- // より高輝度の湯気
+ // 湯気のスタイル
  particle.style.background = `radial-gradient(circle at center, 
                             rgba(255, 255, 255, 0.9) 0%, 
                             rgba(255, 255, 255, 0.1) 70%)`;
  particle.style.filter = 'blur(6px)';
  
- // ランダムなアニメーション時間（より長く）
- const duration = Math.random() * 4 + 3; // 3秒〜7秒
+ // アニメーション時間
+ const duration = isSafari() ? 
+   (Math.random() * 2 + 2) : // 2秒〜4秒 (Safari)
+   (Math.random() * 4 + 3);  // 3秒〜7秒 (他)
  
- // Safariではスタイルからアニメーションを排除して、CSSクラスで対応
- if (safeMode) {
+ // Safariでは最もシンプルなアニメーション
+ if (isSafari()) {
+   // CSSのtransitionを使用
+   particle.style.transition = `opacity ${duration}s, transform ${duration}s`;
    particle.style.opacity = '0';
-   particle.classList.add('steam-particle-safari');
+   particle.style.transform = 'translateY(0) scale(0.1)';
    
-   // アニメーション効果をJavaScriptで簡易実装
-   let opacity = 0;
-   let y = 0;
-   let scale = 0.1;
+   // 少し遅延してスタートポジションから変更
+   setTimeout(() => {
+     particle.style.opacity = '0.5';
+     particle.style.transform = `translateY(-200px) scale(1.0)`;
+   }, 50);
    
-   const startTime = Date.now();
-   const animateParticle = () => {
-     const elapsed = Date.now() - startTime;
-     const progress = Math.min(elapsed / (duration * 1000), 1);
-     
-     if (progress < 0.15) {
-       // 開始フェーズ
-       opacity = progress / 0.15 * 0.8;
-       y = -80 * (progress / 0.15);
-       scale = 0.1 + 0.5 * (progress / 0.15);
-     } else if (progress < 0.5) {
-       // 中間フェーズ
-       opacity = 0.8 - (progress - 0.15) / 0.35 * 0.3;
-       y = -80 - 100 * (progress - 0.15) / 0.35;
-       scale = 0.6 + 0.6 * (progress - 0.15) / 0.35;
-     } else if (progress < 0.9) {
-       // 終了フェーズ
-       opacity = 0.5 - (progress - 0.5) / 0.4 * 0.3;
-       y = -180 - 100 * (progress - 0.5) / 0.4;
-       scale = 1.2 + 0.4 * (progress - 0.5) / 0.4;
-     } else {
-       // フェードアウト
-       opacity = 0.2 - 0.2 * (progress - 0.9) / 0.1;
-       y = -280 - 70 * (progress - 0.9) / 0.1;
-       scale = 1.6 - 0.8 * (progress - 0.9) / 0.1;
+   // アニメーション終了時に要素を削除
+   setTimeout(() => {
+     if (particle.parentNode) {
+       particle.parentNode.removeChild(particle);
      }
-     
-     particle.style.opacity = opacity.toString();
-     particle.style.transform = `translateY(${y}px) scale(${scale})`;
-     
-     if (progress < 1) {
-       requestAnimationFrame(animateParticle);
-     } else {
-       // アニメーション終了時に要素を削除
-       if (particle.parentNode) {
-         particle.parentNode.removeChild(particle);
-       }
-     }
-   };
-   
-   // アニメーション開始
-   requestAnimationFrame(animateParticle);
+   }, duration * 1000);
  } else {
-   // 通常のブラウザ - CSS Animation直接使用
+   // 通常のブラウザ - CSS Animation使用
    particle.style.animation = `steam-animation ${duration}s ease-out forwards`;
    particle.style.opacity = '0';
    
@@ -1471,7 +1461,7 @@ function createSteamParticle(container) {
  container.appendChild(particle);
 }
 
-// 写真撮影処理
+// 写真撮影処理 - Safariでの最適化
 function takePhoto() {
  try {
    console.log("Photo taking process started");
@@ -1479,21 +1469,23 @@ function takePhoto() {
    const shutterEffect = document.getElementById('shutter-effect');
    shutterEffect.style.opacity = '0.8';
    
-   // カメラのキャプチャ
-   const video = document.getElementById('frame-camera-view');
+   // Safari向けの簡素化
+   if (isSafari()) {
+     setTimeout(() => {
+       shutterEffect.style.opacity = '0';
+       alert("写真を撮影しました！");
+     }, 200);
+     return;
+   }
+   
+   // 通常の撮影処理 - 非Safari
+   const video = document.getElementById('camera-view');
    
    setTimeout(() => {
      // フラッシュ効果を消す
      shutterEffect.style.opacity = '0';
      
      try {
-       // Safariではカメラキャプチャを簡略化
-       if (safeMode) {
-         console.log("Safari mode: simplified photo capture");
-         alert("写真を撮影しました！");
-         return;
-       }
-       
        // キャンバスの作成
        const canvas = document.createElement('canvas');
        
