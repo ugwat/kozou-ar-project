@@ -741,44 +741,17 @@ document.addEventListener("DOMContentLoaded", function() {
   // 遅延なしですぐにカメラアクセスを要求
   initAR();
   
-  // フォトフレーム移動用の固定ボタン - HUD風にアップデート
-  const photoModeButton = document.createElement('button');
-  photoModeButton.innerHTML = '📷 写真を撮影する';
-  photoModeButton.style.position = 'fixed';
-  photoModeButton.style.top = '50%';
-  photoModeButton.style.left = '50%';
-  photoModeButton.style.transform = 'translate(-50%, -50%)';
-  photoModeButton.style.padding = '15px 25px';
-  photoModeButton.style.backgroundColor = 'rgba(0, 200, 255, 0.2)';
-  photoModeButton.style.color = 'white';
-  photoModeButton.style.border = '2px solid rgba(0, 200, 255, 0.8)';
-  photoModeButton.style.borderRadius = '10px';
-  photoModeButton.style.fontWeight = 'bold';
-  photoModeButton.style.fontSize = '18px';
-  photoModeButton.style.zIndex = '99999';
-  photoModeButton.style.display = 'none';
-  photoModeButton.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.6)';
-  photoModeButton.style.textShadow = '0 0 8px rgba(0, 200, 255, 1)';
-  photoModeButton.style.fontFamily = 'Arial, sans-serif';
-  photoModeButton.style.cursor = 'pointer';
-  photoModeButton.style.animation = 'pulse 1.5s infinite';
+  // フォトフレーム移動用のボタンを削除（以前のコードを削除）
+  // ※カードバージョンのボタンに一本化するので不要に
 
-  // クリックイベント
-  photoModeButton.onclick = function() {
-    showPhotoFrame();
-  };
-
-  // bodyに追加
-  document.body.appendChild(photoModeButton);
-
-  // activeCardIndexの監視のためのインターバル
-  setInterval(function() {
-    if (activeCardIndex === 4) {
-      photoModeButton.style.display = 'block';
-    } else {
-      photoModeButton.style.display = 'none';
-    }
-  }, 300);
+  // activeCardIndexの監視のためのインターバル - 不要なので削除
+  // setInterval(function() {
+  //   if (activeCardIndex === 4) {
+  //     photoModeButton.style.display = 'block';
+  //   } else {
+  //     photoModeButton.style.display = 'none';
+  //   }
+  // }, 300);
   
   // ----------------
   // フォトフレーム関連のイベントリスナー
@@ -806,7 +779,6 @@ document.addEventListener("DOMContentLoaded", function() {
     takePhoto();
   });
 });
-
 function initAR() {
   // 画像を事前読み込み
   preloadImages(allImages, function() {
@@ -900,63 +872,63 @@ function createCards() {
       wrapper.appendChild(card); // 順序変更：cardNumberを先に、cardを後に
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
-      if (i === 4) {
-        // 写真撮影ボタンを追加 - 「フォトフレームを表示」ボタンの位置に合わせる
-        const photoButton = document.createElement('div');
-        photoButton.className = 'photo-button';
-        photoButton.style.position = 'absolute';
-        photoButton.style.bottom = '15%'; // 下部に配置（画像の矢印位置に合わせる）
-        photoButton.style.left = '10%';
-        photoButton.style.width = '80%';
-        photoButton.style.height = '50px'; // 高さを固定して「フォトフレームを表示」ボタンっぽく
-        photoButton.style.backgroundColor = '#ffff00'; // 黄色背景
-        photoButton.style.color = '#000000'; // 黒テキスト
-        photoButton.style.display = 'flex';
-        photoButton.style.justifyContent = 'center';
-        photoButton.style.alignItems = 'center';
-        photoButton.style.borderRadius = '5px';
-        photoButton.style.fontSize = '18px';
-        photoButton.style.fontWeight = 'bold';
-        photoButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.5)';
-        photoButton.style.animation = 'pulse 1.5s infinite';
-        photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
-        photoButton.style.cursor = 'pointer';
-        photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
-        photoButton.textContent = 'フォトフレームを表示'; // テキスト内容の設定
-        
-        // ダブルクリック防止用フラグ
-        let isProcessing = false;
-        
-        // ボタンにイベントリスナーを直接追加
-        photoButton.addEventListener('click', function(e) {
-          if (isProcessing) return;
-          isProcessing = true;
-          
-          console.log("写真ボタンがクリックされました（直接）");
-          e.stopPropagation(); // 親要素へのイベント伝播を止める
-          showPhotoFrame();
-          
-          // 連続クリック防止のためのクールダウン
-          setTimeout(() => { isProcessing = false; }, 1000);
-        });
-        
-        // タッチデバイス用（修正版）
-        photoButton.addEventListener('touchend', function(e) {
-          e.preventDefault(); // iOSでは必須
-          e.stopPropagation(); // 他に伝播しないように
-          
-          if (isProcessing) return;
-          isProcessing = true;
-          
-          console.log("スマホで写真ボタンがタッチされました");
-          showPhotoFrame();
-          
-          // 連続タップ防止
-          setTimeout(() => { isProcessing = false; }, 1000);
-        }, { passive: false }); // これがないとpreventDefaultが効かない
-        
-        card.appendChild(photoButton);
-      }
+if (i === 4) {
+  // 写真撮影ボタンを追加 - 「フォトフレームを表示」ボタンの位置に合わせる
+  const photoButton = document.createElement('div');
+  photoButton.className = 'photo-button';
+  photoButton.style.position = 'absolute';
+  photoButton.style.bottom = '15%'; // 下部に配置（画像の矢印位置に合わせる）
+  photoButton.style.left = '10%';
+  photoButton.style.width = '80%';
+  photoButton.style.height = '50px'; // 高さを固定して「フォトフレームを表示」ボタンっぽく
+  photoButton.style.backgroundColor = '#ffff00'; // 黄色背景
+  photoButton.style.color = '#000000'; // 黒テキスト
+  photoButton.style.display = 'flex';
+  photoButton.style.justifyContent = 'center';
+  photoButton.style.alignItems = 'center';
+  photoButton.style.borderRadius = '5px';
+  photoButton.style.fontSize = '18px';
+  photoButton.style.fontWeight = 'bold';
+  photoButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.5)';
+  photoButton.style.animation = 'pulse 1.5s infinite';
+  photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
+  photoButton.style.cursor = 'pointer';
+  photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
+  photoButton.textContent = 'フォトフレームを表示'; // テキスト内容の設定
+  
+  // ダブルクリック防止用フラグ
+  let isProcessing = false;
+  
+  // ボタンにイベントリスナーを直接追加
+  photoButton.addEventListener('click', function(e) {
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    console.log("写真ボタンがクリックされました（直接）");
+    e.stopPropagation(); // 親要素へのイベント伝播を止める
+    showPhotoFrame();
+    
+    // 連続クリック防止のためのクールダウン
+    setTimeout(() => { isProcessing = false; }, 1000);
+  });
+  
+  // タッチデバイス用（修正版）
+  photoButton.addEventListener('touchend', function(e) {
+    e.preventDefault(); // iOSでは必須
+    e.stopPropagation(); // 他に伝播しないように
+    
+    if (isProcessing) return;
+    isProcessing = true;
+    
+    console.log("スマホで写真ボタンがタッチされました");
+    showPhotoFrame();
+    
+    // 連続タップ防止
+    setTimeout(() => { isProcessing = false; }, 1000);
+  }, { passive: false }); // これがないとpreventDefaultが効かない
+  
+  card.appendChild(photoButton);
+}
       
       carousel.appendChild(wrapper);
     }
