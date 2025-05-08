@@ -82,84 +82,72 @@
   }
 
   /* マゼルナキケンエフェクト - 上下テープ */
-  .marquee-container {
-    position: absolute;
-    width: 100%;
-    overflow: hidden;
-    z-index: 2110;
-  }
+/* ✅マゼルナキケン テープ 改善版CSS */
+.marquee-container {
+  position: absolute;
+  width: 100%;
+  overflow: hidden;
+  z-index: 2110;
+}
 
-  /* 上部テープ */
-  .marquee-container.top {
-    top: 110px; /* ロゴの下に配置 */
-  }
+.marquee-container.top { top: 110px; }
+.marquee-container.bottom { bottom: 20px; }
 
-  /* 下部テープ */
-  .marquee-container.bottom {
-    bottom: 20px;
-  }
+.marquee {
+  --marquee-color: #f3bb0b;
+  --marquee-duration: 20s;
+  height: 40px;
+  line-height: 40px;
+  font-size: 22px;
+  font-family: "BIZ UDPGothic", sans-serif;
+  font-weight: 900;
+  white-space: nowrap;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  transform: rotate(-5deg);
+  background: var(--marquee-color);
+  color: black;
+  width: 100%;
+}
 
-  .marquee {
-    --marquee-color: #f3bb0b; /* 黄色 */
-    --marquee-duration: 20s;
-    background: var(--marquee-color);
-    color: black;
-    overflow: hidden;
-    transform: rotate(-5deg);
-    white-space: nowrap;
-    width: 110%;
-    margin-left: -5%;
-    height: 40px; /* テープの高さ */
-    margin-bottom: 5px; /* テープ間のマージン */
-  }
+.marquee.reverse {
+  background: none;
+  color: var(--marquee-color);
+  transform: rotate(5deg);
+}
 
-  .marquee:nth-child(even) {
-    transform: rotate(5deg);
-  }
+.marquee--inner {
+  display: inline-block;
+  white-space: nowrap;
+  animation: scroll-left var(--marquee-duration) linear infinite;
+}
 
-  .marquee--inner {
-    display: inline-block;
-    padding-left: 100%;
-    animation: scroll-left var(--marquee-duration) linear infinite;
-    font-size: 24px;
-    font-weight: bold;
-    line-height: 40px; /* テープの高さに合わせる */
-  }
+.marquee.reverse .marquee--inner {
+  animation: scroll-right var(--marquee-duration) linear infinite;
+}
 
-  /* 偶数テープは逆方向に */
-  .marquee.reverse .marquee--inner {
-    animation: scroll-right var(--marquee-duration) linear infinite;
-    padding-right: 100%;
-    padding-left: 0;
-  }
+.marquee--inner p {
+  display: inline;
+  margin: 0 0.5em;
+  position: relative;
+}
 
-  .marquee--inner p {
-    display: inline;
-    margin: 0 0.5em;
-  }
+.marquee--inner p::after {
+  content: "🍜";
+  margin-left: 0.5em;
+}
 
-  .marquee--inner p::after {
-    content: "＊";
-    margin-left: 0.5em;
-  }
+@keyframes scroll-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
 
-  @keyframes scroll-left {
-    0% {
-      transform: translateX(0%);
-    }
-    100% {
-      transform: translateX(-100%);
-    }
-  }
+@keyframes scroll-right {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
 
-  @keyframes scroll-right {
-    0% {
-      transform: translateX(-100%);
-    }
-    100% {
-      transform: translateX(0%);
-    }
-  }
 
   /* 湯気エフェクト */
   #enhanced-steam-container {
@@ -530,22 +518,19 @@
     </div>
   </div>
   
+  
   <!-- 3. 湯気エフェクト -->
   <div id="enhanced-steam-container"></div>
   
   <!-- 4. マゼルナキケンエフェクト - 下部テープ -->
   <div class="marquee-container bottom">
-    <div class="marquee">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
-    </div>
     <div class="marquee reverse">
       <div class="marquee--inner">
         <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
       </div>
     </div>
   </div>
+  
   
   <!-- シャッターエフェクト -->
   <div id="shutter-effect"></div>
