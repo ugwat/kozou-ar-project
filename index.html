@@ -855,6 +855,7 @@ function initAR() {
 }
 
 // createCards関数内のカード番号の位置を修正
+// createCards関数内の写真撮影ボタンの位置を修正
 function createCards() {
   try {
     const carousel = document.querySelector('.carousel');
@@ -900,22 +901,28 @@ function createCards() {
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
-        // 写真撮影ボタンを追加
+        // 写真撮影ボタンを追加 - 「フォトフレームを表示」ボタンの位置に合わせる
         const photoButton = document.createElement('div');
         photoButton.className = 'photo-button';
         photoButton.style.position = 'absolute';
-        photoButton.style.top = '70%'; // 位置を下から上に変更
+        photoButton.style.bottom = '15%'; // 下部に配置（画像の矢印位置に合わせる）
         photoButton.style.left = '10%';
         photoButton.style.width = '80%';
-        photoButton.style.height = '20%';
-        photoButton.style.backgroundImage = 'url(./assets/c5_1.png)';
-        photoButton.style.backgroundSize = 'contain';
-        photoButton.style.backgroundPosition = 'center';
-        photoButton.style.backgroundRepeat = 'no-repeat';
+        photoButton.style.height = '50px'; // 高さを固定して「フォトフレームを表示」ボタンっぽく
+        photoButton.style.backgroundColor = '#ffff00'; // 黄色背景
+        photoButton.style.color = '#000000'; // 黒テキスト
+        photoButton.style.display = 'flex';
+        photoButton.style.justifyContent = 'center';
+        photoButton.style.alignItems = 'center';
+        photoButton.style.borderRadius = '5px';
+        photoButton.style.fontSize = '18px';
+        photoButton.style.fontWeight = 'bold';
+        photoButton.style.boxShadow = '0 0 10px rgba(255, 255, 0, 0.5)';
         photoButton.style.animation = 'pulse 1.5s infinite';
         photoButton.style.zIndex = '9999'; // z-indexを非常に高く設定
         photoButton.style.cursor = 'pointer';
         photoButton.style.pointerEvents = 'auto'; // 明示的にpointer-eventsを有効化
+        photoButton.textContent = 'フォトフレームを表示'; // テキスト内容の設定
         
         // ダブルクリック防止用フラグ
         let isProcessing = false;
@@ -977,7 +984,6 @@ function createCards() {
     console.warn("カード作成エラー:", e);
   }
 }
-
 // スライドを含めたカード位置の更新
 function updateCardPositions(offsetRatio = 0) {
   try {
