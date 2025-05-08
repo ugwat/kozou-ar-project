@@ -600,255 +600,193 @@
 </div>
 
 <script>
-  // ShowOneChildエラーの強化対策
-try {
-  window.ShowOneChild = window.ShowOneChild || {
-    readRenderPromptFromStorage: function() { return null; },
-    getRenderPrompt: function() { return null; },
-    render: function() { return null; }
-  };
-  
-  // localStorage拡張 - エラーが出ないように修正
-  window.localStorage = window.localStorage || {};
-  window.localStorage.getWithTTL = window.localStorage.getWithTTL || function(key) {
-    return null;
-  };
-} catch (e) {
-  console.warn("初期化スクリプトエラー:", e);
-}
+  // 最適化された全体のコード
 
-// IO errorの抑制
-window.addEventListener('error', function(e) {
-  if (e && e.message && typeof e.message === 'string' && 
-    (e.message.includes('ChromeMethodBFE') || 
-     e.message.includes('Unable to create writable file') ||
-     e.message.includes('ShowOneChild'))) {
-    console.warn('エラー抑制:', e.message);
-    return true; // エラー伝播を停止
-  }
-}, true);
+// ------------------------
+// 1. クラッシュ対策部分
+// ------------------------
 
-// 未捕捉のPromiseエラーを抑制
-window.addEventListener('unhandledrejection', function(event) {
-  if (event && event.reason && event.reason.message &&
-    (event.reason.message.includes('ChromeMethodBFE') || 
-     event.reason.message.includes('Unable to create writable') ||
-     event.reason.message.includes('ShowOneChild'))) {
-    console.warn('Promise エラー抑制:', event.reason.message);
-    event.preventDefault();
-    event.stopPropagation();
-  }
-}, true);
-
-// Safariのバージョン検出と対応
+// Safari判定 - シンプル化
 function isSafari() {
-  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  return /iphone|ipod|ipad|safari/i.test(navigator.userAgent.toLowerCase());
 }
 
-// 改良された湯気アニメーションスタイルの追加
-document.head.insertAdjacentHTML('beforeend', `
-  <style>
-    @keyframes steam-animation {
-      0% {
-        opacity: 0;
-        transform: translateY(0) scale(0.1);
-      }
-      15% {
-        opacity: 0.8;
-        transform: translateY(-80px) scale(0.6);
-      }
-      50% {
-        opacity: 0.5;
-        transform: translateY(-180px) translateX(${Math.random() * 60 - 30}px) scale(1.2);
-      }
-      90% {
-        opacity: 0.2;
-        transform: translateY(-280px) translateX(${Math.random() * 80 - 40}px) scale(1.6);
-      }
-      100% {
-        opacity: 0;
-        transform: translateY(-350px) translateX(${Math.random() * 100 - 50}px) scale(0.8);
-      }
-    }
-  </style>
-`);
-
-// 最小限の画像の事前読み込み
-function preloadImages(images, callback) {
-  if (!images || images.length === 0) {
-    callback();
-    return;
-  }
-  
-  let loaded = 0;
-  let errors = 0;
-  
-  function imageLoaded() {
-    loaded++;
-    if ((loaded + errors) === images.length) {
-      callback();
-    }
-  }
-  
-  function imageError() {
-    errors++;
-    if ((loaded + errors) === images.length) {
-      callback();
-    }
-  }
-  
-  for (let i = 0; i < images.length; i++) {
-    const img = new Image();
-    img.onload = imageLoaded;
-    img.onerror = imageError;
-    img.src = images[i];
-  }
-}
-
-// グローバル変数
-let activeCardIndex = 0;
-let isSwipeEnabled = false;
-let startX = 0;
-let currentX = 0;
-let isSwiping = false;
-let floatAnimationFrame = null;
-let canTakePhoto = false; // 撮影可能フラグ
-let steamGenerationInterval = null; // 湯気生成用インターバル
-
-// カード画像のパス設定
-const allImages = [
-  './assets/c1.png',
-  './assets/c2.png',
-  './assets/c3.png',
-  './assets/c4.png',
-  './assets/c5.png',
-  './assets/c5_1.png'
-];
-
-// 設定
-const config = {
-  cardSpacing: 360,
-  swipeSensitivity: 200,
-  cardRotation: 30,
-  centerZ: -400,
-  cardCount: 5
-};
-
-document.addEventListener("DOMContentLoaded", function() {
-  // ページ読み込み時に直接ARを開始
-  document.getElementById('ar-container').style.display = 'block';
-  
-  // 遅延なしですぐにカメラアクセスを要求
-  initAR();
-  
-  // フォトフレーム移動用の固定ボタン - シンプル＆安定版
-  const photoModeButton = document.createElement('div'); // buttonからdivに変更（より安定）
-  photoModeButton.textContent = 'フォトフレームを表示';
-  photoModeButton.style.position = 'absolute'; // fixedからabsoluteに変更
-  photoModeButton.style.bottom = '25%';
-  photoModeButton.style.left = '10%'; // カードの左端に合わせる
-  photoModeButton.style.width = '80%'; // カードと同じ幅
-  photoModeButton.style.height = '50px';
-  photoModeButton.style.backgroundColor = '#ffff00';
-  photoModeButton.style.color = '#000000';
-  photoModeButton.style.border = 'none';
-  photoModeButton.style.borderRadius = '0';
-  photoModeButton.style.fontWeight = 'bold';
-  photoModeButton.style.fontSize = '18px';
-  photoModeButton.style.zIndex = '9999'; // 値を下げて軽量化
-  photoModeButton.style.display = 'none';
-  photoModeButton.style.textAlign = 'center'; // 中央揃え
-  photoModeButton.style.lineHeight = '50px'; // 縦方向中央揃え
-  photoModeButton.style.cursor = 'pointer';
-  
-  // アニメーションを削除して安定化
-  
-  // クリックイベント（シンプル化）
-  photoModeButton.addEventListener('click', function() {
-    showPhotoFrame();
-  });
-  
-  // タッチデバイス用（シンプル化）
-  photoModeButton.addEventListener('touchend', function(e) {
-    e.preventDefault(); 
-    showPhotoFrame();
-  }, { passive: false });
-
-  // カード5の直下に追加（body直下ではなく）
-  const arContainer = document.getElementById('ar-container');
-  arContainer.appendChild(photoModeButton);
-
-  // ボタン表示の監視（シンプル化）
-  setInterval(function() {
-    if (activeCardIndex === 4) {
-      photoModeButton.style.display = 'block';
-    } else {
-      photoModeButton.style.display = 'none';
-    }
-  }, 500); // 間隔を長めに
-
-  // ----------------
-  // その他のイベントリスナー...
-});
-
-// Safari向けクラッシュ対策を強化したinitAR関数
-function initAR() {
-  // 画像の事前読み込みは維持
-  preloadImages(allImages, function() {
-    try {
-      // Safari対策を強化
-      if (isSafari()) {
-        // SafariとiOS向けの非常にシンプルな制約
+// カメラ初期化の完全な分離と単純化
+function initCamera() {
+  try {
+    // 最もシンプルな制約に統一
+    const constraints = { 
+      video: { 
+        facingMode: { exact: 'environment' }, // 強制的に背面カメラを指定
+      } 
+    };
+    
+    navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+      const video = document.getElementById('camera-view');
+      video.srcObject = stream;
+      
+      // 一度表示してみる
+      setTimeout(() => {
+        video.style.opacity = '1';
+      }, 100);
+      
+      // メタデータ読み込み後の処理
+      video.onloadedmetadata = function() {
+        try {
+          video.play()
+            .finally(() => {
+              // 成功・失敗にかかわらずカードを表示
+              setTimeout(createCards, 500); // 遅延を設定
+            });
+        } catch(e) {
+          console.warn("ビデオ再生例外:", e);
+          setTimeout(createCards, 500); // エラー時も遅延を設定
+        }
+      };
+    })
+    .catch(function(error) {
+      console.warn("カメラエラー:", error);
+      
+      // バックアップとして環境指定なしで再試行
+      if (error.name === 'OverconstrainedError') {
+        // 環境指定なしでリトライ
         navigator.mediaDevices.getUserMedia({ video: true })
         .then(function(stream) {
           const video = document.getElementById('camera-view');
           video.srcObject = stream;
           video.onloadedmetadata = function() {
-            video.play().catch(e => {
-              console.warn("ビデオ再生エラー:", e);
-              createCards(); // エラー時もカード表示
-            });
-            createCards(); // 正常時もカード表示
+            try {
+              video.play().finally(() => setTimeout(createCards, 500));
+            } catch(e) {
+              console.warn("バックアップビデオ再生例外:", e);
+              setTimeout(createCards, 500);
+            }
           };
         })
-        .catch(function(error) {
-          console.warn("カメラエラー:", error);
-          createCards(); // エラー時もカード表示
+        .catch(function() {
+          // 最終的に失敗した場合は、カメラなしでカードだけ表示
+          setTimeout(createCards, 500);
         });
       } else {
-        // 他のブラウザ向け
-        const constraints = { 
-          video: { 
-            facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-          } 
-        };
-        
-        navigator.mediaDevices.getUserMedia(constraints)
-        .then(function(stream) {
-          const video = document.getElementById('camera-view');
-          video.srcObject = stream;
-          video.onloadedmetadata = function() {
-            video.play().then(createCards).catch(function(error) {
-              console.warn("ビデオ再生エラー:", error);
-              createCards();
-            });
-          };
-        })
-        .catch(function(error) {
-          console.warn("カメラエラー:", error);
-          createCards();
-        });
+        // その他のエラーの場合も、カメラなしでカードだけ表示
+        setTimeout(createCards, 500);
       }
-    } catch (e) {
-      console.warn("MediaDevices API エラー:", e);
-      createCards();
-    }
+    });
+  } catch (e) {
+    console.warn("MediaDevices APIエラー:", e);
+    // どうしてもダメならカメラなしでカードだけ表示
+    setTimeout(createCards, 500);
+  }
+}
+
+// メインの初期化関数 - カメラとカード生成を分離
+function initAR() {
+  // 画像だけ先に読み込み
+  preloadImages(allImages, function() {
+    // カメラの初期化を実行
+    initCamera();
   });
 }
 
-// カードの作成関数の中から、5枚目のカードのフォトボタン追加部分を削除
+// ------------------------
+// 2. ボタン作成部分
+// ------------------------
+
+// ページ読み込み時の処理
+document.addEventListener("DOMContentLoaded", function() {
+  // ARコンテナを表示
+  document.getElementById('ar-container').style.display = 'block';
+  
+  // 一旦カメラビューを非表示に
+  const cameraView = document.getElementById('camera-view');
+  cameraView.style.opacity = '0';
+  
+  // ARを初期化
+  initAR();
+  
+  // 「フォトフレームを表示」ボタンを作成（ar-containerの子要素として追加）
+  const photoFrameButton = document.createElement('div');
+  photoFrameButton.id = 'photo-frame-button';
+  photoFrameButton.innerHTML = '📷 フォトフレームを表示';
+  photoFrameButton.style.position = 'absolute';
+  photoFrameButton.style.bottom = '18%'; // さらに下に配置
+  photoFrameButton.style.left = '10%';
+  photoFrameButton.style.width = '80%';
+  photoFrameButton.style.height = '50px';
+  photoFrameButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
+  photoFrameButton.style.color = '#000';
+  photoFrameButton.style.fontFamily = '"Hiragino Kaku Gothic ProN", "メイリオ", sans-serif'; // ゴシックフォント
+  photoFrameButton.style.fontSize = '18px';
+  photoFrameButton.style.fontWeight = 'bold';
+  photoFrameButton.style.textAlign = 'center';
+  photoFrameButton.style.lineHeight = '50px';
+  photoFrameButton.style.cursor = 'pointer';
+  photoFrameButton.style.zIndex = '500';
+  photoFrameButton.style.display = 'none';
+  photoFrameButton.style.border = '2px solid rgba(255, 255, 0, 1)';
+  photoFrameButton.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)'; // HUD風光彩効果
+  photoFrameButton.style.transition = 'all 0.3s';
+  
+  // ホバー効果
+  photoFrameButton.onmouseover = function() {
+    this.style.backgroundColor = 'rgba(255, 255, 0, 1)';
+    this.style.boxShadow = '0 0 20px rgba(255, 255, 0, 0.9)';
+  };
+  
+  photoFrameButton.onmouseout = function() {
+    this.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
+    this.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
+  };
+  
+  // クリックイベント - シンプル化
+  photoFrameButton.addEventListener('click', function() {
+    showPhotoFrame();
+  });
+  
+  // タッチ対応
+  photoFrameButton.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    showPhotoFrame();
+  });
+  
+  // arコンテナに追加
+  document.getElementById('ar-container').appendChild(photoFrameButton);
+  
+  // 監視処理 - 頻度を下げる
+  let prevActiveCardIndex = -1;
+  setInterval(function() {
+    // パフォーマンス改善: 変更があった場合のみDOMを操作
+    if (activeCardIndex !== prevActiveCardIndex) {
+      prevActiveCardIndex = activeCardIndex;
+      
+      if (activeCardIndex === 4) {
+        photoFrameButton.style.display = 'block';
+      } else {
+        photoFrameButton.style.display = 'none';
+      }
+    }
+  }, 500);
+  
+  // その他のイベントリスナー設定は変更なし
+  document.getElementById('popup-close-button').addEventListener('click', function() {
+    document.getElementById('photo-instruction-popup').style.display = 'none';
+    canTakePhoto = true;
+  });
+  
+  document.getElementById('photo-frame-container').addEventListener('click', function(e) {
+    if (!canTakePhoto || 
+        e.target === document.getElementById('back-button') || 
+        e.target === document.getElementById('popup-close-button') ||
+        document.getElementById('photo-instruction-popup').style.display !== 'none') {
+      return;
+    }
+    takePhoto();
+  });
+});
+
+// カードの作成関数は基本的に変更なし
+// 5枚目のカードのボタン追加部分を削除する
 function createCards() {
   try {
     const carousel = document.querySelector('.carousel');
@@ -870,7 +808,7 @@ function createCards() {
       cardNumber.className = 'card-number';
       cardNumber.textContent = (i + 1).toString();
       cardNumber.style.position = 'absolute';
-      cardNumber.style.top = '-40px'; // カードの上部外側に配置
+      cardNumber.style.top = '-40px';
       cardNumber.style.left = '50%';
       cardNumber.style.transform = 'translateX(-50%)';
       cardNumber.style.backgroundColor = 'rgba(0, 200, 255, 0.3)';
@@ -892,12 +830,11 @@ function createCards() {
       wrapper.appendChild(cardNumber);
       wrapper.appendChild(card);
       
-      // 5枚目のカードには特別なボタンを追加しない（外部のボタンで対応）
+      // 5枚目のカードに追加のボタンは配置しない
       
       carousel.appendChild(wrapper);
     }
     
-    // 以下は変更なし...
     updateCardPositions();
     setupSwipeEvents();
     
@@ -918,7 +855,6 @@ function createCards() {
     console.warn("カード作成エラー:", e);
   }
 }
-
 // Safariの判定を強化
 function isSafari() {
   const ua = navigator.userAgent.toLowerCase();
