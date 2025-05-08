@@ -854,6 +854,7 @@ function initAR() {
   });
 }
 
+// createCards関数内のカード番号の位置を修正
 function createCards() {
   try {
     const carousel = document.querySelector('.carousel');
@@ -870,12 +871,12 @@ function createCards() {
       card.className = 'card';
       card.dataset.cardType = i + 1; // カードタイプを設定（1〜5）
       
-      // カード番号を追加 - HUD化
+      // カード番号を追加 - HUD化＆位置変更（カードの上部外側に）
       const cardNumber = document.createElement('div');
       cardNumber.className = 'card-number';
       cardNumber.textContent = (i + 1).toString();
       cardNumber.style.position = 'absolute';
-      cardNumber.style.top = '15px';
+      cardNumber.style.top = '-40px'; // カードの上部外側に配置
       cardNumber.style.left = '50%';
       cardNumber.style.transform = 'translateX(-50%)';
       cardNumber.style.backgroundColor = 'rgba(0, 200, 255, 0.3)';
@@ -894,7 +895,8 @@ function createCards() {
       cardNumber.style.textShadow = '0 0 8px rgba(0, 200, 255, 1)';
       cardNumber.style.fontFamily = 'Arial, sans-serif';
       
-      card.appendChild(cardNumber);
+      wrapper.appendChild(cardNumber); // 注意: カードではなくラッパーに追加
+      wrapper.appendChild(card); // 順序変更：cardNumberを先に、cardを後に
       
       // 5枚目のカード（フォトフレーム）の場合はボタンを明示的に追加
       if (i === 4) {
@@ -902,7 +904,7 @@ function createCards() {
         const photoButton = document.createElement('div');
         photoButton.className = 'photo-button';
         photoButton.style.position = 'absolute';
-        photoButton.style.bottom = '10%';
+        photoButton.style.top = '70%'; // 位置を下から上に変更
         photoButton.style.left = '10%';
         photoButton.style.width = '80%';
         photoButton.style.height = '20%';
@@ -949,7 +951,6 @@ function createCards() {
         card.appendChild(photoButton);
       }
       
-      wrapper.appendChild(card);
       carousel.appendChild(wrapper);
     }
     
