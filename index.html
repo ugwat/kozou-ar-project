@@ -644,6 +644,8 @@ let isSwiping = false;
 let floatAnimationFrame = null;
 let canTakePhoto = false; // 撮影可能フラグ
 let steamGenerationInterval = null; // 湯気生成用インターバル
+let isCardPositionUpdating = false; // 位置更新中フラグ（競合防止）
+let cameraStream = null; // グローバルでストリームを保持
 
 // カード画像のパス設定
 const allImages = [
@@ -681,7 +683,70 @@ document.addEventListener("DOMContentLoaded", function() {
   
   // イベントリスナー設定
   setupEventListeners();
+  
+  // ページ離脱時のクリーンアップ追加
+  window.addEventListener('beforeunload', cleanupResources);
+  
+  // 定期的なメモリ最適化
+  setInterval(optimizeMemory, 5000);
 });
+
+// リソースのクリーンアップ
+function cleanupResources() {
+  console.log("Cleaning up resources...");
+  
+  // アニメーションをキャンセル
+  if (floatAnimationFrame) {
+    window.cancelAnimationFrame(floatAnimationFrame);
+    floatAnimationFrame = null;
+  }
+  
+  // 湯気インターバルをクリア
+  if (steamGenerationInterval) {
+    clearInterval(steamGenerationInterval);
+    steamGenerationInterval = null;
+  }
+  
+  // カメラストリームの停止
+  if (cameraStream) {
+    try {
+      const tracks = cameraStream.getTracks();
+      tracks.forEach(track => track.stop());
+      cameraStream = null;
+    } catch (e) {
+      console.warn("Stream cleanup error:", e);
+    }
+  }
+  
+  // すべてのビデオ要素をクリーンアップ
+  const videos = document.querySelectorAll('video');
+  videos.forEach(video => {
+    if (video && video.srcObject) {
+      try {
+        video.srcObject = null;
+        video.load();
+      } catch (e) {
+        console.warn("Video cleanup error:", e);
+      }
+    }
+  });
+}
+
+// メモリ最適化
+function optimizeMemory() {
+  // 不要な湯気パーティクルの削除
+  const steamParticles = document.querySelectorAll('.steam-particle');
+  const maxParticles = isSafari() ? 5 : 10;
+  
+  if (steamParticles.length > maxParticles) {
+    // 余分なパーティクルを削除
+    for (let i = 0; i < steamParticles.length - maxParticles; i++) {
+      if (steamParticles[i] && steamParticles[i].parentNode) {
+        steamParticles[i].parentNode.removeChild(steamParticles[i]);
+      }
+    }
+  }
+}
 
 // DOM構造を修正 - video要素を単一化
 function prepareVideoElement() {
@@ -703,14 +768,15 @@ function prepareVideoElement() {
   }
 }
 
-// フォトフレームボタンの作成
+// フォトフレームボタンの作成 - 位置を修正
 function createPhotoFrameButton() {
   const photoFrameButton = document.createElement('div');
   photoFrameButton.id = 'photo-frame-button';
   photoFrameButton.innerHTML = '📷 フォトフレームを表示';
   photoFrameButton.style.position = 'absolute';
-  photoFrameButton.style.bottom = '18%';
-  photoFrameButton.style.left = '10%';
+  photoFrameButton.style.bottom = '15%'; // 位置を調整
+  photoFrameButton.style.left = '50%'; // 中央配置
+  photoFrameButton.style.transform = 'translateX(-50%)'; // 中央揃え
   photoFrameButton.style.width = '80%';
   photoFrameButton.style.height = '50px';
   photoFrameButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
@@ -754,41 +820,50 @@ function createPhotoFrameButton() {
   document.getElementById('ar-container').appendChild(photoFrameButton);
 }
 
-// ボタン表示の確認
+// ボタン表示の確認 - 5枚目の時のみ確実に表示
 function checkPhotoButtonVisibility() {
   const photoFrameButton = document.getElementById('photo-frame-button');
   if (!photoFrameButton) return;
   
+  // 必ず非表示にしてから条件判定（表示が残る問題を防止）
+  photoFrameButton.style.display = 'none';
+  
+  // 5枚目の場合のみ表示
   if (activeCardIndex === 4) {
     photoFrameButton.style.display = 'block';
-  } else {
-    photoFrameButton.style.display = 'none';
+    console.log("Photo button visible, activeCardIndex:", activeCardIndex);
   }
 }
 
 // イベントリスナー設定
 function setupEventListeners() {
   // ポップアップの閉じるボタン
-  document.getElementById('popup-close-button').addEventListener('click', function() {
-    document.getElementById('photo-instruction-popup').style.display = 'none';
-    
-    // ポップアップを閉じたら撮影可能に
-    canTakePhoto = true;
-  });
+  const closeButton = document.getElementById('popup-close-button');
+  if (closeButton) {
+    closeButton.addEventListener('click', function() {
+      document.getElementById('photo-instruction-popup').style.display = 'none';
+      
+      // ポップアップを閉じたら撮影可能に
+      canTakePhoto = true;
+    });
+  }
   
   // フォトフレーム画面でのタップイベント
-  document.getElementById('photo-frame-container').addEventListener('click', function(e) {
-    // ポップアップ表示中かBackボタンのクリック時は何もしない
-    if (!canTakePhoto || 
-        e.target === document.getElementById('back-button') || 
-        e.target === document.getElementById('popup-close-button') ||
-        document.getElementById('photo-instruction-popup').style.display !== 'none') {
-      return;
-    }
-    
-    // 撮影処理
-    takePhoto();
-  });
+  const photoContainer = document.getElementById('photo-frame-container');
+  if (photoContainer) {
+    photoContainer.addEventListener('click', function(e) {
+      // ポップアップ表示中かBackボタンのクリック時は何もしない
+      if (!canTakePhoto || 
+          e.target === document.getElementById('back-button') || 
+          e.target === document.getElementById('popup-close-button') ||
+          document.getElementById('photo-instruction-popup').style.display !== 'none') {
+        return;
+      }
+      
+      // 撮影処理
+      takePhoto();
+    });
+  }
 }
 
 function initAR() {
@@ -815,6 +890,9 @@ function initCamera() {
       .then(function(stream) {
         console.log("Camera access successful");
         const video = document.getElementById('camera-view');
+        
+        // グローバルでストリームを保持（重要）
+        cameraStream = stream;
         
         // ストリームを設定
         video.srcObject = stream;
@@ -860,6 +938,7 @@ function initCamera() {
         navigator.mediaDevices.getUserMedia(basicConstraints)
           .then(function(stream) {
             console.log("Basic camera access successful");
+            cameraStream = stream; // グローバル保持
             const video = document.getElementById('camera-view');
             video.srcObject = stream;
             
@@ -992,16 +1071,26 @@ function createCards() {
   }
 }
 
-// スライドを含めたカード位置の更新
+// スライドを含めたカード位置の更新 - 5枚目カードの特別処理を追加
 function updateCardPositions(offsetRatio = 0) {
+  // 更新中フラグ（競合防止）
+  if (isCardPositionUpdating) return;
+  isCardPositionUpdating = true;
+  
   try {
     const wrappers = document.querySelectorAll('.card-wrapper');
-    if (!wrappers || wrappers.length === 0) return;
+    if (!wrappers || wrappers.length === 0) {
+      isCardPositionUpdating = false;
+      return;
+    }
     
     // すべてのクラスを一旦リセット
     wrappers.forEach(wrapper => {
       wrapper.classList.remove('center', 'left', 'right');
     });
+    
+    // 最後のカードかどうかのフラグ（特別処理用）
+    const isLastCard = activeCardIndex === config.cardCount - 1;
     
     wrappers.forEach((wrapper, i) => {
       // カードの相対位置を計算（offsetRatioを含む）
@@ -1011,33 +1100,43 @@ function updateCardPositions(offsetRatio = 0) {
       if (relativePos < -2) relativePos += config.cardCount;
       if (relativePos > 2) relativePos -= config.cardCount;
       
-      // X軸位置の計算
-      const xPos = relativePos * config.cardSpacing;
-      
-      // Z軸位置の計算（放物線状に）
-      const zPos = config.centerZ - Math.abs(relativePos) * 100;
-      
-      // 回転角度の計算
-      const rotationY = relativePos * config.cardRotation;
-      
-      // 縮小率の計算（1.0を基準に）
-      const scale = 1.0 - Math.abs(relativePos) * 0.2;
-      
-      // 不透明度の計算
-      const opacity = 1 - Math.abs(relativePos) * 0.3;
-      
-      // スタイルの適用 - 変換文字列を最適化
-      wrapper.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg) scale(${scale})`;
-      wrapper.style.opacity = opacity;
-      wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
-      
-      // 中央カードにクラスを追加（animationではなくクラスベースでスタイル適用）
-      if (Math.abs(relativePos) < 0.5) {
+      // 最後のカード（5枚目）の特別処理
+      if (isLastCard && i === activeCardIndex) {
+        // 中央に強制配置（5枚目が確実に中央に来るよう強制）
+        wrapper.style.transform = `translateX(0px) translateZ(${config.centerZ}px) rotateY(0deg) scale(1.0)`;
+        wrapper.style.opacity = 1;
+        wrapper.style.zIndex = 100;
         wrapper.classList.add('center');
-      } else if (relativePos < 0) {
-        wrapper.classList.add('left');
       } else {
-        wrapper.classList.add('right');
+        // 通常のカード位置計算
+        // X軸位置の計算
+        const xPos = relativePos * config.cardSpacing;
+        
+        // Z軸位置の計算（放物線状に）
+        const zPos = config.centerZ - Math.abs(relativePos) * 100;
+        
+        // 回転角度の計算
+        const rotationY = relativePos * config.cardRotation;
+        
+        // 縮小率の計算（1.0を基準に）
+        const scale = 1.0 - Math.abs(relativePos) * 0.2;
+        
+        // 不透明度の計算
+        const opacity = 1 - Math.abs(relativePos) * 0.3;
+        
+        // スタイルの適用 - 変換文字列を最適化
+        wrapper.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg) scale(${scale})`;
+        wrapper.style.opacity = opacity;
+        wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
+        
+        // クラス付与（アニメーション用）
+        if (Math.abs(relativePos) < 0.5) {
+          wrapper.classList.add('center');
+        } else if (relativePos < 0) {
+          wrapper.classList.add('left');
+        } else {
+          wrapper.classList.add('right');
+        }
       }
     });
     
@@ -1046,14 +1145,17 @@ function updateCardPositions(offsetRatio = 0) {
       simulateFloat();
     }
     
-    // ボタン表示をチェック
+    // ボタン表示をチェック - 位置更新後に確実に実行
     checkPhotoButtonVisibility();
   } catch (e) {
     console.warn("Card position update error:", e);
+  } finally {
+    // 必ず更新中フラグを解除
+    isCardPositionUpdating = false;
   }
 }
 
-// 中央カードの浮遊感をシミュレートする関数 - 復元版
+// 中央カードの浮遊感をシミュレートする関数
 let floatOffset = 0;
 let floatDirection = 1;
 function simulateFloat() {
@@ -1084,6 +1186,8 @@ function simulateFloat() {
     
     // 通常ブラウザの浮遊アニメーション
     function animate() {
+      if (!centerCard) return; // 中央カードがなくなっている場合
+      
       floatOffset += 0.05 * floatDirection;
       
       // 方向転換
@@ -1213,144 +1317,255 @@ function setupSwipeEvents() {
     setTimeout(simulateFloat, 100);
   }, options);
   
-  document.addEventListener('touchcancel', function(e) {
-   // タッチキャンセル時は追跡をリセット
-   activePointerId = null;
-   isSwiping = false;
+  document.addEventListener('touchcancel', function() {
+    // タッチキャンセル時は追跡をリセット
+    activePointerId = null;
+    isSwiping = false;
     
-   // 位置を元に戻して浮遊効果を再開
-   updateCardPositions(0);
-   setTimeout(simulateFloat, 100);
+    // 位置を元に戻して浮遊効果を再開
+    updateCardPositions(0);
+    setTimeout(simulateFloat, 100);
   }, options);
   
   // マウスイベント - iOSではあまり関係ないが、PC用に残す
-  // Safariではマウスイベントを軽量化
-  if (!isSafari()) {
-    document.addEventListener('mousedown', function(e) {
-      if (!isSwipeEnabled) return;
-      
-      // アニメーションをキャンセル
-      if (floatAnimationFrame) {
-        window.cancelAnimationFrame(floatAnimationFrame);
-        floatAnimationFrame = null;
-      }
-      startX = e.clientX;
-      currentX = startX;
-      isSwiping = true;
-    });
-    
-    document.addEventListener('mousemove', function(e) {
-      if (!isSwipeEnabled || !isSwiping) return;
-      currentX = e.clientX;
-      const diffX = currentX - startX;
-      const offsetRatio = diffX / config.swipeSensitivity;
-      updateCardPositions(offsetRatio);
-    });
-    
-    document.addEventListener('mouseup', function() {
-      if (!isSwipeEnabled || !isSwiping) return;
-      finishSwipe();
-      isSwiping = false;
-      
-      // スワイプ終了後に浮遊効果を再開
-      setTimeout(simulateFloat, 100);
-    });
-  }
+ // Safariではマウスイベントを軽量化
+ if (!isSafari()) {
+   document.addEventListener('mousedown', function(e) {
+     if (!isSwipeEnabled) return;
+     
+     // アニメーションをキャンセル
+     if (floatAnimationFrame) {
+       window.cancelAnimationFrame(floatAnimationFrame);
+       floatAnimationFrame = null;
+     }
+     startX = e.clientX;
+     currentX = startX;
+     isSwiping = true;
+   });
+   
+   document.addEventListener('mousemove', function(e) {
+     if (!isSwipeEnabled || !isSwiping) return;
+     currentX = e.clientX;
+     const diffX = currentX - startX;
+     const offsetRatio = diffX / config.swipeSensitivity;
+     updateCardPositions(offsetRatio);
+   });
+   
+   document.addEventListener('mouseup', function() {
+     if (!isSwipeEnabled || !isSwiping) return;
+     finishSwipe();
+     isSwiping = false;
+     
+     // スワイプ終了後に浮遊効果を再開
+     setTimeout(simulateFloat, 100);
+   });
+ }
 }
 
+// スワイプ終了時のカード位置確定 - 5枚目への遷移を特別扱い
 function finishSwipe() {
-  try {
-    const diffX = currentX - startX;
-    const threshold = 50;
-    
-    if (Math.abs(diffX) < threshold) {
-      // しきい値以下ならスワイプなし
-      updateCardPositions(0);
-      return;
-    }
-    
-    // スワイプ方向に応じてアクティブカードを変更
-    if (diffX > 0) {
-      // 右スワイプ
-      activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
-    } else {
-      // 左スワイプ
-      activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-    }
-    
-    // 新しい位置を適用
-    updateCardPositions(0);
-  } catch (e) {
-    console.warn("Swipe end error:", e);
-    // エラー時は位置をリセット
-    updateCardPositions(0);
-  }
+ try {
+   const diffX = currentX - startX;
+   const threshold = 50;
+   
+   if (Math.abs(diffX) < threshold) {
+     // しきい値以下ならスワイプなし
+     updateCardPositions(0);
+     return;
+   }
+   
+   // スワイプ方向に応じてアクティブカードを変更
+   const prevIndex = activeCardIndex; // 前のインデックスを保存
+   
+   if (diffX > 0) {
+     // 右スワイプ
+     activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+   } else {
+     // 左スワイプ
+     activeCardIndex = (activeCardIndex + 1) % config.cardCount;
+   }
+   
+   console.log(`Card changed: ${prevIndex} -> ${activeCardIndex}`);
+   
+   // 新しい位置を適用
+   updateCardPositions(0);
+   
+   // 最後のカードに移動した場合、または最後のカードから移動した場合は特別に確認
+   if (activeCardIndex === 4 || prevIndex === 4) {
+     setTimeout(() => checkPhotoButtonVisibility(), 50);
+   }
+ } catch (e) {
+   console.warn("Swipe end error:", e);
+   // エラー時は位置をリセット
+   updateCardPositions(0);
+ }
 }
 
-// フォトフレーム表示関数 - ビデオ要素共有の最適化を維持
+// フォトフレーム表示関数 - 完全修正版
 function showPhotoFrame() {
-  try {
-    console.log("showPhotoFrame function called");
-    
-    // ビデオの位置とカメラを再利用するため、まずARコンテナとカメラを維持
-    const video = document.getElementById('camera-view');
-    
-    // ARコンテナを非表示
-    document.getElementById('ar-container').style.display = 'none';
-    
-    // ビデオをフォトフレームコンテナに移動（再割り当てではなく移動）
-    const frameContainer = document.getElementById('photo-frame-container');
-    frameContainer.style.display = 'block';
-    
-    // 新しいアプローチ：CSS位置調整でカメラを共有
-    video.style.position = 'absolute';
-    video.style.zIndex = '2010'; // フレームコンテナ内のzIndexに合わせる
-    frameContainer.appendChild(video);
-    
-    // 説明ポップアップを表示
-    document.getElementById('photo-instruction-popup').style.display = 'block';
-    
-    // 湯気エフェクトの初期化
-    initSteamEffect();
-    
-    // 撮影可能フラグをリセット
-    canTakePhoto = false;
-    
-    // ロゴをクリックで戻れるようにイベントリスナー追加
-    const logoContainer = document.getElementById('logo-container');
-    if (logoContainer) {
-      logoContainer.style.cursor = 'pointer';
-      logoContainer.onclick = function() {
-        // フォトフレームモードを終了
-        document.getElementById('photo-frame-container').style.display = 'none';
-        
-        // カメラビデオをARコンテナに戻す
-        const arContainer = document.getElementById('ar-container');
-        arContainer.style.display = 'block';
-        video.style.zIndex = '10'; // 元のzIndexに戻す
-        arContainer.appendChild(video);
-        
-        // 湯気エフェクトのクリーンアップ
-        if (steamGenerationInterval) {
-          clearInterval(steamGenerationInterval);
-          steamGenerationInterval = null;
-        }
-      };
-    }
-    
-    // 不要な「戻る」ボタンを非表示
-    const backButton = document.getElementById('back-button');
-    if (backButton) {
-      backButton.style.display = 'none';
-    }
-    
-    console.log("Photo frame display complete");
+ try {
+   console.log("showPhotoFrame function called");
+   
+   // ARコンテナを非表示
+   document.getElementById('ar-container').style.display = 'none';
+   
+   // フォトフレームコンテナを表示
+   const frameContainer = document.getElementById('photo-frame-container');
+   frameContainer.style.display = 'block';
+   
+   // 既存のカメラをクリーンアップ
+   cleanupExistingCameras(frameContainer);
+   
+   // 新しいビデオ要素を作成
+   const frameVideo = document.createElement('video');
+   frameVideo.id = 'frame-camera-view';
+   frameVideo.autoplay = true;
+   frameVideo.playsinline = true;
+   frameVideo.muted = true;
+   frameVideo.style.position = 'absolute';
+   frameVideo.style.top = '0';
+   frameVideo.style.left = '0';
+   frameVideo.style.width = '100%';
+   frameVideo.style.height = '100%';
+   frameVideo.style.objectFit = 'cover';
+   frameVideo.style.zIndex = '2010';
+   
+   frameContainer.appendChild(frameVideo);
+   
+   // フォトフレーム用に新しいカメラストリームを取得
+   getNewCameraStream(frameVideo);
+   
+   // 説明ポップアップを表示
+   document.getElementById('photo-instruction-popup').style.display = 'block';
+   
+   // 湯気エフェクトの初期化
+   initSteamEffect();
+   
+   // 撮影可能フラグをリセット
+   canTakePhoto = false;
+   
+   // ロゴをクリックで戻れるようにイベントリスナー追加
+   const logoContainer = document.getElementById('logo-container');
+   if (logoContainer) {
+     logoContainer.style.cursor = 'pointer';
+     logoContainer.onclick = function() {
+       returnToARMode();
+     };
+   }
+   
+   // 不要な「戻る」ボタンを非表示
+   const backButton = document.getElementById('back-button');
+   if (backButton) {
+     backButton.style.display = 'none';
+   }
+   
+   console.log("Photo frame display complete");
  } catch (e) {
    console.warn("Photo frame display error:", e);
  }
 }
 
-// 湯気エフェクトの初期化 - 元の効果を復活させつつ最適化
+// 既存のカメラ要素をクリーンアップ
+function cleanupExistingCameras(container) {
+ if (!container) return;
+ 
+ // 既存のフレームカメラビューを削除
+ const existingVideo = container.querySelector('#frame-camera-view');
+ if (existingVideo) {
+   if (existingVideo.srcObject) {
+     try {
+       const tracks = existingVideo.srcObject.getTracks();
+       tracks.forEach(track => track.stop());
+       existingVideo.srcObject = null;
+     } catch (e) {
+       console.warn("Error stopping existing video:", e);
+     }
+   }
+   container.removeChild(existingVideo);
+ }
+}
+
+// 新しいカメラストリームを取得
+function getNewCameraStream(videoElement) {
+ if (!videoElement) return;
+ 
+ // カメラの設定
+ const constraints = { 
+   video: { 
+     facingMode: "environment", // exactなしでも背面カメラを優先
+     width: { ideal: window.innerWidth },
+     height: { ideal: window.innerHeight }
+   } 
+ };
+ 
+ console.log("Getting new camera for photo frame");
+ 
+ // カメラアクセスを要求
+ navigator.mediaDevices.getUserMedia(constraints)
+   .then(function(stream) {
+     console.log("Photo frame camera access successful");
+     
+     // ストリームを設定
+     videoElement.srcObject = stream;
+     
+     // 遅延してから再生
+     setTimeout(function() {
+       try {
+         videoElement.play()
+           .then(() => console.log("Photo frame video playing"))
+           .catch(e => console.warn("Photo frame video play error:", e));
+       } catch (e) {
+         console.warn("Photo frame video play exception:", e);
+       }
+     }, 300);
+   })
+   .catch(function(error) {
+     console.warn("Photo frame camera access error:", error);
+   });
+}
+
+// AR画面に戻る関数
+function returnToARMode() {
+ try {
+   console.log("Returning to AR mode");
+   
+   // フレームビデオのストリームを停止
+   const frameVideo = document.getElementById('frame-camera-view');
+   if (frameVideo && frameVideo.srcObject) {
+     try {
+       const tracks = frameVideo.srcObject.getTracks();
+       tracks.forEach(track => track.stop());
+       frameVideo.srcObject = null;
+     } catch (e) {
+       console.warn("Error stopping frame video:", e);
+     }
+   }
+   
+   // フォトフレームを非表示
+   document.getElementById('photo-frame-container').style.display = 'none';
+   
+   // ARコンテナを表示
+   const arContainer = document.getElementById('ar-container');
+   arContainer.style.display = 'block';
+   
+   // 湯気効果のクリーンアップ
+   if (steamGenerationInterval) {
+     clearInterval(steamGenerationInterval);
+     steamGenerationInterval = null;
+   }
+   
+   // メインカメラビューのチェック
+   const mainVideo = document.getElementById('camera-view');
+   if (mainVideo && !mainVideo.srcObject) {
+     // カメラが停止していたら再初期化
+     setTimeout(initCamera, 300);
+   }
+ } catch (e) {
+   console.warn("Return to AR error:", e);
+ }
+}
+
+// 湯気エフェクトの初期化 - Safariでの最適化
 function initSteamEffect() {
  const container = document.getElementById('enhanced-steam-container');
  if (!container) {
@@ -1358,8 +1573,8 @@ function initSteamEffect() {
    return;
  }
  
- // コンテナのスタイル改良 - 湯気の発生位置を上に
- container.style.top = '25%'; // 30%から25%に変更
+ // コンテナのスタイル
+ container.style.top = '25%';
  container.style.width = '350px';
  container.style.height = '300px';
  container.style.overflow = 'visible';
@@ -1415,7 +1630,7 @@ function initSteamEffect() {
  console.log("Steam effect initialized");
 }
 
-// 湯気パーティクル作成 - 元のアニメーション復活と最適化の両立
+// 湯気パーティクル作成 - Safariでも安定動作
 function createSteamParticle(container) {
  if (!container) return;
  
@@ -1436,8 +1651,8 @@ function createSteamParticle(container) {
  
  // 湯気のスタイル
  particle.style.background = `radial-gradient(circle at center, 
-                            rgba(255, 255, 255, 0.9) 0%, 
-                            rgba(255, 255, 255, 0.1) 70%)`;
+                           rgba(255, 255, 255, 0.9) 0%, 
+                           rgba(255, 255, 255, 0.1) 70%)`;
  particle.style.filter = 'blur(5px)';
  
  // アニメーション時間
@@ -1492,7 +1707,7 @@ function takePhoto() {
    }
    
    // 通常の撮影処理 - 非Safari
-   const video = document.getElementById('camera-view');
+   const video = document.getElementById('frame-camera-view');
    
    setTimeout(() => {
      // フラッシュ効果を消す
@@ -1503,7 +1718,7 @@ function takePhoto() {
        const canvas = document.createElement('canvas');
        
        // ビデオが動作している場合
-       if (video.videoWidth && video.videoHeight) {
+       if (video && video.videoWidth && video.videoHeight) {
          const width = video.videoWidth;
          const height = video.videoHeight;
          canvas.width = width;
