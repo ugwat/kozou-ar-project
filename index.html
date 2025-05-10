@@ -665,15 +665,15 @@ document.addEventListener("DOMContentLoaded", function() {
   // ARコンテナを表示
   document.getElementById('ar-container').style.display = 'block';
   
-  // フォトフレームボタンの作成（カード後に表示されるよう設定）
-  createPhotoFrameButton();
+  // カードを先に作成
+  console.log("Creating cards first");
+  createCards();
   
   // イベントリスナー設定
   setupEventListeners();
   
-  // カードを先に作成
-  console.log("Creating cards first");
-  createCards();
+  // フォトフレームボタンの作成（カード後に表示されるよう設定）
+  createPhotoFrameButton();
   
   // 画像のプリロード
   preloadImages(config.cardImages, function() {
@@ -682,10 +682,14 @@ document.addEventListener("DOMContentLoaded", function() {
     // カメラ初期化（メインビデオ要素も作成）
     // 失敗してもカードは表示済み
     initMainCamera();
+    
+    // 確実にボタン表示を更新
+    setTimeout(updatePhotoButtonVisibility, 500);
   });
   
   // クリーンアップ登録
   window.addEventListener('beforeunload', cleanupAllResources);
+  window.addEventListener('pagehide', cleanupAllResources);
 });
 
 // ビデオ要素の完全削除（安全策）
@@ -773,8 +777,17 @@ function getNewCameraStream(videoElement) {
       .then(function(stream) {
         console.log("Camera access successful");
         
-        // 遅延してからストリームを設定（Safari対策）
+        // Safari対策: 十分な遅延を設定
         setTimeout(function() {
+          if (videoElement.srcObject) {
+            try {
+              const oldTracks = videoElement.srcObject.getTracks();
+              oldTracks.forEach(t => {
+                if (t.readyState === 'live') t.stop();
+              });
+            } catch (e) {}
+          }
+          
           videoElement.srcObject = stream;
           
           // さらに遅延して再生（Safari対策）
@@ -782,18 +795,24 @@ function getNewCameraStream(videoElement) {
             videoElement.play()
               .then(function() {
                 console.log("Video playing successfully");
+                // ボタン表示を再確認
+                updatePhotoButtonVisibility();
               })
               .catch(function(e) {
                 console.warn("Video play error:", e);
               });
-          }, 200);
-        }, 100);
+          }, 300);
+        }, 200);
       })
       .catch(function(error) {
         console.warn("Camera access error:", error);
+        // エラー時もボタン表示を確認
+        updatePhotoButtonVisibility();
       });
   } catch (e) {
     console.warn("getUserMedia error:", e);
+    // 例外時もボタン表示を確認
+    updatePhotoButtonVisibility();
   }
 }
 
@@ -841,6 +860,22 @@ function setupEventListeners() {
     photoContainer.removeEventListener('click', photoFrameClickHandler);
     photoContainer.addEventListener('click', photoFrameClickHandler);
   }
+  
+  // ウィンドウ非表示時にもクリーンアップ
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      // タブ非表示時にもリソース解放
+      cleanupAllResources();
+    } else {
+      // 再表示時にカメラ再初期化
+      if (document.getElementById('ar-container').style.display !== 'none') {
+        setTimeout(function() {
+          initMainCamera();
+          setTimeout(updatePhotoButtonVisibility, 300);
+        }, 500);
+      }
+    }
+  });
 }
 
 // フォトフレームのクリックハンドラ
@@ -1028,7 +1063,13 @@ function updatePhotoButtonVisibility() {
   const photoFrameButton = document.getElementById('photo-frame-button');
   if (!photoFrameButton) return;
   
-  photoFrameButton.style.display = (activeCardIndex === 4) ? 'block' : 'none';
+  // 明示的な条件判定
+  if (activeCardIndex === 4) {
+    photoFrameButton.style.display = 'block';
+    console.log("Photo button should be visible");
+  } else {
+    photoFrameButton.style.display = 'none';
+  }
 }
 
 // カード位置更新 - 5枚目を特別処理
@@ -1234,6 +1275,9 @@ function completeSwipe() {
   
   // 位置更新
   updateCardPositions(0);
+  
+  // 明示的にボタン表示を更新
+  updatePhotoButtonVisibility();
 }
 
 // フォトフレーム表示
@@ -1252,7 +1296,7 @@ function showPhotoFrame() {
     const frameContainer = document.getElementById('photo-frame-container');
     frameContainer.style.display = 'block';
     
-    // メインビデオを移動
+    // メインビデオの処理
     if (mainVideoElement) {
       if (mainVideoElement.parentNode) {
         mainVideoElement.parentNode.removeChild(mainVideoElement);
@@ -1295,10 +1339,13 @@ function showPhotoFrame() {
     // ロゴクリックで戻る機能
     setupLogoClickToReturn();
     
-    // 戻るボタンを非表示
+    // 戻るボタンを表示
     const backButton = document.getElementById('back-button');
     if (backButton) {
-      backButton.style.display = 'none';
+      backButton.style.display = 'block';
+      backButton.onclick = function() {
+        returnToARMode();
+      };
     }
     
     isProcessing = false;
@@ -1355,6 +1402,9 @@ function returnToARMode() {
       steamGenerationInterval = null;
     }
     
+    // 最後にボタン表示を確認
+    setTimeout(updatePhotoButtonVisibility, 300);
+    
     isProcessing = false;
   } catch (e) {
     console.warn("Return to AR mode error:", e);
@@ -1387,225 +1437,224 @@ function initSteamEffect() {
   for (let i = 0; i < initialCount; i++) {
     setTimeout(() => createSteamParticle(container), i * 300);
   }
+  // パーティクル生成
+ const interval = isSafari() ? 1500 : 800;
+ steamGenerationInterval = setInterval(() => {
+   // パーティクル数確認
+   const existingParticles = container.querySelectorAll('.steam-particle');
+   const maxParticles = isSafari() ? 5 : 10;
+   
+   // 上限チェック
+   if (existingParticles.length > maxParticles) {
+     if (existingParticles[0] && existingParticles[0].parentNode) {
+       existingParticles[0].parentNode.removeChild(existingParticles[0]);
+     }
+   }
+   
+   // パーティクル追加
+   createSteamParticle(container);
+ }, interval);
+}
+
+// 湯気パーティクル作成
+function createSteamParticle(container) {
+if (!container) return;
+
+const particle = document.createElement('div');
+particle.className = 'steam-particle';
+
+// ランダム位置
+const startX = Math.random() * 120 - 60;
+particle.style.position = 'absolute';
+particle.style.bottom = '0';
+particle.style.left = `calc(50% + ${startX}px)`;
+
+// ランダムサイズ（Safariでは小さめ）
+const size = isSafari() ? 
+  (Math.random() * 30 + 30) : // 30px〜60px (Safari)
+  (Math.random() * 50 + 40);  // 40px〜90px (他)
+
+particle.style.width = `${size}px`;
+particle.style.height = `${size}px`;
+
+// スタイル設定
+particle.style.borderRadius = '50%';
+particle.style.background = `radial-gradient(circle at center, 
+                          rgba(255, 255, 255, 0.9) 0%, 
+                          rgba(255, 255, 255, 0.1) 70%)`;
+particle.style.filter = 'blur(5px)';
+
+// アニメーション時間
+const duration = isSafari() ? 
+  (Math.random() * 2 + 2) : // 2秒〜4秒 (Safari)
+  (Math.random() * 3 + 3);  // 3秒〜6秒 (他)
+
+// Safariでは簡易アニメーション
+if (isSafari()) {
+  particle.style.transition = `opacity ${duration}s, transform ${duration}s`;
+  particle.style.opacity = '0';
+  particle.style.transform = 'translateY(0) scale(0.1)';
+  
+  // 遅延してアニメーション開始
+  setTimeout(() => {
+    particle.style.opacity = '0.6';
+    particle.style.transform = `translateY(-${Math.random() * 100 + 100}px) scale(1.0)`;
+  }, 50);
+} else {
+  // 通常ブラウザではアニメーション
+  particle.style.animation = `steam-animation ${duration}s ease-out forwards`;
+  particle.style.opacity = '0';
+}
+
+// 要素追加
+container.appendChild(particle);
+
+// 終了時に削除
+setTimeout(() => {
+  if (particle && particle.parentNode) {
+    particle.parentNode.removeChild(particle);
+  }
+}, duration * 1000);
+}
+
+// 写真撮影
+function takePhoto() {
+// 処理中は無視
+if (isProcessing) return;
+isProcessing = true;
+
+try {
+  console.log("Taking photo");
+  
+  // フラッシュ効果
+  const shutterEffect = document.getElementById('shutter-effect');
+  if (shutterEffect) {
+    shutterEffect.style.opacity = '0.8';
+  }
+  
+  setTimeout(() => {
+    // フラッシュを消す
+    if (shutterEffect) {
+      shutterEffect.style.opacity = '0';
+    }
+    
+    // ビデオからキャプチャ
+    if (mainVideoElement && mainVideoElement.videoWidth && mainVideoElement.videoHeight) {
+      // キャンバス作成
+      const canvas = document.createElement('canvas');
+      const width = mainVideoElement.videoWidth;
+      const height = mainVideoElement.videoHeight;
+      canvas.width = width;
+      canvas.height = height;
+      
+      // フレーム描画
+      const context = canvas.getContext('2d');
+      context.drawImage(mainVideoElement, 0, 0, width, height);
+      
+      // 画像取得
+      try {
+        const imageDataURL = canvas.toDataURL('image/jpeg');
+        console.log("Photo captured successfully");
+        
+        // 撮影画像を表示
+        showCapturedImage(imageDataURL);
+      } catch (e) {
+        console.warn("Image conversion error:", e);
+        showCapturedImage(null);
+      }
+    } else {
+      console.warn("Video not ready for capture");
+      showCapturedImage(null);
+    }
+    
+    isProcessing = false;
+  }, 200);
+} catch (e) {
+  console.warn("Photo capture error:", e);
+  showCapturedImage(null);
+  isProcessing = false;
+}
+}
+
+// 撮影画像の表示
+function showCapturedImage(imageDataURL) {
+// ダミー画像（エラー時用）
+const imageSrc = imageDataURL || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+// 既存モーダル削除
+const existingModal = document.getElementById('photo-modal');
+if (existingModal) {
+  document.body.removeChild(existingModal);
+}
+
+// モーダル作成
+const photoModal = document.createElement('div');
+photoModal.id = 'photo-modal';
+photoModal.style.position = 'fixed';
+photoModal.style.top = '0';
+photoModal.style.left = '0';
+photoModal.style.width = '100%';
+photoModal.style.height = '100%';
+photoModal.style.backgroundColor = 'rgba(0,0,0,0.9)';
+photoModal.style.zIndex = '3000';
+photoModal.style.display = 'flex';
+photoModal.style.flexDirection = 'column';
+photoModal.style.alignItems = 'center';
+photoModal.style.justifyContent = 'center';
+
+// 画像表示
+const img = document.createElement('img');
+img.src = imageSrc;
+img.style.maxWidth = '90%';
+img.style.maxHeight = '70%';
+img.style.objectFit = 'contain';
+img.style.border = '2px solid rgba(0, 200, 255, 0.8)';
+img.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
+photoModal.appendChild(img);
+
+// 保存ボタン
+const saveButton = document.createElement('a');
+saveButton.href = imageSrc;
+saveButton.download = 'kozou-photo-' + Date.now() + '.jpg';
+saveButton.textContent = '写真を保存する';
+saveButton.style.display = 'block';
+saveButton.style.margin = '20px';
+saveButton.style.padding = '10px 20px';
+saveButton.style.backgroundColor = 'rgba(0, 200, 255, 0.8)';
+saveButton.style.color = 'white';
+saveButton.style.borderRadius = '5px';
+saveButton.style.textDecoration = 'none';
+saveButton.style.fontWeight = 'bold';
+saveButton.style.textAlign = 'center';
+saveButton.style.cursor = 'pointer';
+saveButton.style.boxShadow = '0 0 10px rgba(0, 200, 255, 0.5)';
+photoModal.appendChild(saveButton);
+
+// 閉じるボタン
+const closeButton = document.createElement('button');
+closeButton.textContent = '閉じる';
+closeButton.style.margin = '10px';
+closeButton.style.padding = '10px 20px';
+closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+closeButton.style.color = 'white';
+closeButton.style.borderRadius = '5px';
+closeButton.style.border = 'none';
+closeButton.style.cursor = 'pointer';
+closeButton.addEventListener('click', function() {
+  if (photoModal && photoModal.parentNode) {
+    photoModal.parentNode.removeChild(photoModal);
+  }
+});
+photoModal.appendChild(closeButton);
+
+// モーダル表示
+document.body.appendChild(photoModal);
+}
   
   // 既存インターバルをクリア
   if (steamGenerationInterval) {
     clearInterval(steamGenerationInterval);
   }
-  
-  // パーティクル生成
-  const interval = isSafari() ? 1500 : 800;
-  steamGenerationInterval = setInterval(() => {
-    // パーティクル数確認
-    const existingParticles = container.querySelectorAll('.steam-particle');
-    const maxParticles = isSafari() ? 5 : 10;
-    
-    // 上限チェック
-    if (existingParticles.length > maxParticles) {
-      if (existingParticles[0] && existingParticles[0].parentNode) {
-        existingParticles[0].parentNode.removeChild(existingParticles[0]);
-      }
-    }
-    
-    // パーティクル追加
-    createSteamParticle(container);
-  }, interval);
-}
-
-// 湯気パーティクル作成（続き）
-function createSteamParticle(container) {
- if (!container) return;
- 
- const particle = document.createElement('div');
- particle.className = 'steam-particle';
- 
- // ランダム位置
- const startX = Math.random() * 120 - 60;
- particle.style.position = 'absolute';
- particle.style.bottom = '0';
- particle.style.left = `calc(50% + ${startX}px)`;
- 
- // ランダムサイズ（Safariでは小さめ）
- const size = isSafari() ? 
-   (Math.random() * 30 + 30) : // 30px〜60px (Safari)
-   (Math.random() * 50 + 40);  // 40px〜90px (他)
- 
- particle.style.width = `${size}px`;
- particle.style.height = `${size}px`;
- 
- // スタイル設定
- particle.style.borderRadius = '50%';
- particle.style.background = `radial-gradient(circle at center, 
-                           rgba(255, 255, 255, 0.9) 0%, 
-                           rgba(255, 255, 255, 0.1) 70%)`;
- particle.style.filter = 'blur(5px)';
- 
- // アニメーション時間
- const duration = isSafari() ? 
-   (Math.random() * 2 + 2) : // 2秒〜4秒 (Safari)
-   (Math.random() * 3 + 3);  // 3秒〜6秒 (他)
- 
- // Safariでは簡易アニメーション
- if (isSafari()) {
-   particle.style.transition = `opacity ${duration}s, transform ${duration}s`;
-   particle.style.opacity = '0';
-   particle.style.transform = 'translateY(0) scale(0.1)';
-   
-   // 遅延してアニメーション開始
-   setTimeout(() => {
-     particle.style.opacity = '0.6';
-     particle.style.transform = `translateY(-${Math.random() * 100 + 100}px) scale(1.0)`;
-   }, 50);
- } else {
-   // 通常ブラウザではアニメーション
-   particle.style.animation = `steam-animation ${duration}s ease-out forwards`;
-   particle.style.opacity = '0';
- }
- 
- // 要素追加
- container.appendChild(particle);
- 
- // 終了時に削除
- setTimeout(() => {
-   if (particle && particle.parentNode) {
-     particle.parentNode.removeChild(particle);
-   }
- }, duration * 1000);
-}
-
-// 写真撮影
-function takePhoto() {
- // 処理中は無視
- if (isProcessing) return;
- isProcessing = true;
- 
- try {
-   console.log("Taking photo");
-   
-   // フラッシュ効果
-   const shutterEffect = document.getElementById('shutter-effect');
-   if (shutterEffect) {
-     shutterEffect.style.opacity = '0.8';
-   }
-   
-   setTimeout(() => {
-     // フラッシュを消す
-     if (shutterEffect) {
-       shutterEffect.style.opacity = '0';
-     }
-     
-     // ビデオからキャプチャ
-     if (mainVideoElement && mainVideoElement.videoWidth && mainVideoElement.videoHeight) {
-       // キャンバス作成
-       const canvas = document.createElement('canvas');
-       const width = mainVideoElement.videoWidth;
-       const height = mainVideoElement.videoHeight;
-       canvas.width = width;
-       canvas.height = height;
-       
-       // フレーム描画
-       const context = canvas.getContext('2d');
-       context.drawImage(mainVideoElement, 0, 0, width, height);
-       
-       // 画像取得
-       try {
-         const imageDataURL = canvas.toDataURL('image/jpeg');
-         console.log("Photo captured successfully");
-         
-         // 撮影画像を表示
-         showCapturedImage(imageDataURL);
-       } catch (e) {
-         console.warn("Image conversion error:", e);
-         showCapturedImage(null);
-       }
-     } else {
-       console.warn("Video not ready for capture");
-       showCapturedImage(null);
-     }
-     
-     isProcessing = false;
-   }, 200);
- } catch (e) {
-   console.warn("Photo capture error:", e);
-   showCapturedImage(null);
-   isProcessing = false;
- }
-}
-
-// 撮影画像の表示
-function showCapturedImage(imageDataURL) {
- // ダミー画像（エラー時用）
- const imageSrc = imageDataURL || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
- 
- // 既存モーダル削除
- const existingModal = document.getElementById('photo-modal');
- if (existingModal) {
-   document.body.removeChild(existingModal);
- }
- 
- // モーダル作成
- const photoModal = document.createElement('div');
- photoModal.id = 'photo-modal';
- photoModal.style.position = 'fixed';
- photoModal.style.top = '0';
- photoModal.style.left = '0';
- photoModal.style.width = '100%';
- photoModal.style.height = '100%';
- photoModal.style.backgroundColor = 'rgba(0,0,0,0.9)';
- photoModal.style.zIndex = '3000';
- photoModal.style.display = 'flex';
- photoModal.style.flexDirection = 'column';
- photoModal.style.alignItems = 'center';
- photoModal.style.justifyContent = 'center';
- 
- // 画像表示
- const img = document.createElement('img');
- img.src = imageSrc;
- img.style.maxWidth = '90%';
- img.style.maxHeight = '70%';
- img.style.objectFit = 'contain';
- img.style.border = '2px solid rgba(0, 200, 255, 0.8)';
- img.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
- photoModal.appendChild(img);
- 
- // 保存ボタン
- const saveButton = document.createElement('a');
- saveButton.href = imageSrc;
- saveButton.download = 'kozou-photo-' + Date.now() + '.jpg';
- saveButton.textContent = '写真を保存する';
- saveButton.style.display = 'block';
- saveButton.style.margin = '20px';
- saveButton.style.padding = '10px 20px';
- saveButton.style.backgroundColor = 'rgba(0, 200, 255, 0.8)';
- saveButton.style.color = 'white';
- saveButton.style.borderRadius = '5px';
- saveButton.style.textDecoration = 'none';
- saveButton.style.fontWeight = 'bold';
- saveButton.style.textAlign = 'center';
- saveButton.style.cursor = 'pointer';
- saveButton.style.boxShadow = '0 0 10px rgba(0, 200, 255, 0.5)';
- photoModal.appendChild(saveButton);
- 
- // 閉じるボタン
- const closeButton = document.createElement('button');
- closeButton.textContent = '閉じる';
- closeButton.style.margin = '10px';
- closeButton.style.padding = '10px 20px';
- closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
- closeButton.style.color = 'white';
- closeButton.style.borderRadius = '5px';
- closeButton.style.border = 'none';
- closeButton.style.cursor = 'pointer';
- closeButton.addEventListener('click', function() {
-   if (photoModal && photoModal.parentNode) {
-     photoModal.parentNode.removeChild(photoModal);
-   }
- });
- photoModal.appendChild(closeButton);
- 
- // モーダル表示
- document.body.appendChild(photoModal);
-}
 </script>
 </body>
 </html>
