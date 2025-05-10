@@ -626,9 +626,15 @@ function isSafari() {
          /iphone|ipod|ipad/i.test(ua);
 }
 
-console.log("Script loaded, Safari mode: " + isSafari());
+// iOS判定
+function isiOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
 
-// グローバル変数 - シンプルに整理
+console.log("Script loaded, Safari mode: " + isSafari() + ", iOS mode: " + isiOS());
+
+// グローバル変数
 let activeCardIndex = 0;
 let isSwipeEnabled = false;
 let startX = 0;
@@ -638,6 +644,7 @@ let canTakePhoto = false;
 let isProcessing = false;
 let steamGenerationInterval = null;
 let cameraStream = null; // グローバルなカメラストリーム参照
+let isCameraInitialized = false;
 
 // 設定
 const config = {
@@ -655,114 +662,155 @@ const config = {
   ]
 };
 
-// 初期化 - 完全にリライト
+// 初期化 - 完全リライト
 document.addEventListener("DOMContentLoaded", function() {
   console.log("DOM loaded");
   
-  // 1. レイヤー構造の準備 - ここが重要
-  setupAppLayers();
+  // まずビデオ要素を作成
+  createVideoElement();
   
-  // 2. カード作成
+  // 次にカードとUIを初期化
   createCards();
-  
-  // 3. イベントリスナー設定
-  setupEventListeners();
-  
-  // 4. フォトフレームボタン作成
+  setupEventListeners(); 
   createPhotoFrameButton();
   
-  // 5. 画像プリロード
+  // カメラ初期化を試みる - ユーザージェスチャなしでも許可されるケース用
+  setTimeout(initCameraIfNeeded, 1000);
+  
+  // 画像のプリロードは並行して行う
   preloadImages(config.cardImages, function() {
     console.log("Images preloaded");
-    
-    // 6. カメラ初期化 (プリロード完了後)
-    initCamera();
+    // プリロードが完了したらカードのアニメーションを開始
+    animateCards();
   });
+  
+  // ARコンテナとフォトフレームコンテナのセットアップ
+  setupContainers();
 });
 
-// アプリのレイヤー構造を設定
-function setupAppLayers() {
-  const body = document.body;
+// メインのビデオ要素を作成
+function createVideoElement() {
+  // 既存のビデオ要素があれば削除（念のため）
+  const existingVideo = document.getElementById('main-camera-feed');
+  if (existingVideo && existingVideo.parentNode) {
+    if (existingVideo.srcObject) {
+      try {
+        const tracks = existingVideo.srcObject.getTracks();
+        tracks.forEach(track => track.stop());
+      } catch (e) {}
+    }
+    existingVideo.parentNode.removeChild(existingVideo);
+  }
   
-  // 既存のARコンテナとフォトフレームコンテナ
+  // 新しいビデオ要素の作成
+  const videoElement = document.createElement('video');
+  videoElement.id = 'main-camera-feed';
+  videoElement.autoplay = true;
+  videoElement.playsinline = true;
+  videoElement.muted = true;
+  videoElement.style.position = 'fixed'; // body直下での固定配置
+  videoElement.style.top = '0';
+  videoElement.style.left = '0';
+  videoElement.style.width = '100%';
+  videoElement.style.height = '100%';
+  videoElement.style.objectFit = 'cover';
+  videoElement.style.zIndex = '1'; // 最背面
+  
+  // iOSでの特別な対応
+  if (isiOS()) {
+    videoElement.style.transform = 'translateZ(0)'; // ハードウェアアクセラレーション強制
+    videoElement.setAttribute('webkit-playsinline', 'true'); // 古いiOS対策
+  }
+  
+  // body直下の最初の要素として追加（重要：常にDOMに存在させる）
+  document.body.insertBefore(videoElement, document.body.firstChild);
+  
+  console.log("Video element created successfully");
+}
+
+// コンテナのセットアップ
+function setupContainers() {
   const arContainer = document.getElementById('ar-container');
   const photoContainer = document.getElementById('photo-frame-container');
   
-  // メインカメラフィードの作成 (一番下のレイヤー)
-  const cameraFeed = document.createElement('video');
-  cameraFeed.id = 'main-camera-feed';
-  cameraFeed.autoplay = true;
-  cameraFeed.playsinline = true;
-  cameraFeed.muted = true;
-  cameraFeed.style.position = 'absolute';
-  cameraFeed.style.top = '0';
-  cameraFeed.style.left = '0';
-  cameraFeed.style.width = '100%';
-  cameraFeed.style.height = '100%';
-  cameraFeed.style.objectFit = 'cover';
-  cameraFeed.style.zIndex = '1';
+  if (arContainer) {
+    arContainer.style.position = 'fixed';
+    arContainer.style.top = '0';
+    arContainer.style.left = '0'; 
+    arContainer.style.width = '100%';
+    arContainer.style.height = '100%';
+    arContainer.style.zIndex = '10';
+    arContainer.style.background = 'transparent';
+    arContainer.style.display = 'block';
+  }
   
-  // 重要: bodyに直接追加してDOMツリーの最上位に
-  body.insertBefore(cameraFeed, body.firstChild);
-  
-  // ARとフォトフレームのレイヤー構造を調整
-  arContainer.style.zIndex = '10';
-  arContainer.style.position = 'absolute';
-  arContainer.style.top = '0';
-  arContainer.style.left = '0';
-  arContainer.style.width = '100%';
-  arContainer.style.height = '100%';
-  arContainer.style.background = 'transparent';
-  arContainer.style.display = 'block';
-  
-  photoContainer.style.zIndex = '20';
-  photoContainer.style.position = 'absolute';
-  photoContainer.style.top = '0';
-  photoContainer.style.left = '0';
-  photoContainer.style.width = '100%';
-  photoContainer.style.height = '100%';
-  photoContainer.style.background = 'transparent';
-  photoContainer.style.display = 'none';
-  
-  // 重要: 既存のビデオ要素があれば削除 (新しい構造に合わせる)
-  const oldVideos = document.querySelectorAll('video:not(#main-camera-feed)');
-  oldVideos.forEach(video => {
-    if (video.srcObject) {
-      const tracks = video.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
-    }
-    if (video.parentNode) {
-      video.parentNode.removeChild(video);
-    }
-  });
+  if (photoContainer) {
+    photoContainer.style.position = 'fixed';
+    photoContainer.style.top = '0';
+    photoContainer.style.left = '0';
+    photoContainer.style.width = '100%';
+    photoContainer.style.height = '100%';
+    photoContainer.style.zIndex = '20';
+    photoContainer.style.background = 'transparent';
+    photoContainer.style.display = 'none';
+  }
 }
 
-// カメラ初期化 - 一度だけストリーム取得
+// 必要に応じてカメラを初期化
+function initCameraIfNeeded() {
+  if (!isCameraInitialized && !cameraStream) {
+    // カメラ初期化を試みる
+    initCamera();
+  }
+}
+
+// カメラ初期化 - 改良版
 function initCamera() {
-  // すでにストリームが存在する場合は再利用
-  if (cameraStream) {
-    const videoElement = document.getElementById('main-camera-feed');
-    if (videoElement) {
-      videoElement.srcObject = cameraStream;
-      
-      // 念のため再生状態を確認
-      if (videoElement.paused) {
-        videoElement.play().catch(e => console.warn("Video play error:", e));
-      }
-      
-      // アニメーション開始
-      animateCards();
-    }
+  console.log("Initializing camera...");
+  
+  // iOS特有の処理
+  const isIOSDevice = isiOS();
+  const videoElement = document.getElementById('main-camera-feed');
+  
+  if (!videoElement) {
+    console.error("Video element not found!");
     return;
   }
   
-  // ストリームがなければ新規取得
-  const constraints = { 
+  // 既存ストリームのクリーンアップ
+  if (cameraStream) {
+    try {
+      const tracks = cameraStream.getTracks();
+      tracks.forEach(track => {
+        if (track.readyState === 'live') {
+          track.stop();
+        }
+      });
+      cameraStream = null;
+    } catch (e) {
+      console.warn("Error stopping existing stream:", e);
+    }
+  }
+  
+  if (videoElement.srcObject) {
+    try {
+      const tracks = videoElement.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
+      videoElement.srcObject = null;
+    } catch (e) {}
+  }
+  
+  // カメラの制約設定
+  const constraints = {
     video: { 
-      facingMode: "environment" 
-    } 
+      facingMode: "environment",
+      // iOSでは解像度を低めに設定してパフォーマンス改善
+      width: isIOSDevice ? { ideal: 1280, max: 1920 } : { ideal: 1920 },
+      height: isIOSDevice ? { ideal: 720, max: 1080 } : { ideal: 1080 }
+    }
   };
   
+  // iOS Safariでの許可ダイアログ対策
   navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
       console.log("Camera access successful");
@@ -770,30 +818,50 @@ function initCamera() {
       // グローバル変数に保存
       cameraStream = stream;
       
-      const videoElement = document.getElementById('main-camera-feed');
-      if (videoElement) {
-        videoElement.srcObject = stream;
-        
-        // iOS Safariでは特に遅延が必要なことがある
-        setTimeout(function() {
-          videoElement.play()
-            .then(function() {
-              console.log("Video playing successfully");
-              // カードアニメーション開始
-              animateCards();
-            })
-            .catch(function(e) {
-              console.warn("Video play error:", e);
-              // エラーでもカードは表示
-              animateCards();
-            });
-        }, isSafari() ? 200 : 0);
-      }
+      // iOS Safariでは遅延して割り当て
+      const delay = isIOSDevice ? 300 : 0;
+      setTimeout(function() {
+        try {
+          // iOS Safariではsrcを一度クリアしてから再設定
+          if (isIOSDevice) {
+            videoElement.src = "";
+          }
+          
+          videoElement.srcObject = stream;
+          
+          // 再生準備完了イベント
+          videoElement.onloadedmetadata = function() {
+            // iOSではユーザージェスチャがなくても再生可能なように
+            videoElement.muted = true;
+            
+            videoElement.play()
+              .then(function() {
+                console.log("Video playing successfully");
+                isCameraInitialized = true;
+              })
+              .catch(function(err) {
+                console.warn("Error playing video:", err);
+                
+                // iOSで自動再生に失敗した場合、1回だけ再試行
+                if (isIOSDevice) {
+                  setTimeout(function() {
+                    videoElement.play().catch(e => console.warn("Retry play failed:", e));
+                  }, 500);
+                }
+              });
+          };
+        } catch (e) {
+          console.error("Error setting video source:", e);
+        }
+      }, delay);
     })
     .catch(function(error) {
       console.warn("Camera access error:", error);
-      // カメラなしでもカードは表示
-      animateCards();
+      
+      // カメラアクセスが拒否または利用不可の場合もカードアニメーション実行
+      if (!isSwipeEnabled) {
+        animateCards();
+      }
     });
 }
 
@@ -820,20 +888,27 @@ function setupEventListeners() {
     backButton.addEventListener('click', returnToARMode);
   }
   
-  // ページ離脱時のクリーンアップ
-  window.addEventListener('beforeunload', cleanupResources);
-  window.addEventListener('pagehide', cleanupResources);
+  // ページ全体のクリックでカメラ初期化（ユーザージェスチャ要件）
+  document.body.addEventListener('click', function() {
+    if (!isCameraInitialized) {
+      initCameraIfNeeded();
+    }
+  }, { once: true });
   
-  // iOS SafariでビデオがバックグラウンドでPauseされた場合の対応
+  // iOS Safariでビデオが停止した場合の対応
   document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
-      // ページが再表示されたらビデオの再生を確認
+      // ページが再表示されたらビデオの再生を再開
       const videoElement = document.getElementById('main-camera-feed');
       if (videoElement && videoElement.paused && videoElement.srcObject) {
         videoElement.play().catch(e => console.warn("Video resume error:", e));
       }
     }
   });
+  
+  // ページ離脱時のクリーンアップ
+  window.addEventListener('beforeunload', cleanupResources);
+  window.addEventListener('pagehide', cleanupResources);
 }
 
 // ポップアップ閉じるハンドラー
@@ -845,10 +920,7 @@ function popupCloseHandler() {
 
 // フォトフレームクリックハンドラー
 function photoFrameClickHandler(e) {
-  // 処理中は無視
-  if (isProcessing) return;
-  
-  // ターゲット要素のチェック
+  // 特定の要素のクリックは無視
   if (e.target.id === 'back-button' || 
       e.target.id === 'popup-close-button' ||
       document.getElementById('photo-instruction-popup').style.display !== 'none') {
@@ -1020,8 +1092,19 @@ function createPhotoFrameButton() {
   photoFrameButton.style.border = '2px solid rgba(255, 255, 0, 1)';
   photoFrameButton.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
   
-  // クリックイベント
-  photoFrameButton.addEventListener('click', showPhotoFrame);
+  // クリックイベント - iOS用にユーザージェスチャでカメラ初期化
+  photoFrameButton.addEventListener('click', function() {
+    // カメラが初期化されていない場合は初期化
+    if (!isCameraInitialized) {
+      initCamera();
+      
+      // カメラ初期化後に少し待ってからフォトフレームを表示
+      setTimeout(showPhotoFrame, 500);
+    } else {
+      // すでに初期化されていればすぐに表示
+      showPhotoFrame();
+    }
+  });
   
   // ARコンテナに追加
   document.getElementById('ar-container').appendChild(photoFrameButton);
@@ -1252,7 +1335,7 @@ function completeSwipe() {
 function showPhotoFrame() {
   console.log("Showing photo frame");
   
-  // 重要: videoは移動せず、両レイヤーの表示状態だけを切り替え
+  // レイヤー切替（DOM移動なし）
   const arContainer = document.getElementById('ar-container');
   const photoContainer = document.getElementById('photo-frame-container');
   
@@ -1262,11 +1345,18 @@ function showPhotoFrame() {
   // フォトフレームコンテナを表示
   photoContainer.style.display = 'block';
   
-  // ビデオの再生状態を確認
+  // ビデオのz-indexを調整（AR向けの1からフォトフレーム向けの5に）
   const videoElement = document.getElementById('main-camera-feed');
-  if (videoElement && videoElement.paused && videoElement.srcObject) {
-    // ビデオが停止していれば再開を試みる
-    videoElement.play().catch(e => console.warn("Video play error in photo frame:", e));
+  if (videoElement) {
+    videoElement.style.zIndex = '5';
+    
+    // iOS Safariの場合は、念のためストリームを確認
+    if (isiOS() && (!videoElement.srcObject || videoElement.paused)) {
+      if (cameraStream) {
+        videoElement.srcObject = cameraStream;
+      }
+      videoElement.play().catch(e => console.warn("Video play error in photo frame:", e));
+    }
   }
   
   // 説明ポップアップを表示
@@ -1285,11 +1375,11 @@ function showPhotoFrame() {
   }
 }
 
-// ARモードに戻る - 完全に書き直し
+// ARモードに戻る - 修正版
 function returnToARMode() {
   console.log("Returning to AR mode");
   
-  // 重要: videoは移動せず、両レイヤーの表示状態だけを切り替え
+  // レイヤー切替（DOM移動なし）
   const arContainer = document.getElementById('ar-container');
   const photoContainer = document.getElementById('photo-frame-container');
   
@@ -1299,106 +1389,125 @@ function returnToARMode() {
   // ARコンテナを表示
   arContainer.style.display = 'block';
   
-  // ビデオの再生状態を確認
+  // ビデオのz-indexを元に戻す（フォトフレーム用の5からAR用の1に）
   const videoElement = document.getElementById('main-camera-feed');
-  if (videoElement && videoElement.paused && videoElement.srcObject) {
-    // ビデオが停止していれば再開を試みる
-    videoElement.play().catch(e => console.warn("Video play error in AR mode:", e));
-  }
-  
-  // 湯気効果のクリーンアップ
-  if (steamGenerationInterval) {
-    clearInterval(steamGenerationInterval);
-    steamGenerationInterval = null;
-  }
-  
-  // ボタン表示を更新
-  updatePhotoButtonVisibility();
+  if (videoElement) {
+    videoElement.style.zIndex = '1';
+    
+    // iOS Safariの場合は、念のためストリームを確認
+   if (isiOS() && (!videoElement.srcObject || videoElement.paused)) {
+     if (cameraStream) {
+       videoElement.srcObject = cameraStream;
+     }
+     videoElement.play().catch(e => console.warn("Video play error in AR mode:", e));
+   }
+ }
+ 
+ // 湯気効果のクリーンアップ
+ if (steamGenerationInterval) {
+   clearInterval(steamGenerationInterval);
+   steamGenerationInterval = null;
+ }
+ 
+ // ボタン表示を更新
+ updatePhotoButtonVisibility();
 }
 
-// 湯気エフェクト初期化
+// 湯気エフェクト初期化 - 最適化版
 function initSteamEffect() {
-  const container = document.getElementById('enhanced-steam-container');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  
-  // 発光効果
-  const glow = document.createElement('div');
-  glow.className = 'steam-glow';
-  container.appendChild(glow);
-  
-  // 初期パーティクル
-  const initialCount = isSafari() ? 2 : 3;
-  for (let i = 0; i < initialCount; i++) {
-    setTimeout(() => createSteamParticle(container), i * 300);
-  }
-  
-  // 既存インターバルをクリア
-  if (steamGenerationInterval) {
-    clearInterval(steamGenerationInterval);
-  }
-  
-  // パーティクル生成（パフォーマンス考慮）
-  const interval = isSafari() ? 1500 : 800;
-  steamGenerationInterval = setInterval(() => {
-    // パーティクル数確認
-    const existingParticles = container.querySelectorAll('.steam-particle');
-    const maxParticles = isSafari() ? 3 : 5; // 少なめに設定
-    
-    if (existingParticles.length > maxParticles) {
-      if (existingParticles[0] && existingParticles[0].parentNode) {
-        existingParticles[0].parentNode.removeChild(existingParticles[0]);
-      }
-    }
-    
-    createSteamParticle(container);
-  }, interval);
+ const container = document.getElementById('enhanced-steam-container');
+ if (!container) return;
+ 
+ container.innerHTML = '';
+ 
+ // 発光効果
+ const glow = document.createElement('div');
+ glow.className = 'steam-glow';
+ container.appendChild(glow);
+ 
+ // 初期パーティクル（Safariでは少なめに）
+ const initialCount = isiOS() ? 1 : 2;
+ for (let i = 0; i < initialCount; i++) {
+   setTimeout(() => createSteamParticle(container), i * 300);
+ }
+ 
+ // 既存インターバルをクリア
+ if (steamGenerationInterval) {
+   clearInterval(steamGenerationInterval);
+ }
+ 
+ // パーティクル生成（iOSではさらに軽量化）
+ const interval = isiOS() ? 2000 : (isSafari() ? 1500 : 800);
+ const maxParticles = isiOS() ? 2 : (isSafari() ? 3 : 5);
+ 
+ steamGenerationInterval = setInterval(() => {
+   // パーティクル数確認
+   const existingParticles = container.querySelectorAll('.steam-particle');
+   
+   if (existingParticles.length > maxParticles) {
+     // 最も古いパーティクルを削除
+     if (existingParticles[0] && existingParticles[0].parentNode) {
+       existingParticles[0].parentNode.removeChild(existingParticles[0]);
+     }
+   }
+   
+   createSteamParticle(container);
+ }, interval);
 }
 
-// 湯気パーティクル作成
+// 湯気パーティクル作成 - 最適化版
 function createSteamParticle(container) {
-  if (!container) return;
-  
-  const particle = document.createElement('div');
-  particle.className = 'steam-particle';
-  
-  // ランダム位置
-  const startX = Math.random() * 120 - 60;
-  particle.style.left = `calc(50% + ${startX}px)`;
-  
-  // ランダムサイズ
-  const size = isSafari() ? (Math.random() * 30 + 30) : (Math.random() * 50 + 40);
-  particle.style.width = `${size}px`;
-  particle.style.height = `${size}px`;
-  
-  // Safariでは簡易アニメーション
-  if (isSafari()) {
-    particle.style.transition = `opacity ${Math.random() * 2 + 2}s, transform ${Math.random() * 2 + 2}s`;
-    particle.style.opacity = '0';
-    particle.style.transform = 'translateY(0) scale(0.1)';
-    
-    setTimeout(() => {
-      particle.style.opacity = '0.6';
-      particle.style.transform = `translateY(-${Math.random() * 100 + 100}px) scale(1.0)`;
-    }, 50);
-  } else {
-    // 通常ブラウザではアニメーション
-    particle.style.animation = `steam-animation ${Math.random() * 3 + 3}s ease-out forwards`;
+ if (!container) return;
+ 
+ const particle = document.createElement('div');
+ particle.className = 'steam-particle';
+ 
+ // ランダム位置
+ const startX = Math.random() * 100 - 50; // スコープ縮小
+ particle.style.left = `calc(50% + ${startX}px)`;
+ 
+ // ランダムサイズ（iOSではさらに小さく）
+ const size = isiOS() ? 
+   (Math.random() * 20 + 20) : // 20px〜40px (iOS)
+   (isSafari() ? 
+     (Math.random() * 30 + 30) : // 30px〜60px (Safari)
+     (Math.random() * 50 + 40)   // 40px〜90px (その他)
+   );
+ 
+ particle.style.width = `${size}px`;
+ particle.style.height = `${size}px`;
+ 
+ // iOS/Safariでは簡易アニメーション
+ if (isiOS() || isSafari()) {
+   // トランジションベースのアニメーション
+   const duration = isiOS() ? (Math.random() * 1.5 + 1.5) : (Math.random() * 2 + 2);
+   particle.style.transition = `opacity ${duration}s, transform ${duration}s`;
+   particle.style.opacity = '0';
+   particle.style.transform = 'translateY(0) scale(0.1)';
+   
+   // 少し遅延してアニメーション開始
+   setTimeout(() => {
+     particle.style.opacity = '0.6';
+     particle.style.transform = `translateY(-${Math.random() * 80 + 80}px) scale(1.0)`;
+   }, 50);
+ } else {
+   // 通常ブラウザではCSSアニメーション
+   particle.style.animation = `steam-animation ${Math.random() * 3 + 3}s ease-out forwards`;
  }
  
  // 要素追加
  container.appendChild(particle);
  
- // 終了時に削除
+ // 終了時に削除（メモリリーク防止）
+ const duration = isiOS() ? 3000 : 5000;
  setTimeout(() => {
    if (particle && particle.parentNode) {
      particle.parentNode.removeChild(particle);
    }
- }, 5000);
+ }, duration);
 }
 
-// 写真撮影 - 修正済み
+// 写真撮影 - パフォーマンス最適化版
 function takePhoto() {
  if (isProcessing) return;
  isProcessing = true;
@@ -1411,20 +1520,21 @@ function takePhoto() {
    shutterEffect.style.opacity = '0.8';
  }
  
+ // 撮影処理は少し遅延して実行
  setTimeout(() => {
-   // フラッシュを消す
-   if (shutterEffect) {
-     shutterEffect.style.opacity = '0';
-   }
-   
-   // メインカメラフィードからキャプチャ
-   const videoElement = document.getElementById('main-camera-feed');
-   if (videoElement && videoElement.videoWidth && videoElement.videoHeight) {
-     try {
-       // キャンバス作成
+   try {
+     // フラッシュを消す
+     if (shutterEffect) {
+       shutterEffect.style.opacity = '0';
+     }
+     
+     // メインカメラフィードからキャプチャ
+     const videoElement = document.getElementById('main-camera-feed');
+     if (videoElement && videoElement.videoWidth && videoElement.videoHeight) {
+       // キャンバス作成 - iOSでは解像度を下げる
        const canvas = document.createElement('canvas');
-       const width = videoElement.videoWidth;
-       const height = videoElement.videoHeight;
+       const width = isiOS() ? Math.min(videoElement.videoWidth, 1280) : videoElement.videoWidth;
+       const height = isiOS() ? Math.min(videoElement.videoHeight, 720) : videoElement.videoHeight;
        canvas.width = width;
        canvas.height = height;
        
@@ -1432,9 +1542,15 @@ function takePhoto() {
        const context = canvas.getContext('2d');
        context.drawImage(videoElement, 0, 0, width, height);
        
-       // 画像取得
+       // 画像取得（iOS向けに品質調整）
        try {
-         const imageDataURL = canvas.toDataURL('image/jpeg');
+         // iOSでは品質を下げて処理負荷軽減
+         const quality = isiOS() ? 0.7 : 0.9;
+         const imageDataURL = canvas.toDataURL('image/jpeg', quality);
+         
+         // メモリ解放
+         context.clearRect(0, 0, width, height);
+         
          console.log("Photo captured successfully");
          
          // 撮影画像を表示
@@ -1443,20 +1559,20 @@ function takePhoto() {
          console.warn("Image conversion error:", e);
          showCapturedImage(null);
        }
-     } catch (e) {
-       console.warn("Canvas operation error:", e);
+     } else {
+       console.warn("Video not ready for capture");
        showCapturedImage(null);
      }
-   } else {
-     console.warn("Video not ready for capture");
+   } catch (e) {
+     console.warn("Photo capture error:", e);
      showCapturedImage(null);
+   } finally {
+     isProcessing = false;
    }
-   
-   isProcessing = false;
  }, 200);
 }
 
-// 撮影画像の表示
+// 撮影画像の表示 - 最適化版
 function showCapturedImage(imageDataURL) {
  // ダミー画像（エラー時用）
  const imageSrc = imageDataURL || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
