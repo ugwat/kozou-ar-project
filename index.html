@@ -845,25 +845,32 @@ function setupEventListeners() {
       
       // ポップアップを閉じたら撮影可能に
       canTakePhoto = true;
+      console.log("Popup closed, canTakePhoto set to:", canTakePhoto);
     });
   }
   
   // フォトフレーム画面でのタップイベント
   const photoContainer = document.getElementById('photo-frame-container');
   if (photoContainer) {
-    photoContainer.addEventListener('click', function(e) {
-      // ポップアップ表示中かBackボタンのクリック時は何もしない
-      if (!canTakePhoto || 
-          e.target === document.getElementById('back-button') || 
-          e.target === document.getElementById('popup-close-button') ||
-          document.getElementById('photo-instruction-popup').style.display !== 'none') {
-        return;
-      }
-      
-      // 撮影処理
-      takePhoto();
-    });
+    photoContainer.addEventListener('click', photoContainerClickHandler);
   }
+}
+
+// フォトフレームコンテナのクリックハンドラ
+function photoContainerClickHandler(e) {
+  console.log("Photo container clicked, canTakePhoto:", canTakePhoto);
+  
+  // ポップアップ表示中かBackボタンのクリック時は何もしない
+  if (!canTakePhoto || 
+      e.target === document.getElementById('back-button') || 
+      e.target === document.getElementById('popup-close-button') ||
+      document.getElementById('photo-instruction-popup').style.display !== 'none') {
+    console.log("Click ignored - conditions not met");
+    return;
+  }
+  
+  // 撮影処理
+  takePhoto();
 }
 
 function initAR() {
@@ -1326,7 +1333,6 @@ function setupSwipeEvents() {
     updateCardPositions(0);
     setTimeout(simulateFloat, 100);
   }, options);
-  
   // マウスイベント - iOSではあまり関係ないが、PC用に残す
  // Safariではマウスイベントを軽量化
  if (!isSafari()) {
@@ -1443,6 +1449,7 @@ function showPhotoFrame() {
    
    // 撮影可能フラグをリセット
    canTakePhoto = false;
+   console.log("canTakePhoto set to false on frame init");
    
    // ロゴをクリックで戻れるようにイベントリスナー追加
    const logoContainer = document.getElementById('logo-container');
@@ -1689,7 +1696,7 @@ function createSteamParticle(container) {
  }, duration * 1000);
 }
 
-// 写真撮影処理 - Safariでの最適化
+// 写真撮影処理 - 画像保存機能付き
 function takePhoto() {
  try {
    console.log("Photo taking process started");
@@ -1701,7 +1708,7 @@ function takePhoto() {
    if (isSafari()) {
      setTimeout(() => {
        shutterEffect.style.opacity = '0';
-       alert("写真を撮影しました！");
+       showCapturedImage(null); // ダミー画像として表示
      }, 200);
      return;
    }
@@ -1733,27 +1740,91 @@ function takePhoto() {
            const imageDataURL = canvas.toDataURL('image/jpeg');
            console.log("Photo capture successful", imageDataURL.substring(0, 30) + "...");
            
-           // 撮影成功メッセージ
-           alert("写真を撮影しました！");
-           
+           // 撮影画像を表示して保存できるように
+           showCapturedImage(imageDataURL);
          } catch (e) {
            console.warn("Image conversion error:", e);
-           alert("写真撮影しました！");
+           showCapturedImage(null); // エラー時はダミー画像
          }
        } else {
          console.warn("Video is not playing");
-         alert("写真撮影しました！");
+         showCapturedImage(null); // ビデオ非アクティブ時はダミー画像
        }
      } catch (e) {
        console.warn("Camera capture error:", e);
-       alert("写真撮影しました！");
+       showCapturedImage(null); // キャプチャエラー時はダミー画像
      }
    }, 200); // フラッシュ効果の表示時間
  } catch (e) {
    console.warn("Photo taking error:", e);
-   alert("撮影しました！");
+   showCapturedImage(null); // エラー時はダミー画像
  }
 }
+
+// 撮影した画像をモーダルで表示し保存できるようにする
+function showCapturedImage(imageDataURL) {
+ // 画像データがない場合はダミー画像を使用（Safari対応）
+ const imageSrc = imageDataURL || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+ 
+ // モーダルを作成
+ const photoModal = document.createElement('div');
+ photoModal.style.position = 'fixed';
+ photoModal.style.top = '0';
+ photoModal.style.left = '0';
+ photoModal.style.width = '100%';
+ photoModal.style.height = '100%';
+ photoModal.style.backgroundColor = 'rgba(0,0,0,0.9)';
+ photoModal.style.zIndex = '3000';
+ photoModal.style.display = 'flex';
+ photoModal.style.flexDirection = 'column';
+ photoModal.style.alignItems = 'center';
+ photoModal.style.justifyContent = 'center';
+ 
+ // 画像表示
+ const img = document.createElement('img');
+ img.src = imageSrc;
+ img.style.maxWidth = '90%';
+ img.style.maxHeight = '70%';
+ img.style.objectFit = 'contain';
+ img.style.border = '2px solid rgba(0, 200, 255, 0.8)';
+ img.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
+ photoModal.appendChild(img);
+ 
+ // 保存ボタン - Safariでもダウンロードリンクとして機能
+ const saveButton = document.createElement('a');
+ saveButton.href = imageSrc;
+ saveButton.download = 'kozou-photo-' + Date.now() + '.jpg';
+ saveButton.textContent = '写真を保存する';
+ saveButton.style.display = 'block';
+ saveButton.style.margin = '20px';
+ saveButton.style.padding = '10px 20px';
+ saveButton.style.backgroundColor = 'rgba(0, 200, 255, 0.8)';
+ saveButton.style.color = 'white';
+ saveButton.style.borderRadius = '5px';
+ saveButton.style.textDecoration = 'none';
+ saveButton.style.fontWeight = 'bold';
+ saveButton.style.textAlign = 'center';
+ saveButton.style.cursor = 'pointer';
+ saveButton.style.boxShadow = '0 0 10px rgba(0, 200, 255, 0.5)';
+ photoModal.appendChild(saveButton);
+ 
+ // 閉じるボタン
+ const closeButton = document.createElement('button');
+ closeButton.textContent = '閉じる';
+ closeButton.style.margin = '10px';
+ closeButton.style.padding = '10px 20px';
+ closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+ closeButton.style.color = 'white';
+ closeButton.style.borderRadius = '5px';
+ closeButton.style.border = 'none';
+ closeButton.style.cursor = 'pointer';
+ closeButton.addEventListener('click', function() {
+   document.body.removeChild(photoModal);
+ });
+ photoModal.appendChild(closeButton);
+ 
+ document.body.appendChild(photoModal);
+}// マウスイベント - iOSではあまり関係
 </script>
 </body>
 </html>
