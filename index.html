@@ -599,31 +599,31 @@
 <script>
  // 基本設定 - 変更なし
 window.ShowOneChild = window.ShowOneChild || {
-  readRenderPromptFromStorage: function() { return null; },
-  getRenderPrompt: function() { return null; },
-  render: function() { return null; }
+ readRenderPromptFromStorage: function() { return null; },
+ getRenderPrompt: function() { return null; },
+ render: function() { return null; }
 };
 
 if (window.localStorage && !window.localStorage.getWithTTL) {
-  window.localStorage.getWithTTL = function(key) {
-    return window.localStorage.getItem(key);
-  };
+ window.localStorage.getWithTTL = function(key) {
+   return window.localStorage.getItem(key);
+ };
 }
 
 // エラー抑制
 window.addEventListener('error', function(e) {
-  if (e && e.message && typeof e.message === 'string' && 
-     (e.message.includes('ChromeMethodBFE') || e.message.includes('Unable to create writable file'))) {
-    console.warn('IO error suppressed:', e.message);
-    return true;
-  }
+ if (e && e.message && typeof e.message === 'string' && 
+    (e.message.includes('ChromeMethodBFE') || e.message.includes('Unable to create writable file'))) {
+   console.warn('IO error suppressed:', e.message);
+   return true;
+ }
 }, true);
 
 // Safari判定
 function isSafari() {
-  const ua = navigator.userAgent.toLowerCase();
-  return (ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1) || 
-         /iphone|ipod|ipad/i.test(ua);
+ const ua = navigator.userAgent.toLowerCase();
+ return (ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1) || 
+        /iphone|ipod|ipad/i.test(ua);
 }
 
 console.log("Script loaded, Safari mode: " + isSafari());
@@ -641,1020 +641,832 @@ let steamGenerationInterval = null;
 
 // 設定
 const config = {
-  cardSpacing: 360,
-  swipeSensitivity: 200,
-  cardRotation: 30,
-  centerZ: -400,
-  cardCount: 5,
-  cardImages: [
-    './assets/c1.png',
-    './assets/c2.png',
-    './assets/c3.png',
-    './assets/c4.png',
-    './assets/c5.png'
-  ]
+ cardSpacing: 360,
+ swipeSensitivity: 200,
+ cardRotation: 30,
+ centerZ: -400,
+ cardCount: 5,
+ cardImages: [
+   './assets/c1.png',
+   './assets/c2.png',
+   './assets/c3.png',
+   './assets/c4.png',
+   './assets/c5.png'
+ ]
 };
 
 // 初期化 - シンプルに整理
 document.addEventListener("DOMContentLoaded", function() {
-  console.log("DOM loaded");
-  
-  // 起動前にビデオ要素をすべて削除・クリーンアップ
-  removeAllVideoElements();
-  
-  // ARコンテナを表示
-  document.getElementById('ar-container').style.display = 'block';
-  
-  // カードを先に作成
-  console.log("Creating cards first");
-  createCards();
-  
-  // イベントリスナー設定
-  setupEventListeners();
-  
-  // フォトフレームボタンの作成（カード後に表示されるよう設定）
-  createPhotoFrameButton();
-  
-  // 画像のプリロード
-  preloadImages(config.cardImages, function() {
-    console.log("Images preloaded");
-    
-    // カメラ初期化（メインビデオ要素も作成）
-    // 失敗してもカードは表示済み
-    initMainCamera();
-    
-    // 確実にボタン表示を更新
-    setTimeout(updatePhotoButtonVisibility, 500);
-  });
-  
-  // クリーンアップ登録
-  window.addEventListener('beforeunload', cleanupAllResources);
-  window.addEventListener('pagehide', cleanupAllResources);
+ console.log("DOM loaded");
+ 
+ // ARコンテナを表示
+ document.getElementById('ar-container').style.display = 'block';
+ 
+ // カード作成を先に行う
+ createCards();
+ 
+ // イベントリスナー設定
+ setupEventListeners();
+ 
+ // フォトフレームボタンの作成
+ createPhotoFrameButton();
+ 
+ // 画像のプリロード
+ preloadImages(config.cardImages, function() {
+   console.log("Images preloaded");
+   
+   // カメラ初期化
+   initCamera();
+ });
 });
 
-// ビデオ要素の完全削除（安全策）
-function removeAllVideoElements() {
-  document.querySelectorAll('video').forEach(video => {
-    if (video.srcObject) {
-      try {
-        const tracks = video.srcObject.getTracks();
-        tracks.forEach(track => track.stop());
-        video.srcObject = null;
-        video.load(); // メモリを解放
-      } catch (e) {}
-    }
-    if (video.parentNode) {
-      video.parentNode.removeChild(video);
-    }
-  });
-  
-  // グローバル変数もクリア
-  mainVideoElement = null;
-}
-
-// メイン画面のカメラ初期化
-function initMainCamera() {
-  console.log("Initializing main camera");
-  
-  // まず単一のビデオ要素を作成
-  if (!mainVideoElement) {
-    mainVideoElement = document.createElement('video');
-    mainVideoElement.id = 'main-video-element'; // IDは統一
-    mainVideoElement.autoplay = true;
-    mainVideoElement.playsinline = true;
-    mainVideoElement.muted = true;
-    mainVideoElement.style.position = 'absolute';
-    mainVideoElement.style.top = '0';
-    mainVideoElement.style.left = '0';
-    mainVideoElement.style.width = '100%';
-    mainVideoElement.style.height = '100%';
-    mainVideoElement.style.objectFit = 'cover';
-    mainVideoElement.style.zIndex = '10';
-    
-    // ARコンテナに追加
-    document.getElementById('ar-container').appendChild(mainVideoElement);
-  }
-  
-  // カメラストリームを取得
-  getNewCameraStream(mainVideoElement);
-}
-
-// 新しいカメラストリームを取得
-function getNewCameraStream(videoElement) {
-  if (!videoElement) {
-    console.warn("No video element provided");
-    return;
-  }
-  
-  // 既存ストリームを停止
-  if (videoElement.srcObject) {
-    try {
-      const tracks = videoElement.srcObject.getTracks();
-      tracks.forEach(track => {
-        if (track.readyState === 'live') {
-          track.stop();
-        }
-      });
-      videoElement.srcObject = null;
-      videoElement.load(); // メモリ解放を促進
-    } catch (e) {
-      console.warn("Error stopping stream:", e);
-    }
-  }
-  
-  // カメラ設定 - Safariでも動作する設定
-  const constraints = { 
-    video: { 
-      facingMode: "environment" // exactは使わない（より安定）
-    } 
-  };
-  
-  console.log("Getting camera stream");
-  
-  // ストリーム取得
-  try {
-    navigator.mediaDevices.getUserMedia(constraints)
-      .then(function(stream) {
-        console.log("Camera access successful");
-        
-        // Safari対策: 十分な遅延を設定
-        setTimeout(function() {
-          if (videoElement.srcObject) {
-            try {
-              const oldTracks = videoElement.srcObject.getTracks();
-              oldTracks.forEach(t => {
-                if (t.readyState === 'live') t.stop();
-              });
-            } catch (e) {}
-          }
-          
-          videoElement.srcObject = stream;
-          
-          // さらに遅延して再生（Safari対策）
-          setTimeout(function() {
-            videoElement.play()
-              .then(function() {
-                console.log("Video playing successfully");
-                // ボタン表示を再確認
-                updatePhotoButtonVisibility();
-              })
-              .catch(function(e) {
-                console.warn("Video play error:", e);
-              });
-          }, 300);
-        }, 200);
-      })
-      .catch(function(error) {
-        console.warn("Camera access error:", error);
-        // エラー時もボタン表示を確認
-        updatePhotoButtonVisibility();
-      });
-  } catch (e) {
-    console.warn("getUserMedia error:", e);
-    // 例外時もボタン表示を確認
-    updatePhotoButtonVisibility();
-  }
+// カメラの初期化（一度だけ）
+function initCamera() {
+ console.log("Initializing camera");
+ 
+ if (!mainVideoElement) {
+   mainVideoElement = document.createElement('video');
+   mainVideoElement.id = 'main-video-element';
+   mainVideoElement.autoplay = true;
+   mainVideoElement.playsinline = true;
+   mainVideoElement.muted = true;
+   mainVideoElement.style.position = 'absolute';
+   mainVideoElement.style.top = '0';
+   mainVideoElement.style.left = '0';
+   mainVideoElement.style.width = '100%';
+   mainVideoElement.style.height = '100%';
+   mainVideoElement.style.objectFit = 'cover';
+   mainVideoElement.style.zIndex = '10';
+   
+   document.getElementById('ar-container').appendChild(mainVideoElement);
+ }
+ 
+ // スマホの背面カメラを優先
+ const constraints = { 
+   video: { 
+     facingMode: "environment"
+   } 
+ };
+ 
+ if (mainVideoElement.srcObject) {
+   try {
+     const tracks = mainVideoElement.srcObject.getTracks();
+     tracks.forEach(track => track.stop());
+     mainVideoElement.srcObject = null;
+   } catch (e) {
+     console.warn("Error stopping existing stream:", e);
+   }
+ }
+ 
+ navigator.mediaDevices.getUserMedia(constraints)
+   .then(function(stream) {
+     console.log("Camera access successful");
+     
+     setTimeout(function() {
+       mainVideoElement.srcObject = stream;
+       mainVideoElement.play()
+         .then(function() {
+           console.log("Video playing successfully");
+           // カードアニメーション開始
+           animateCards();
+         })
+         .catch(function(e) {
+           console.warn("Video play error:", e);
+           // エラーでもカードは表示
+           animateCards();
+         });
+     }, isSafari() ? 200 : 0);
+   })
+   .catch(function(error) {
+     console.warn("Camera access error:", error);
+     // カメラエラーでもカードは表示
+     animateCards();
+   });
 }
 
 // 画像プリロード
 function preloadImages(images, callback) {
-  if (!images || images.length === 0) {
-    if (callback) callback();
-    return;
-  }
-  
-  let loaded = 0;
-  let errors = 0;
-  const total = images.length;
-  
-  function checkComplete() {
-    if (loaded + errors >= total) {
-      if (callback) callback();
-    }
-  }
-  
-  images.forEach(function(src) {
-    const img = new Image();
-    img.onload = function() { loaded++; checkComplete(); };
-    img.onerror = function() { errors++; checkComplete(); };
-    img.src = src;
-  });
+ if (!images || images.length === 0) {
+   if (callback) callback();
+   return;
+ }
+ 
+ let loaded = 0;
+ let errors = 0;
+ const total = images.length;
+ 
+ function checkComplete() {
+   if (loaded + errors >= total) {
+     if (callback) callback();
+   }
+ }
+ 
+ images.forEach(function(src) {
+   const img = new Image();
+   img.onload = function() { loaded++; checkComplete(); };
+   img.onerror = function() { errors++; checkComplete(); };
+   img.src = src;
+ });
 }
 
 // イベントリスナー設定
 function setupEventListeners() {
-  // ポップアップの閉じるボタン
-  const closeButton = document.getElementById('popup-close-button');
-  if (closeButton) {
-    closeButton.addEventListener('click', function() {
-      document.getElementById('photo-instruction-popup').style.display = 'none';
-      canTakePhoto = true;
-      console.log("Popup closed, canTakePhoto:", canTakePhoto);
-    });
-  }
-  
-  // フォトフレームでのタップ
-  const photoContainer = document.getElementById('photo-frame-container');
-  if (photoContainer) {
-    // 既存のリスナーを削除して再設定
-    photoContainer.removeEventListener('click', photoFrameClickHandler);
-    photoContainer.addEventListener('click', photoFrameClickHandler);
-  }
-  
-  // ウィンドウ非表示時にもクリーンアップ
-  document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-      // タブ非表示時にもリソース解放
-      cleanupAllResources();
-    } else {
-      // 再表示時にカメラ再初期化
-      if (document.getElementById('ar-container').style.display !== 'none') {
-        setTimeout(function() {
-          initMainCamera();
-          setTimeout(updatePhotoButtonVisibility, 300);
-        }, 500);
-      }
-    }
-  });
-}
-
-// フォトフレームのクリックハンドラ
-function photoFrameClickHandler(e) {
-  // 処理中は無視
-  if (isProcessing) return;
-  
-  // 撮影条件の確認
-  if (!canTakePhoto || 
-      e.target.id === 'back-button' || 
-      e.target.id === 'popup-close-button' ||
-      document.getElementById('photo-instruction-popup').style.display !== 'none') {
-    return;
-  }
-  
-  // 撮影処理
-  takePhoto();
+ // ポップアップの閉じるボタン
+ const closeButton = document.getElementById('popup-close-button');
+ if (closeButton) {
+   closeButton.addEventListener('click', function() {
+     document.getElementById('photo-instruction-popup').style.display = 'none';
+     canTakePhoto = true;
+   });
+ }
+ 
+ // フォトフレームでのタップ
+ const photoContainer = document.getElementById('photo-frame-container');
+ if (photoContainer) {
+   photoContainer.addEventListener('click', function(e) {
+     // 撮影条件の確認
+     if (!canTakePhoto || 
+         e.target.id === 'back-button' || 
+         e.target.id === 'popup-close-button' ||
+         document.getElementById('photo-instruction-popup').style.display !== 'none') {
+       return;
+     }
+     
+     // 撮影処理
+     takePhoto();
+   });
+ }
+ 
+ // 戻るボタン
+ const backButton = document.getElementById('back-button');
+ if (backButton) {
+   backButton.addEventListener('click', function() {
+     returnToARMode();
+   });
+ }
+ 
+ // ページ離脱時のクリーンアップ
+ window.addEventListener('beforeunload', cleanupResources);
 }
 
 // リソースクリーンアップ
-function cleanupAllResources() {
-  console.log("Cleaning up all resources");
-  
-  // 湯気エフェクトをクリア
-  if (steamGenerationInterval) {
-    clearInterval(steamGenerationInterval);
-    steamGenerationInterval = null;
-  }
-  
-  // ビデオストリームを停止
-  if (mainVideoElement && mainVideoElement.srcObject) {
-    try {
-      const tracks = mainVideoElement.srcObject.getTracks();
-      tracks.forEach(track => {
-        if (track.readyState === 'live') {
-          track.stop();
-        }
-      });
-      mainVideoElement.srcObject = null;
-      mainVideoElement.load();
-      
-      // 念のため削除
-      if (mainVideoElement.parentNode) {
-        mainVideoElement.parentNode.removeChild(mainVideoElement);
-      }
-      mainVideoElement = null;
-    } catch (e) {
-      console.warn("Error cleaning up video:", e);
-    }
-  }
-  
-  // その他のクリーンアップ
-  const steamContainer = document.getElementById('enhanced-steam-container');
-  if (steamContainer) {
-    steamContainer.innerHTML = '';
-  }
+function cleanupResources() {
+ console.log("Cleaning up resources");
+ 
+ // 湯気エフェクトをクリア
+ if (steamGenerationInterval) {
+   clearInterval(steamGenerationInterval);
+   steamGenerationInterval = null;
+ }
+ 
+ // ビデオストリームを停止
+ if (mainVideoElement && mainVideoElement.srcObject) {
+   try {
+     const tracks = mainVideoElement.srcObject.getTracks();
+     tracks.forEach(track => {
+       if (track.readyState === 'live') {
+         track.stop();
+       }
+     });
+     mainVideoElement.srcObject = null;
+   } catch (e) {
+     console.warn("Error cleaning up video:", e);
+   }
+ }
 }
 
-// カード作成 - カメラと独立
+// カード作成
 function createCards() {
-  const carousel = document.querySelector('.carousel');
-  if (!carousel) {
-    console.warn("Carousel element not found");
-    return;
-  }
-  
-  carousel.innerHTML = '';
-  
-  // カード作成
-  for (let i = 0; i < config.cardCount; i++) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'card-wrapper';
-    wrapper.dataset.index = i;
-    
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.dataset.cardType = i + 1;
-    
-    // カード番号
-    const cardNumber = document.createElement('div');
-    cardNumber.className = 'card-number';
-    cardNumber.textContent = (i + 1).toString();
-    cardNumber.style.position = 'absolute';
-    cardNumber.style.top = '-40px';
-    cardNumber.style.left = '50%';
-    cardNumber.style.transform = 'translateX(-50%)';
-    cardNumber.style.backgroundColor = 'rgba(0, 200, 255, 0.3)';
-    cardNumber.style.color = 'white';
-    cardNumber.style.fontWeight = 'bold';
-    cardNumber.style.fontSize = '28px';
-    cardNumber.style.width = '50px';
-    cardNumber.style.height = '50px';
-    cardNumber.style.borderRadius = '50%';
-    cardNumber.style.display = 'flex';
-    cardNumber.style.justifyContent = 'center';
-    cardNumber.style.alignItems = 'center';
-    cardNumber.style.zIndex = '100';
-    cardNumber.style.border = '2px solid rgba(0, 200, 255, 0.8)';
-    cardNumber.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.7)';
-    cardNumber.style.textShadow = '0 0 8px rgba(0, 200, 255, 1)';
-    cardNumber.style.fontFamily = 'Arial, sans-serif';
-    
-    wrapper.appendChild(cardNumber);
-    wrapper.appendChild(card);
-    carousel.appendChild(wrapper);
-  }
-  
-  // カードの初期位置
-  updateCardPositions();
-  
-  // スワイプイベント設定
-  setupSwipeEvents();
-  
-  // カード成長アニメーション
-  animateCards();
+ const carousel = document.querySelector('.carousel');
+ if (!carousel) {
+   console.warn("Carousel element not found");
+   return;
+ }
+ 
+ carousel.innerHTML = '';
+ 
+ // カード作成
+ for (let i = 0; i < config.cardCount; i++) {
+   const wrapper = document.createElement('div');
+   wrapper.className = 'card-wrapper';
+   wrapper.dataset.index = i;
+   
+   const card = document.createElement('div');
+   card.className = 'card';
+   card.dataset.cardType = i + 1;
+   
+   // カード番号
+   const cardNumber = document.createElement('div');
+   cardNumber.className = 'card-number';
+   cardNumber.textContent = (i + 1).toString();
+   cardNumber.style.position = 'absolute';
+   cardNumber.style.top = '-40px';
+   cardNumber.style.left = '50%';
+   cardNumber.style.transform = 'translateX(-50%)';
+   cardNumber.style.backgroundColor = 'rgba(0, 200, 255, 0.3)';
+   cardNumber.style.color = 'white';
+   cardNumber.style.fontWeight = 'bold';
+   cardNumber.style.fontSize = '28px';
+   cardNumber.style.width = '50px';
+   cardNumber.style.height = '50px';
+   cardNumber.style.borderRadius = '50%';
+   cardNumber.style.display = 'flex';
+   cardNumber.style.justifyContent = 'center';
+   cardNumber.style.alignItems = 'center';
+   cardNumber.style.zIndex = '100';
+   cardNumber.style.border = '2px solid rgba(0, 200, 255, 0.8)';
+   cardNumber.style.boxShadow = '0 0 15px rgba(0, 200, 255, 0.7)';
+   cardNumber.style.textShadow = '0 0 8px rgba(0, 200, 255, 1)';
+   cardNumber.style.fontFamily = 'Arial, sans-serif';
+   
+   wrapper.appendChild(cardNumber);
+   wrapper.appendChild(card);
+   carousel.appendChild(wrapper);
+ }
+ 
+ // カードの初期位置
+ updateCardPositions();
+ 
+ // スワイプイベント設定
+ setupSwipeEvents();
 }
 
 // カード成長アニメーション
 function animateCards() {
-  const cards = document.querySelectorAll('.card');
-  
-  // 成長アニメーション
-  cards.forEach((card, i) => {
-    setTimeout(() => {
-      card.style.height = '589.2px';
-      card.style.opacity = '1';
-    }, i * 200);
-  });
-  
-  // スワイプ有効化
-  setTimeout(() => {
-    isSwipeEnabled = true;
-    console.log("Cards animation complete, swipe enabled");
-    updatePhotoButtonVisibility();
-  }, 1500);
+ const cards = document.querySelectorAll('.card');
+ 
+ // 成長アニメーション
+ cards.forEach((card, i) => {
+   setTimeout(() => {
+     card.style.height = '589.2px';
+     card.style.opacity = '1';
+   }, i * 200);
+ });
+ 
+ // スワイプ有効化
+ setTimeout(() => {
+   isSwipeEnabled = true;
+   console.log("Cards animation complete, swipe enabled");
+   updatePhotoButtonVisibility();
+ }, 1500);
 }
 
 // フォトフレームボタン
 function createPhotoFrameButton() {
-  // 既存ボタンを削除
-  const existingButton = document.getElementById('photo-frame-button');
-  if (existingButton && existingButton.parentNode) {
-    existingButton.parentNode.removeChild(existingButton);
-  }
-  
-  // ボタン作成
-  const photoFrameButton = document.createElement('div');
-  photoFrameButton.id = 'photo-frame-button';
-  photoFrameButton.innerHTML = '📷 フォトフレームを表示';
-  photoFrameButton.style.position = 'absolute';
-  photoFrameButton.style.bottom = '15%';
-  photoFrameButton.style.left = '50%';
-  photoFrameButton.style.transform = 'translateX(-50%)';
-  photoFrameButton.style.width = '80%';
-  photoFrameButton.style.height = '50px';
-  photoFrameButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
-  photoFrameButton.style.color = '#000';
-  photoFrameButton.style.fontFamily = '"Hiragino Kaku Gothic ProN", "メイリオ", sans-serif';
-  photoFrameButton.style.fontSize = '18px';
-  photoFrameButton.style.fontWeight = 'bold';
-  photoFrameButton.style.textAlign = 'center';
-  photoFrameButton.style.lineHeight = '50px';
-  photoFrameButton.style.cursor = 'pointer';
-  photoFrameButton.style.zIndex = '9999';
-  photoFrameButton.style.display = 'none';
-  photoFrameButton.style.border = '2px solid rgba(255, 255, 0, 1)';
-  photoFrameButton.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
-  
-  // クリックイベント
-  photoFrameButton.addEventListener('click', function() {
-    showPhotoFrame();
-  });
-  
-  photoFrameButton.addEventListener('touchend', function(e) {
-    e.preventDefault();
-    showPhotoFrame();
-  });
-  
-  // ARコンテナに追加
-  document.getElementById('ar-container').appendChild(photoFrameButton);
+ // 既存ボタンを削除
+ const existingButton = document.getElementById('photo-frame-button');
+ if (existingButton && existingButton.parentNode) {
+   existingButton.parentNode.removeChild(existingButton);
+ }
+ 
+ // ボタン作成
+ const photoFrameButton = document.createElement('div');
+ photoFrameButton.id = 'photo-frame-button';
+ photoFrameButton.innerHTML = '📷 フォトフレームを表示';
+ photoFrameButton.style.position = 'absolute';
+ photoFrameButton.style.bottom = '15%';
+ photoFrameButton.style.left = '50%';
+ photoFrameButton.style.transform = 'translateX(-50%)';
+ photoFrameButton.style.width = '80%';
+ photoFrameButton.style.height = '50px';
+ photoFrameButton.style.backgroundColor = 'rgba(255, 255, 0, 0.9)';
+ photoFrameButton.style.color = '#000';
+ photoFrameButton.style.fontFamily = '"Hiragino Kaku Gothic ProN", "メイリオ", sans-serif';
+ photoFrameButton.style.fontSize = '18px';
+ photoFrameButton.style.fontWeight = 'bold';
+ photoFrameButton.style.textAlign = 'center';
+ photoFrameButton.style.lineHeight = '50px';
+ photoFrameButton.style.cursor = 'pointer';
+ photoFrameButton.style.zIndex = '9999';
+ photoFrameButton.style.display = 'none';
+ photoFrameButton.style.border = '2px solid rgba(255, 255, 0, 1)';
+ photoFrameButton.style.boxShadow = '0 0 15px rgba(255, 255, 0, 0.7)';
+ 
+ // クリックイベント
+ photoFrameButton.addEventListener('click', function() {
+   showPhotoFrame();
+ });
+ 
+ // ARコンテナに追加
+ document.getElementById('ar-container').appendChild(photoFrameButton);
 }
 
 // ボタン表示更新
 function updatePhotoButtonVisibility() {
-  const photoFrameButton = document.getElementById('photo-frame-button');
-  if (!photoFrameButton) return;
-  
-  // 明示的な条件判定
-  if (activeCardIndex === 4) {
-    photoFrameButton.style.display = 'block';
-    console.log("Photo button should be visible");
-  } else {
-    photoFrameButton.style.display = 'none';
-  }
+ const photoFrameButton = document.getElementById('photo-frame-button');
+ if (!photoFrameButton) return;
+ 
+ if (activeCardIndex === 4) {
+   photoFrameButton.style.display = 'block';
+   console.log("Photo button visible");
+ } else {
+   photoFrameButton.style.display = 'none';
+ }
 }
 
 // カード位置更新 - 5枚目を特別処理
 function updateCardPositions(offsetRatio = 0) {
-  // 処理中は無視
-  if (isProcessing) return;
-  isProcessing = true;
-  
-  try {
-    const wrappers = document.querySelectorAll('.card-wrapper');
-    if (!wrappers || wrappers.length === 0) {
-      isProcessing = false;
-      return;
-    }
-    
-    // クラスリセット
-    wrappers.forEach(wrapper => {
-      wrapper.classList.remove('center', 'left', 'right');
-    });
-    
-    // 5枚目表示フラグ
-    const isLastCard = activeCardIndex === config.cardCount - 1;
-    
-    // カード配置
-    wrappers.forEach((wrapper, i) => {
-      // 5枚目特別処理
-      if (isLastCard) {
-        // 5枚目表示時の配置
-        if (i === activeCardIndex) {
-          // 中央（5枚目）
-          wrapper.style.transform = `translateX(0px) translateZ(${config.centerZ}px) rotateY(0deg) scale(1.0)`;
-          wrapper.style.opacity = 1;
-          wrapper.style.zIndex = 100;
-          wrapper.classList.add('center');
-        } else if (i === activeCardIndex - 1 || (i === config.cardCount - 1 && activeCardIndex === 0)) {
-          // 左側（4枚目）
-          wrapper.style.transform = `translateX(-${config.cardSpacing}px) translateZ(${config.centerZ - 100}px) rotateY(${config.cardRotation}deg) scale(0.8)`;
-          wrapper.style.opacity = 0.7;
-          wrapper.style.zIndex = 90;
-          wrapper.classList.add('left');
-        } else {
-          // その他（非表示）
-          wrapper.style.transform = `translateX(-${config.cardSpacing * 2}px) translateZ(${config.centerZ - 200}px) rotateY(${config.cardRotation * 2}deg) scale(0.6)`;
-          wrapper.style.opacity = 0.4;
-          wrapper.style.zIndex = 80;
-          wrapper.classList.add('left');
-        }
-      } else {
-        // 通常のカード表示
-        let relativePos = i - activeCardIndex - offsetRatio;
-        
-        // 循環調整
-        if (relativePos < -2) relativePos += config.cardCount;
-        if (relativePos > 2) relativePos -= config.cardCount;
-        
-        // 位置計算
-        const xPos = relativePos * config.cardSpacing;
-        const zPos = config.centerZ - Math.abs(relativePos) * 100;
-        const rotationY = relativePos * config.cardRotation;
-        const scale = 1.0 - Math.abs(relativePos) * 0.2;
-        const opacity = 1 - Math.abs(relativePos) * 0.3;
-        
-        // スタイル適用
-        wrapper.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg) scale(${scale})`;
-        wrapper.style.opacity = opacity;
-        wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
-        
-        // クラス設定
-        if (Math.abs(relativePos) < 0.5) {
-          wrapper.classList.add('center');
-        } else if (relativePos < 0) {
-          wrapper.classList.add('left');
-        } else {
-          wrapper.classList.add('right');
-        }
-      }
-    });
-    
-    // ボタン表示更新
-    updatePhotoButtonVisibility();
-  } catch (e) {
-    console.warn("Card position update error:", e);
-  } finally {
-    isProcessing = false;
-  }
+ // 処理中は無視
+ if (isProcessing) return;
+ isProcessing = true;
+ 
+ try {
+   const wrappers = document.querySelectorAll('.card-wrapper');
+   if (!wrappers || wrappers.length === 0) {
+     isProcessing = false;
+     return;
+   }
+   
+   // クラスリセット
+   wrappers.forEach(wrapper => {
+     wrapper.classList.remove('center', 'left', 'right');
+   });
+   
+   // 5枚目表示フラグ
+   const isLastCard = activeCardIndex === config.cardCount - 1;
+   
+   // カード配置
+   wrappers.forEach((wrapper, i) => {
+     // 5枚目特別処理
+     if (isLastCard) {
+       // 5枚目表示時の配置
+       if (i === activeCardIndex) {
+         // 中央（5枚目）
+         wrapper.style.transform = `translateX(0px) translateZ(${config.centerZ}px) rotateY(0deg) scale(1.0)`;
+         wrapper.style.opacity = 1;
+         wrapper.style.zIndex = 100;
+         wrapper.classList.add('center');
+       } else if (i === activeCardIndex - 1 || (i === config.cardCount - 1 && activeCardIndex === 0)) {
+         // 左側（4枚目）
+         wrapper.style.transform = `translateX(-${config.cardSpacing}px) translateZ(${config.centerZ - 100}px) rotateY(${config.cardRotation}deg) scale(0.8)`;
+         wrapper.style.opacity = 0.7;
+         wrapper.style.zIndex = 90;
+         wrapper.classList.add('left');
+       } else {
+         // その他（非表示）
+         wrapper.style.transform = `translateX(-${config.cardSpacing * 2}px) translateZ(${config.centerZ - 200}px) rotateY(${config.cardRotation * 2}deg) scale(0.6)`;
+         wrapper.style.opacity = 0.4;
+         wrapper.style.zIndex = 80;
+         wrapper.classList.add('left');
+       }
+     } else {
+       // 通常のカード表示
+       let relativePos = i - activeCardIndex - offsetRatio;
+       
+       // 循環調整
+       if (relativePos < -2) relativePos += config.cardCount;
+       if (relativePos > 2) relativePos -= config.cardCount;
+       
+       // 位置計算
+       const xPos = relativePos * config.cardSpacing;
+       const zPos = config.centerZ - Math.abs(relativePos) * 100;
+       const rotationY = relativePos * config.cardRotation;
+       const scale = 1.0 - Math.abs(relativePos) * 0.2;
+       const opacity = 1 - Math.abs(relativePos) * 0.3;
+       
+       // スタイル適用
+       wrapper.style.transform = `translateX(${xPos}px) translateZ(${zPos}px) rotateY(${rotationY}deg) scale(${scale})`;
+       wrapper.style.opacity = opacity;
+       wrapper.style.zIndex = Math.floor(100 - Math.abs(relativePos) * 10);
+       
+       // クラス設定
+       if (Math.abs(relativePos) < 0.5) {
+         wrapper.classList.add('center');
+       } else if (relativePos < 0) {
+         wrapper.classList.add('left');
+       } else {
+         wrapper.classList.add('right');
+       }
+     }
+   });
+ } catch (e) {
+   console.warn("Card position update error:", e);
+ } finally {
+   isProcessing = false;
+   
+   // ボタン表示更新
+   updatePhotoButtonVisibility();
+ }
 }
 
 // スワイプイベント
 function setupSwipeEvents() {
-  // オプション
-  const options = isSafari() ? {} : { passive: true };
-  
-  // アクティブタッチポインタ
-  let activePointerId = null;
-  
-  // タッチイベント
-  document.addEventListener('touchstart', function(e) {
-    if (!isSwipeEnabled || isProcessing) return;
-    
-    // タッチ追跡
-    activePointerId = e.touches[0].identifier;
-    startX = e.touches[0].clientX;
-    currentX = startX;
-    isSwiping = true;
-  }, options);
-  
-  document.addEventListener('touchmove', function(e) {
-    if (!isSwipeEnabled || !isSwiping || isProcessing) return;
-    
-    // タッチを特定
-    let touchIndex = -1;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === activePointerId) {
-        touchIndex = i;
-        break;
-      }
-    }
-    
-    if (touchIndex === -1) return;
-    
-    // 位置更新
-    currentX = e.changedTouches[touchIndex].clientX;
-    const diffX = currentX - startX;
-    const offsetRatio = diffX / config.swipeSensitivity;
-    
-    requestAnimationFrame(() => updateCardPositions(offsetRatio));
-  }, options);
-  
-  document.addEventListener('touchend', function(e) {
-    if (!isSwipeEnabled || !isSwiping || isProcessing) return;
-    
-    // タッチを特定
-    let touchIndex = -1;
-    for (let i = 0; i < e.changedTouches.length; i++) {
-      if (e.changedTouches[i].identifier === activePointerId) {
-        touchIndex = i;
-        break;
-      }
-    }
-    
-    if (touchIndex !== -1) {
-      completeSwipe();
-    }
-    
-    // リセット
-    isSwiping = false;
-    activePointerId = null;
-  }, options);
-  
-  document.addEventListener('touchcancel', function() {
-    // キャンセル時のリセット
-    isSwiping = false;
-    activePointerId = null;
-    updateCardPositions(0);
-  }, options);
-  
-  // マウスイベント
-  document.addEventListener('mousedown', function(e) {
-    if (!isSwipeEnabled || isProcessing) return;
-    
-    startX = e.clientX;
-    currentX = startX;
-    isSwiping = true;
-  });
-  
-  document.addEventListener('mousemove', function(e) {
-    if (!isSwipeEnabled || !isSwiping || isProcessing) return;
-    
-    currentX = e.clientX;
-    const diffX = currentX - startX;
-    const offsetRatio = diffX / config.swipeSensitivity;
-    
-    updateCardPositions(offsetRatio);
-  });
-  
-  document.addEventListener('mouseup', function() {
-    if (!isSwipeEnabled || !isSwiping || isProcessing) return;
-    
-    completeSwipe();
-    isSwiping = false;
-  });
+ // オプション
+ const options = isSafari() ? {} : { passive: true };
+ 
+ // アクティブタッチポインタ
+ let activePointerId = null;
+ 
+ // タッチイベント
+ document.addEventListener('touchstart', function(e) {
+   if (!isSwipeEnabled || isProcessing) return;
+   
+   // タッチ追跡
+   activePointerId = e.touches[0].identifier;
+   startX = e.touches[0].clientX;
+   currentX = startX;
+   isSwiping = true;
+ }, options);
+ 
+ document.addEventListener('touchmove', function(e) {
+   if (!isSwipeEnabled || !isSwiping || isProcessing) return;
+   
+   // タッチを特定
+   let touchIndex = -1;
+   for (let i = 0; i < e.changedTouches.length; i++) {
+     if (e.changedTouches[i].identifier === activePointerId) {
+       touchIndex = i;
+       break;
+     }
+   }
+   
+   if (touchIndex === -1) return;
+   
+   // 位置更新
+   currentX = e.changedTouches[touchIndex].clientX;
+   const diffX = currentX - startX;
+   const offsetRatio = diffX / config.swipeSensitivity;
+   
+   requestAnimationFrame(() => updateCardPositions(offsetRatio));
+ }, options);
+ 
+ document.addEventListener('touchend', function(e) {
+   if (!isSwipeEnabled || !isSwiping || isProcessing) return;
+   
+   // タッチを特定
+   let touchIndex = -1;
+   for (let i = 0; i < e.changedTouches.length; i++) {
+     if (e.changedTouches[i].identifier === activePointerId) {
+       touchIndex = i;
+       break;
+     }
+   }
+   
+   if (touchIndex !== -1) {
+     completeSwipe();
+   }
+   
+   // リセット
+   isSwiping = false;
+   activePointerId = null;
+ }, options);
+ 
+ document.addEventListener('touchcancel', function() {
+   // キャンセル時のリセット
+   isSwiping = false;
+   activePointerId = null;
+   updateCardPositions(0);
+ }, options);
+ 
+ // マウスイベント
+ document.addEventListener('mousedown', function(e) {
+   if (!isSwipeEnabled || isProcessing) return;
+   
+   startX = e.clientX;
+   currentX = startX;
+   isSwiping = true;
+ });
+ 
+ document.addEventListener('mousemove', function(e) {
+   if (!isSwipeEnabled || !isSwiping || isProcessing) return;
+   
+   currentX = e.clientX;
+   const diffX = currentX - startX;
+   const offsetRatio = diffX / config.swipeSensitivity;
+   
+   updateCardPositions(offsetRatio);
+ });
+ 
+ document.addEventListener('mouseup', function() {
+   if (!isSwipeEnabled || !isSwiping || isProcessing) return;
+   
+   completeSwipe();
+   isSwiping = false;
+ });
 }
 
 // スワイプ完了
 function completeSwipe() {
-  const diffX = currentX - startX;
-  const threshold = 50;
-  
-  // しきい値チェック
-  if (Math.abs(diffX) < threshold) {
-    updateCardPositions(0);
-    return;
-  }
-  
-  // カード変更
-  if (diffX > 0) {
-    // 右スワイプ
-    activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
-  } else {
-    // 左スワイプ
-    activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-  }
-  
-  // 位置更新
-  updateCardPositions(0);
-  
-  // 明示的にボタン表示を更新
-  updatePhotoButtonVisibility();
+ const diffX = currentX - startX;
+ const threshold = 50;
+ 
+ // しきい値チェック
+ if (Math.abs(diffX) < threshold) {
+   updateCardPositions(0);
+   return;
+ }
+ 
+ // カード変更
+ if (diffX > 0) {
+   // 右スワイプ
+   activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+ } else {
+   // 左スワイプ
+   activeCardIndex = (activeCardIndex + 1) % config.cardCount;
+ }
+ 
+ // 位置更新
+ updateCardPositions(0);
+ 
+ // 明示的にボタン表示を更新
+ updatePhotoButtonVisibility();
 }
 
 // フォトフレーム表示
 function showPhotoFrame() {
-  // 処理中は無視
-  if (isProcessing) return;
-  isProcessing = true;
-  
-  try {
-    console.log("Showing photo frame");
-    
-    // ARコンテナを非表示
-    document.getElementById('ar-container').style.display = 'none';
-    
-    // フォトフレームコンテナを表示
-    const frameContainer = document.getElementById('photo-frame-container');
-    frameContainer.style.display = 'block';
-    
-    // メインビデオの処理
-    if (mainVideoElement) {
-      if (mainVideoElement.parentNode) {
-        mainVideoElement.parentNode.removeChild(mainVideoElement);
-      }
-      
-      // スタイル調整
-      mainVideoElement.style.zIndex = '2010';
-      frameContainer.appendChild(mainVideoElement);
-      
-      // 新しいカメラストリームを取得
-      getNewCameraStream(mainVideoElement);
-    } else {
-      // ビデオがなければ作成
-      mainVideoElement = document.createElement('video');
-      mainVideoElement.id = 'main-video-element';
-      mainVideoElement.autoplay = true;
-      mainVideoElement.playsinline = true;
-      mainVideoElement.muted = true;
-      mainVideoElement.style.position = 'absolute';
-      mainVideoElement.style.top = '0';
-      mainVideoElement.style.left = '0';
-      mainVideoElement.style.width = '100%';
-      mainVideoElement.style.height = '100%';
-      mainVideoElement.style.objectFit = 'cover';
-      mainVideoElement.style.zIndex = '2010';
-      
-      frameContainer.appendChild(mainVideoElement);
-      getNewCameraStream(mainVideoElement);
-    }
-    
-    // 説明ポップアップを表示
-    document.getElementById('photo-instruction-popup').style.display = 'block';
-    
-    // 湯気エフェクト初期化
-    initSteamEffect();
-    
-    // 撮影フラグをリセット
-    canTakePhoto = false;
-    
-    // ロゴクリックで戻る機能
-    setupLogoClickToReturn();
-    
-    // 戻るボタンを表示
-    const backButton = document.getElementById('back-button');
-    if (backButton) {
-      backButton.style.display = 'block';
-      backButton.onclick = function() {
-        returnToARMode();
-      };
-    }
-    
-    isProcessing = false;
-  } catch (e) {
-    console.warn("Photo frame display error:", e);
-    isProcessing = false;
-  }
-}
-
-// ロゴクリックで戻る機能
-function setupLogoClickToReturn() {
-  const logoContainer = document.getElementById('logo-container');
-  if (logoContainer) {
-    logoContainer.style.cursor = 'pointer';
-    logoContainer.onclick = function() {
-      returnToARMode();
-    };
-  }
+ if (isProcessing) return;
+ isProcessing = true;
+ 
+ try {
+   console.log("Showing photo frame");
+   
+   // ARコンテナを非表示
+   document.getElementById('ar-container').style.display = 'none';
+   
+   // フォトフレームコンテナを表示
+   const frameContainer = document.getElementById('photo-frame-container');
+   frameContainer.style.display = 'block';
+   
+   // メインビデオの移動（DOM操作最小化）
+   if (mainVideoElement) {
+     if (mainVideoElement.parentNode) {
+       mainVideoElement.parentNode.removeChild(mainVideoElement);
+     }
+     
+     // フォトフレームにビデオを追加
+     frameContainer.appendChild(mainVideoElement);
+     mainVideoElement.style.zIndex = '2010';
+   }
+   
+   // ポップアップを表示
+   document.getElementById('photo-instruction-popup').style.display = 'block';
+   
+   // 湯気エフェクト初期化
+   initSteamEffect();
+   
+   // 撮影フラグをリセット
+   canTakePhoto = false;
+ } catch (e) {
+   console.warn("Photo frame display error:", e);
+ } finally {
+   isProcessing = false;
+ }
 }
 
 // ARモードに戻る
 function returnToARMode() {
-  // 処理中は無視
-  if (isProcessing) return;
-  isProcessing = true;
-  
-  try {
-    console.log("Returning to AR mode");
-    
-    // フォトフレームを非表示
-    document.getElementById('photo-frame-container').style.display = 'none';
-    
-    // ARコンテナを表示
-    const arContainer = document.getElementById('ar-container');
-    arContainer.style.display = 'block';
-    
-    // メインビデオを移動
-    if (mainVideoElement) {
-      if (mainVideoElement.parentNode) {
-        mainVideoElement.parentNode.removeChild(mainVideoElement);
-      }
-      
-      // スタイル調整
-      mainVideoElement.style.zIndex = '10';
-      arContainer.appendChild(mainVideoElement);
-      
-      // 新しいカメラストリームを取得
-      getNewCameraStream(mainVideoElement);
-    }
-    
-    // 湯気効果のクリーンアップ
-    if (steamGenerationInterval) {
-      clearInterval(steamGenerationInterval);
-      steamGenerationInterval = null;
-    }
-    
-    // 最後にボタン表示を確認
-    setTimeout(updatePhotoButtonVisibility, 300);
-    
-    isProcessing = false;
-  } catch (e) {
-    console.warn("Return to AR mode error:", e);
-    isProcessing = false;
-  }
+ if (isProcessing) return;
+ isProcessing = true;
+ 
+ try {
+   console.log("Returning to AR mode");
+   
+   // フォトフレームを非表示
+   document.getElementById('photo-frame-container').style.display = 'none';
+   
+   // ARコンテナを表示
+   const arContainer = document.getElementById('ar-container');
+   arContainer.style.display = 'block';
+   
+   // メインビデオの移動（DOM操作最小化）
+   if (mainVideoElement) {
+     if (mainVideoElement.parentNode) {
+       mainVideoElement.parentNode.removeChild(mainVideoElement);
+     }
+     
+     // ARコンテナにビデオを追加
+     arContainer.appendChild(mainVideoElement);
+     mainVideoElement.style.zIndex = '10';
+   }
+   
+   // 湯気効果のクリーンアップ
+   if (steamGenerationInterval) {
+     clearInterval(steamGenerationInterval);
+     steamGenerationInterval = null;
+   }
+   
+   // ボタン表示を更新
+   updatePhotoButtonVisibility();
+ } catch (e) {
+   console.warn("Return to AR mode error:", e);
+ } finally {
+   isProcessing = false;
+ }
 }
 
 // 湯気エフェクト初期化
 function initSteamEffect() {
-  const container = document.getElementById('enhanced-steam-container');
-  if (!container) return;
-  
-  // 初期化
-  container.style.top = '25%';
-  container.style.width = '350px';
-  container.style.height = '300px';
-  container.style.overflow = 'visible';
-  container.innerHTML = '';
-  
-  // 発光効果
-  const glow = document.createElement('div');
-  glow.className = 'steam-glow';
-  glow.style.width = '200px';
-  glow.style.height = '40px';
-  glow.style.filter = 'blur(8px)';
-  container.appendChild(glow);
-  
-  // 初期パーティクル
-  const initialCount = isSafari() ? 3 : 5;
-  for (let i = 0; i < initialCount; i++) {
-    setTimeout(() => createSteamParticle(container), i * 300);
-  }
-  // パーティクル生成
+ const container = document.getElementById('enhanced-steam-container');
+ if (!container) return;
+ 
+ container.innerHTML = '';
+ 
+ // 発光効果
+ const glow = document.createElement('div');
+ glow.className = 'steam-glow';
+ container.appendChild(glow);
+ 
+ // 初期パーティクル
+ const initialCount = isSafari() ? 3 : 5;
+ for (let i = 0; i < initialCount; i++) {
+   setTimeout(() => createSteamParticle(container), i * 300);
+ }
+ 
+ // 既存インターバルをクリア
+ if (steamGenerationInterval) {
+   clearInterval(steamGenerationInterval);
+ }
+ 
+ // パーティクル生成
  const interval = isSafari() ? 1500 : 800;
  steamGenerationInterval = setInterval(() => {
    // パーティクル数確認
    const existingParticles = container.querySelectorAll('.steam-particle');
    const maxParticles = isSafari() ? 5 : 10;
    
-   // 上限チェック
    if (existingParticles.length > maxParticles) {
      if (existingParticles[0] && existingParticles[0].parentNode) {
        existingParticles[0].parentNode.removeChild(existingParticles[0]);
      }
    }
    
-   // パーティクル追加
    createSteamParticle(container);
  }, interval);
 }
 
 // 湯気パーティクル作成
 function createSteamParticle(container) {
-if (!container) return;
-
-const particle = document.createElement('div');
-particle.className = 'steam-particle';
-
-// ランダム位置
-const startX = Math.random() * 120 - 60;
-particle.style.position = 'absolute';
-particle.style.bottom = '0';
-particle.style.left = `calc(50% + ${startX}px)`;
-
-// ランダムサイズ（Safariでは小さめ）
-const size = isSafari() ? 
-  (Math.random() * 30 + 30) : // 30px〜60px (Safari)
-  (Math.random() * 50 + 40);  // 40px〜90px (他)
-
-particle.style.width = `${size}px`;
-particle.style.height = `${size}px`;
-
-// スタイル設定
-particle.style.borderRadius = '50%';
-particle.style.background = `radial-gradient(circle at center, 
-                          rgba(255, 255, 255, 0.9) 0%, 
-                          rgba(255, 255, 255, 0.1) 70%)`;
-particle.style.filter = 'blur(5px)';
-
-// アニメーション時間
-const duration = isSafari() ? 
-  (Math.random() * 2 + 2) : // 2秒〜4秒 (Safari)
-  (Math.random() * 3 + 3);  // 3秒〜6秒 (他)
-
-// Safariでは簡易アニメーション
-if (isSafari()) {
-  particle.style.transition = `opacity ${duration}s, transform ${duration}s`;
-  particle.style.opacity = '0';
-  particle.style.transform = 'translateY(0) scale(0.1)';
-  
-  // 遅延してアニメーション開始
-  setTimeout(() => {
-    particle.style.opacity = '0.6';
-    particle.style.transform = `translateY(-${Math.random() * 100 + 100}px) scale(1.0)`;
-  }, 50);
-} else {
-  // 通常ブラウザではアニメーション
-  particle.style.animation = `steam-animation ${duration}s ease-out forwards`;
-  particle.style.opacity = '0';
-}
-
-// 要素追加
-container.appendChild(particle);
-
-// 終了時に削除
-setTimeout(() => {
-  if (particle && particle.parentNode) {
-    particle.parentNode.removeChild(particle);
-  }
-}, duration * 1000);
+ if (!container) return;
+ 
+ const particle = document.createElement('div');
+ particle.className = 'steam-particle';
+ 
+ // ランダム位置
+ const startX = Math.random() * 120 - 60;
+ particle.style.left = `calc(50% + ${startX}px)`;
+ 
+ // ランダムサイズ
+ const size = isSafari() ? (Math.random() * 30 + 30) : (Math.random() * 50 + 40);
+ particle.style.width = `${size}px`;
+ particle.style.height = `${size}px`;
+ 
+ // Safariでは簡易アニメーション
+ if (isSafari()) {
+   particle.style.transition = `opacity ${Math.random() * 2 + 2}s, transform ${Math.random() * 2 + 2}s`;
+   particle.style.opacity = '0';
+   particle.style.transform = 'translateY(0) scale(0.1)';
+   
+   setTimeout(() => {
+     particle.style.opacity = '0.6';
+     particle.style.transform = `translateY(-${Math.random() * 100 + 100}px) scale(1.0)`;
+   }, 50);
+ } else {
+   // 通常ブラウザではアニメーション
+   particle.style.animation = `steam-animation ${Math.random() * 3 + 3}s ease-out forwards`;
+ }
+ 
+ // 要素追加
+ container.appendChild(particle);
+ 
+ // 終了時に削除
+ setTimeout(() => {
+   if (particle && particle.parentNode) {
+     particle.parentNode.removeChild(particle);
+   }
+ }, 5000);
 }
 
 // 写真撮影
 function takePhoto() {
-// 処理中は無視
-if (isProcessing) return;
-isProcessing = true;
-
-try {
-  console.log("Taking photo");
-  
-  // フラッシュ効果
-  const shutterEffect = document.getElementById('shutter-effect');
-  if (shutterEffect) {
-    shutterEffect.style.opacity = '0.8';
-  }
-  
-  setTimeout(() => {
-    // フラッシュを消す
-    if (shutterEffect) {
-      shutterEffect.style.opacity = '0';
-    }
-    
-    // ビデオからキャプチャ
-    if (mainVideoElement && mainVideoElement.videoWidth && mainVideoElement.videoHeight) {
-      // キャンバス作成
-      const canvas = document.createElement('canvas');
-      const width = mainVideoElement.videoWidth;
-      const height = mainVideoElement.videoHeight;
-      canvas.width = width;
-      canvas.height = height;
-      
-      // フレーム描画
-      const context = canvas.getContext('2d');
-      context.drawImage(mainVideoElement, 0, 0, width, height);
-      
-      // 画像取得
-      try {
-        const imageDataURL = canvas.toDataURL('image/jpeg');
-        console.log("Photo captured successfully");
-        
-        // 撮影画像を表示
-        showCapturedImage(imageDataURL);
-      } catch (e) {
-        console.warn("Image conversion error:", e);
-        showCapturedImage(null);
-      }
-    } else {
-      console.warn("Video not ready for capture");
-      showCapturedImage(null);
-    }
-    
-    isProcessing = false;
-  }, 200);
-} catch (e) {
-  console.warn("Photo capture error:", e);
-  showCapturedImage(null);
-  isProcessing = false;
-}
+ if (isProcessing) return;
+ isProcessing = true;
+ 
+ try {
+   console.log("Taking photo");
+   
+   // フラッシュ効果
+   const shutterEffect = document.getElementById('shutter-effect');
+   if (shutterEffect) {
+     shutterEffect.style.opacity = '0.8';
+   }
+   
+   setTimeout(() => {
+     // フラッシュを消す
+     if (shutterEffect) {
+       shutterEffect.style.opacity = '0';
+     }
+     
+     // ビデオからキャプチャ
+     if (mainVideoElement && mainVideoElement.videoWidth && mainVideoElement.videoHeight) {
+       // キャンバス作成
+       const canvas = document.createElement('canvas');
+       const width = mainVideoElement.videoWidth;
+       const height = mainVideoElement.videoHeight;
+       canvas.width = width;
+       canvas.height = height;
+       
+       // フレーム描画
+       const context = canvas.getContext('2d');
+       context.drawImage(mainVideoElement, 0, 0, width, height);
+       
+       // 画像取得
+       try {
+         const imageDataURL = canvas.toDataURL('image/jpeg');
+         console.log("Photo captured successfully");
+         
+         // 撮影画像を表示
+         showCapturedImage(imageDataURL);
+       } catch (e) {
+         console.warn("Image conversion error:", e);
+         showCapturedImage(null);
+       }
+     } else {
+       console.warn("Video not ready for capture");
+       showCapturedImage(null);
+     }
+   }, 200);
+ } catch (e) {
+   console.warn("Photo capture error:", e);
+   showCapturedImage(null);
+ } finally {
+   isProcessing = false;
+ }
 }
 
 // 撮影画像の表示
 function showCapturedImage(imageDataURL) {
-// ダミー画像（エラー時用）
-const imageSrc = imageDataURL || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
-
-// 既存モーダル削除
-const existingModal = document.getElementById('photo-modal');
-if (existingModal) {
-  document.body.removeChild(existingModal);
+ // ダミー画像（エラー時用）
+ const imageSrc = imageDataURL || 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+ 
+ // 既存モーダル削除
+ const existingModal = document.getElementById('photo-modal');
+ if (existingModal) {
+   document.body.removeChild(existingModal);
+ }
+ 
+ // モーダル作成
+ const photoModal = document.createElement('div');
+ photoModal.id = 'photo-modal';
+ photoModal.style.position = 'fixed';
+ photoModal.style.top = '0';
+ photoModal.style.left = '0';
+ photoModal.style.width = '100%';
+ photoModal.style.height = '100%';
+ photoModal.style.backgroundColor = 'rgba(0,0,0,0.9)';
+ photoModal.style.zIndex = '3000';
+ photoModal.style.display = 'flex';
+ photoModal.style.flexDirection = 'column';
+ photoModal.style.alignItems = 'center';
+ photoModal.style.justifyContent = 'center';
+ 
+ // 画像表示
+ const img = document.createElement('img');
+ img.src = imageSrc;
+ img.style.maxWidth = '90%';
+ img.style.maxHeight = '70%';
+ img.style.objectFit = 'contain';
+ img.style.border = '2px solid rgba(0, 200, 255, 0.8)';
+ img.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
+ photoModal.appendChild(img);
+ 
+ // 保存ボタン
+ const saveButton = document.createElement('a');
+ saveButton.href = imageSrc;
+ saveButton.download = 'kozou-photo-' + Date.now() + '.jpg';
+ saveButton.textContent = '写真を保存する';
+ saveButton.style.display = 'block';
+ saveButton.style.margin = '20px';
+ saveButton.style.padding = '10px 20px';
+ saveButton.style.backgroundColor = 'rgba(0, 200, 255, 0.8)';
+ saveButton.style.color = 'white';
+ saveButton.style.borderRadius = '5px';
+ saveButton.style.textDecoration = 'none';
+ saveButton.style.fontWeight = 'bold';
+ saveButton.style.textAlign = 'center';
+ saveButton.style.cursor = 'pointer';
+ saveButton.style.boxShadow = '0 0 10px rgba(0, 200, 255, 0.5)';
+ photoModal.appendChild(saveButton);
+ 
+ // 閉じるボタン
+ const closeButton = document.createElement('button');
+ closeButton.textContent = '閉じる';
+ closeButton.style.margin = '10px';
+ closeButton.style.padding = '10px 20px';
+ closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
+ closeButton.style.color = 'white';
+ closeButton.style.borderRadius = '5px';
+ closeButton.style.border = 'none';
+ closeButton.style.cursor = 'pointer';
+ closeButton.addEventListener('click', function() {
+   if (photoModal && photoModal.parentNode) {
+     photoModal.parentNode.removeChild(photoModal);
+   }
+ });
+ photoModal.appendChild(closeButton);
+ 
+ // モーダル表示
+ document.body.appendChild(photoModal);
 }
-
-// モーダル作成
-const photoModal = document.createElement('div');
-photoModal.id = 'photo-modal';
-photoModal.style.position = 'fixed';
-photoModal.style.top = '0';
-photoModal.style.left = '0';
-photoModal.style.width = '100%';
-photoModal.style.height = '100%';
-photoModal.style.backgroundColor = 'rgba(0,0,0,0.9)';
-photoModal.style.zIndex = '3000';
-photoModal.style.display = 'flex';
-photoModal.style.flexDirection = 'column';
-photoModal.style.alignItems = 'center';
-photoModal.style.justifyContent = 'center';
-
-// 画像表示
-const img = document.createElement('img');
-img.src = imageSrc;
-img.style.maxWidth = '90%';
-img.style.maxHeight = '70%';
-img.style.objectFit = 'contain';
-img.style.border = '2px solid rgba(0, 200, 255, 0.8)';
-img.style.boxShadow = '0 0 20px rgba(0, 200, 255, 0.5)';
-photoModal.appendChild(img);
-
-// 保存ボタン
-const saveButton = document.createElement('a');
-saveButton.href = imageSrc;
-saveButton.download = 'kozou-photo-' + Date.now() + '.jpg';
-saveButton.textContent = '写真を保存する';
-saveButton.style.display = 'block';
-saveButton.style.margin = '20px';
-saveButton.style.padding = '10px 20px';
-saveButton.style.backgroundColor = 'rgba(0, 200, 255, 0.8)';
-saveButton.style.color = 'white';
-saveButton.style.borderRadius = '5px';
-saveButton.style.textDecoration = 'none';
-saveButton.style.fontWeight = 'bold';
-saveButton.style.textAlign = 'center';
-saveButton.style.cursor = 'pointer';
-saveButton.style.boxShadow = '0 0 10px rgba(0, 200, 255, 0.5)';
-photoModal.appendChild(saveButton);
-
-// 閉じるボタン
-const closeButton = document.createElement('button');
-closeButton.textContent = '閉じる';
-closeButton.style.margin = '10px';
-closeButton.style.padding = '10px 20px';
-closeButton.style.backgroundColor = 'rgba(255, 255, 255, 0.3)';
-closeButton.style.color = 'white';
-closeButton.style.borderRadius = '5px';
-closeButton.style.border = 'none';
-closeButton.style.cursor = 'pointer';
-closeButton.addEventListener('click', function() {
-  if (photoModal && photoModal.parentNode) {
-    photoModal.parentNode.removeChild(photoModal);
-  }
-});
-photoModal.appendChild(closeButton);
-
-// モーダル表示
-document.body.appendChild(photoModal);
-}
-  
-  // 既存インターバルをクリア
-  if (steamGenerationInterval) {
-    clearInterval(steamGenerationInterval);
-  }
 </script>
 </body>
 </html>
