@@ -1168,8 +1168,12 @@ function updateCardPositions(offsetRatio = 0) {
   checkPhotoButtonVisibility();
 }
 
-// スワイプイベントの設定 - iOS対応
+// スワイプイベントの設定 - iOS対応・スライド動作修正
 function setupSwipeEvents() {
+  // スワイプ方向の制御フラグ
+  let isDirectionLocked = false;
+  let swipeDirection = 0; // -1:左, 0:なし, 1:右
+  
   // タッチイベント - iOS対応
   document.addEventListener('touchstart', function(e) {
     if (!isSwipeEnabled) return;
@@ -1177,6 +1181,8 @@ function setupSwipeEvents() {
     startX = e.touches[0].clientX;
     currentX = startX;
     isSwiping = true;
+    isDirectionLocked = false; // 方向ロックリセット
+    swipeDirection = 0; // 方向リセット
     
     // iOS Safariでのスクロール防止
     if (isIOS()) {
@@ -1189,7 +1195,22 @@ function setupSwipeEvents() {
     
     currentX = e.touches[0].clientX;
     const diffX = currentX - startX;
-    const offsetRatio = diffX / config.swipeSensitivity;
+    
+    // スワイプ方向の決定（一度決めたら変更しない）
+    if (!isDirectionLocked && Math.abs(diffX) > 20) {
+      isDirectionLocked = true;
+      swipeDirection = diffX > 0 ? 1 : -1; // 1:右, -1:左
+    }
+    
+    // 方向がロックされた場合、その方向のみの動きに制限
+    let effectiveDiff = diffX;
+    if (isDirectionLocked) {
+      if ((swipeDirection === 1 && diffX < 0) || (swipeDirection === -1 && diffX > 0)) {
+        effectiveDiff = 0;
+      }
+    }
+    
+    const offsetRatio = effectiveDiff / config.swipeSensitivity;
     
     // 位置更新
     updateCardPositions(offsetRatio);
@@ -1207,19 +1228,19 @@ function setupSwipeEvents() {
     const diffX = currentX - startX;
     const threshold = 50;
     
-    if (Math.abs(diffX) >= threshold) {
+    if (Math.abs(diffX) >= threshold && isDirectionLocked) {
       isAnimating = true; // アニメーション中フラグ
       
-      // スワイプ方向に応じてカード変更
-      if (diffX > 0) {
-        // 右スワイプ
+      // スワイプ方向に応じてカード変更（方向ロックに従う）
+      if (swipeDirection > 0) {
+        // 右スワイプ - 一つ前のカード
         activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
-      } else {
-        // 左スワイプ
+      } else if (swipeDirection < 0) {
+        // 左スワイプ - 一つ次のカード
         activeCardIndex = (activeCardIndex + 1) % config.cardCount;
       }
       
-      // 少し遅延してアニメーションを解除
+      // アニメーション適用
       setTimeout(function() {
         isAnimating = false;
         updateCardPositions(0);
@@ -1229,7 +1250,9 @@ function setupSwipeEvents() {
       updateCardPositions(0);
     }
     
+    // フラグリセット
     isSwiping = false;
+    isDirectionLocked = false;
     
     // iOS Safariでのタッチ終了時の問題回避
     if (isIOS()) {
@@ -1273,7 +1296,7 @@ function setupSwipeEvents() {
   }
 }
 
-// フォトフレーム表示 - iOS対応
+// フォトフレーム表示 - iOS対応・ポップアップ修正
 function showPhotoFrame() {
   try {
     console.log("Showing photo frame");
@@ -1327,14 +1350,37 @@ function showPhotoFrame() {
       }
     }
     
-    // ポップアップを表示
+    // 湯気エフェクト - ポップアップ前に開始
+    initSteamEffect();
+    
+    // ポップアップイベントハンドラ設定
     const popup = document.getElementById('photo-instruction-popup');
     if (popup) {
       popup.style.display = 'block';
+      
+      // 閉じるボタン機能確認
+      const closeButton = document.getElementById('popup-close-button');
+      if (closeButton) {
+        // 既存のイベントリスナをすべて削除
+        const newCloseButton = closeButton.cloneNode(true);
+        closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+        
+        // 新しいイベントリスナ
+        newCloseButton.addEventListener('click', function(e) {
+          popup.style.display = 'none';
+          canTakePhoto = true;
+          e.stopPropagation(); // イベント伝播を停止
+        });
+      }
+      
+      // ポップアップ自体をタップしても閉じる
+      popup.addEventListener('click', function(e) {
+        if (e.target === popup) {
+          popup.style.display = 'none';
+          canTakePhoto = true;
+        }
+      });
     }
-    
-    // 湯気エフェクト
-    initSteamEffect();
     
     // 撮影フラグリセット
     canTakePhoto = false;
@@ -1344,6 +1390,15 @@ function showPhotoFrame() {
     if (backButton) {
       backButton.style.display = 'block';
     }
+    
+    // 5秒後にポップアップが閉じられていなければ自動的に閉じる
+    setTimeout(function() {
+      const popupCheck = document.getElementById('photo-instruction-popup');
+      if (popupCheck && popupCheck.style.display !== 'none') {
+        popupCheck.style.display = 'none';
+        canTakePhoto = true;
+      }
+    }, 5000);
   } catch (e) {
     console.warn("Photo frame error:", e);
     
