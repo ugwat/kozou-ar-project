@@ -150,9 +150,6 @@
   font-weight: 900;                   /* 👈 太字を強調 */
   font-family: "BIZ UDPGothic", sans-serif; /* 👈 読みやすく太いゴシック体に */
 }
-
-
-
 .marquee.reverse .marquee--inner {
   animation: scroll-right var(--marquee-duration) linear infinite;
 }
@@ -412,7 +409,6 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-
   /* 説明ポップアップのスタイル */
   #photo-instruction-popup {
     position: fixed;
@@ -598,112 +594,110 @@
   <div class="popup-corner popup-corner-bl"></div>
   <div class="popup-corner popup-corner-br"></div>
 </div>
-
 <script>
-// KOZOU+ AR プロジェクト 最終版（メモリ最適化とiOS対応強化）
-
-// ShowOneChildエラーの修正
-window.ShowOneChild = window.ShowOneChild || {
-  readRenderPromptFromStorage: function() { return null; },
-  getRenderPrompt: function() { return null; },
-  render: function() { return null; }
-};
-
-// localStorage拡張
-if (window.localStorage && !window.localStorage.getWithTTL) {
-  window.localStorage.getWithTTL = function(key) {
-    return window.localStorage.getItem(key);
+  // KOZOU+ AR プロジェクト 最終版（メモリ最適化とiOS対応強化）
+  
+  // ShowOneChildエラーの修正
+  window.ShowOneChild = window.ShowOneChild || {
+    readRenderPromptFromStorage: function() { return null; },
+    getRenderPrompt: function() { return null; },
+    render: function() { return null; }
   };
-}
-
-// IO errorの抑制
-window.addEventListener('error', function(e) {
-  if (e && e.message && typeof e.message === 'string' && 
-     (e.message.includes('ChromeMethodBFE') || e.message.includes('Unable to create writable file'))) {
-    console.warn('IO error suppressed:', e.message);
-    return true; // エラー伝播を停止
-  }
-}, true);
-
-// Safari判定
-function isSafari() {
-  const ua = navigator.userAgent.toLowerCase();
-  return (ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1) || 
-         /iphone|ipod|ipad/i.test(ua);
-}
-
-// iOS判定
-function isIOS() {
-  return /iphone|ipod|ipad/i.test(navigator.userAgent.toLowerCase());
-}
-
-// 低メモリデバイス判定（iPhone 12以前などの古い端末向け）
-function isLowMemoryDevice() {
-  // UAからデバイスを推定
-  const ua = navigator.userAgent;
-  // iPhone 12以前の判定（SE, 11, XR, X, 8など）
-  if (/iPhone/.test(ua) && 
-     (/iPhone OS 13/.test(ua) || /iPhone OS 14/.test(ua) || 
-      /iPhone1[012],/.test(ua) || /iPhone9,/.test(ua) || /iPhone8,/.test(ua))) {
-    return true;
-  }
-  return false;
-}
-
-console.log("Script loaded, Safari: " + isSafari() + ", iOS: " + isIOS() + ", Low memory: " + isLowMemoryDevice());
-
-// グローバル変数 - 最小限に抑えてメモリ使用を節約
-let activeCardIndex = 0;
-let isSwipeEnabled = false;
-let startX = 0;
-let currentX = 0;
-let isSwiping = false;
-let canTakePhoto = false;
-let steamGenerationInterval = null;
-let isAnimating = false;
-let videoElement = null; // 単一のビデオ要素への参照
-let streamObject = null; // カメラストリームを保持
-
-// メモリ解放のためのクリーンアップ関数
-function cleanupResources() {
-  // 湯気エフェクトのクリーンアップ
-  if (steamGenerationInterval) {
-    clearInterval(steamGenerationInterval);
-    steamGenerationInterval = null;
+  
+  // localStorage拡張
+  if (window.localStorage && !window.localStorage.getWithTTL) {
+    window.localStorage.getWithTTL = function(key) {
+      return window.localStorage.getItem(key);
+    };
   }
   
-  // 不要なDOMノードを削除してメモリを解放
-  const steamContainer = document.getElementById('enhanced-steam-container');
-  if (steamContainer) {
-    steamContainer.innerHTML = '';
+  // IO errorの抑制
+  window.addEventListener('error', function(e) {
+    if (e && e.message && typeof e.message === 'string' && 
+       (e.message.includes('ChromeMethodBFE') || e.message.includes('Unable to create writable file'))) {
+      console.warn('IO error suppressed:', e.message);
+      return true; // エラー伝播を停止
+    }
+  }, true);
+  
+  // Safari判定
+  function isSafari() {
+    const ua = navigator.userAgent.toLowerCase();
+    return (ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1) || 
+           /iphone|ipod|ipad/i.test(ua);
   }
   
-  // 不要なオブジェクトをGCできるようnull設定
-  startX = 0;
-  currentX = 0;
-}
-
-// 画像の事前読み込み
-const allImages = [
-  './assets/c1.png', './assets/c2.png', './assets/c3.png', 
-  './assets/c4.png', './assets/c5.png'
-];
-
-// 設定 - 低メモリデバイスでは軽量化
-const config = {
-  cardSpacing: 360,
-  swipeSensitivity: 200,
-  cardRotation: 30,
-  centerZ: -400,
-  cardCount: 5,
-  maxSteamParticles: isLowMemoryDevice() ? 8 : (isSafari() ? 12 : 25), // エクストリーム設定
-  steamInterval: isLowMemoryDevice() ? 800 : (isSafari() ? 600 : 400), // 生成頻度も調整
-  steamCoreSize: isLowMemoryDevice() ? 160 : 220, // 湯気の発生コアサイズ
-  steamBurstInterval: 2000, // バースト生成間隔（ミリ秒）
-  steamBurstSize: isLowMemoryDevice() ? 3 : 5 // バーストあたりのパーティクル数
-};
-
-// 必要なCSSアニメーションスタイルを動的に追加
+  // iOS判定
+  function isIOS() {
+    return /iphone|ipod|ipad/i.test(navigator.userAgent.toLowerCase());
+  }
+  
+  // 低メモリデバイス判定（iPhone 12以前などの古い端末向け）
+  function isLowMemoryDevice() {
+    // UAからデバイスを推定
+    const ua = navigator.userAgent;
+    // iPhone 12以前の判定（SE, 11, XR, X, 8など）
+    if (/iPhone/.test(ua) && 
+       (/iPhone OS 13/.test(ua) || /iPhone OS 14/.test(ua) || 
+        /iPhone1[012],/.test(ua) || /iPhone9,/.test(ua) || /iPhone8,/.test(ua))) {
+      return true;
+    }
+    return false;
+  }
+  
+  console.log("Script loaded, Safari: " + isSafari() + ", iOS: " + isIOS() + ", Low memory: " + isLowMemoryDevice());
+  
+  // グローバル変数 - 最小限に抑えてメモリ使用を節約
+  let activeCardIndex = 0;
+  let isSwipeEnabled = false;
+  let startX = 0;
+  let currentX = 0;
+  let isSwiping = false;
+  let canTakePhoto = false;
+  let steamGenerationInterval = null;
+  let isAnimating = false;
+  let videoElement = null; // 単一のビデオ要素への参照
+  let streamObject = null; // カメラストリームを保持
+  
+  // メモリ解放のためのクリーンアップ関数
+  function cleanupResources() {
+    // 湯気エフェクトのクリーンアップ
+    if (steamGenerationInterval) {
+      clearInterval(steamGenerationInterval);
+      steamGenerationInterval = null;
+    }
+    
+    // 不要なDOMノードを削除してメモリを解放
+    const steamContainer = document.getElementById('enhanced-steam-container');
+    if (steamContainer) {
+      steamContainer.innerHTML = '';
+    }
+    
+    // 不要なオブジェクトをGCできるようnull設定
+    startX = 0;
+    currentX = 0;
+  }
+  
+  // 画像の事前読み込み
+  const allImages = [
+    './assets/c1.png', './assets/c2.png', './assets/c3.png', 
+    './assets/c4.png', './assets/c5.png'
+  ];
+  
+  // 設定 - 低メモリデバイスでは軽量化
+  const config = {
+    cardSpacing: 360,
+    swipeSensitivity: 200,
+    cardRotation: 30,
+    centerZ: -400,
+    cardCount: 5,
+    maxSteamParticles: isLowMemoryDevice() ? 8 : (isSafari() ? 12 : 25), // エクストリーム設定
+    steamInterval: isLowMemoryDevice() ? 800 : (isSafari() ? 600 : 400), // 生成頻度も調整
+    steamCoreSize: isLowMemoryDevice() ? 160 : 220, // 湯気の発生コアサイズ
+    steamBurstInterval: 2000, // バースト生成間隔（ミリ秒）
+    steamBurstSize: isLowMemoryDevice() ? 3 : 5 // バーストあたりのパーティクル数
+  };
+  // 必要なCSSアニメーションスタイルを動的に追加
 function addAnimationStyles() {
   if (document.getElementById('steam-animation-styles')) return;
   
@@ -921,7 +915,6 @@ function setupEventListeners() {
     }
   }, true);
 }
-
 // カメラ初期化 - Safari対応強化
 function initCamera() {
   try {
@@ -1007,7 +1000,6 @@ function preloadImages(images, callback) {
     img.src = src;
   });
 }
-
 // カード作成
 function createCards() {
   console.log("Creating cards");
@@ -1131,7 +1123,6 @@ function updateCardPositions(offsetRatio = 0) {
   // ボタン表示のチェック
   checkPhotoButtonVisibility();
 }
-
 // スワイプイベント - 修正版（直感的な方向に）
 function setupSwipeEvents() {
   // タッチイベント - 修正：直感的な動きのため符号を調整
@@ -1229,7 +1220,6 @@ function setupSwipeEvents() {
     });
   }
 }
-
 // フォトフレーム表示 - メモリ最適化
 function showPhotoFrame() {
   try {
@@ -1328,7 +1318,6 @@ function returnToARMode() {
     console.warn("Return to AR mode error:", e);
   }
 }
-
 // 湯気エフェクト - エクストリーム版（一箇所から広がるバージョン）
 function initSteamEffect() {
   const container = document.getElementById('enhanced-steam-container');
@@ -1530,7 +1519,6 @@ function createSteamParticle(container, centerX = 0, timeOffset = 0) {
   // コンテナに追加
   container.appendChild(particle);
 }
-
 // 写真撮影処理 - 湯気エフェクト対応版
 function takePhoto() {
   try {
@@ -1696,7 +1684,6 @@ function downloadImage(dataURL) {
     }
   }, 100);
 }
-
 // 撮影画像表示 - よりリッチな表示とiOS保存ガイダンス
 function displayCapturedImage(imageDataURL) {
   // 既存プレビューを削除
@@ -1847,7 +1834,6 @@ function displayCapturedImage(imageDataURL) {
     }
   });
 }
-
 // ページ離脱時のクリーンアップ - メモリリーク防止
 window.addEventListener('beforeunload', function() {
   // リソース解放
