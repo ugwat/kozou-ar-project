@@ -1349,7 +1349,581 @@ function initSteamEffect() {
   core.style.left = '50%';
   core.style.transform = 'translateX(-50%)';
   core.style.width = `${config.steamCoreSize}px`;
+  core.style.width = `${config.steamCoreSize}px`;
   core.style.height = '40px';
+  // 背景グラデーションの透明度を下げる（0.8→0.5）
+  core.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%)';
+  core.style.filter = 'blur(10px)';
+  core.style.borderRadius = '50%';
+  // 全体の透明度も下げる
+  core.style.opacity = '0.7'; // 追加：透明度を設定
+  core.style.animation = 'core-pulse 2s ease-in-out infinite';
+  core.style.zIndex = '5';
+  container.appendChild(core);
+  
+  // 発光効果 - 下部の光る部分
+  const glow = document.createElement('div');
+  glow.className = 'steam-glow';
+  glow.style.position = 'absolute';
+  glow.style.bottom = '-30px';
+  glow.style.left = '50%';
+  glow.style.transform = 'translateX(-50%)';
+  glow.style.width = '220px';
+  glow.style.height = '60px';
+  // 背景グラデーションの透明度を下げる（0.5→0.3）
+  glow.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%)';
+  glow.style.filter = 'blur(12px)';
+  // 透明度を下げる（0.7→0.5）
+  glow.style.opacity = '0.5';
+  glow.style.animation = 'glow-pulse 3s ease-in-out infinite';
+  glow.style.zIndex = '4';
+  container.appendChild(glow);
+  
+  // 初期バースト生成
+  createSteamBurst(container);
+  
+  // 既存インターバルをクリア
+  if (steamGenerationInterval) {
+    clearInterval(steamGenerationInterval);
+  }
+  
+  // バースト生成インターバル - メモリに応じて調整
+  steamGenerationInterval = setInterval(() => {
+    // 既存パーティクル数の確認
+    const existingParticles = container.querySelectorAll('.steam-particle');
+    
+    if (existingParticles.length < config.maxSteamParticles) {
+      // バースト生成（一度に複数パーティクル）
+      createSteamBurst(container);
+      
+      // 非常に派手な効果（低メモリデバイス以外）
+      if (!isLowMemoryDevice() && Math.random() > 0.7 && !isSafari()) {
+        setTimeout(() => createSteamBurst(container), 400);
+      }
+    } else {
+      // パーティクル数が上限に達したら古いものから削除
+      const oldestParticles = Array.from(existingParticles).slice(0, config.steamBurstSize);
+      oldestParticles.forEach(particle => {
+        if (particle && particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      });
+    }
+  }, config.steamBurstInterval);
+}
+
+// 湯気バースト生成 - 一度に複数のパーティクルをまとめて生成
+function createSteamBurst(container) {
+  if (!container) return;
+  
+  // バーストサイズ（一度に生成するパーティクル数）
+  const burstSize = config.steamBurstSize;
+  const burstCenterX = 0; // 中心からのX位置（ピクセル）
+  
+  // パーティクルをまとめて生成
+  for (let i = 0; i < burstSize; i++) {
+    setTimeout(() => {
+      createSteamParticle(container, burstCenterX, i / burstSize);
+    }, i * 80); // わずかなディレイを設けて自然な印象に
+  }
+}
+
+// 湯気パーティクル作成 - エクストリーム版
+function createSteamParticle(container, centerX = 0, timeOffset = 0) {
+  if (!container) return;
+  
+  const particle = document.createElement('div');
+  particle.className = 'steam-particle';
+  
+  // 中心からの位置設定 - 広がりを調整
+  const spreadX = isLowMemoryDevice() ? 30 : 60; // 広がり幅
+  const startX = centerX + (Math.random() * spreadX * 2 - spreadX);
+  
+  particle.style.position = 'absolute';
+  particle.style.bottom = '0';
+  particle.style.left = `calc(50% + ${startX}px)`;
+  
+  // サイズ設定 - デバイスに応じたサイズと多様性
+  const baseSize = isLowMemoryDevice() ? 50 : (isSafari() ? 70 : 100);
+  const sizeVariation = isLowMemoryDevice() ? 30 : (isSafari() ? 40 : 60);
+  const size = baseSize + Math.random() * sizeVariation;
+  
+  particle.style.width = `${size}px`;
+  particle.style.height = `${size}px`;
+  particle.style.borderRadius = '50%';
+  particle.style.background = 'radial-gradient(circle at center, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0) 70%)';
+  particle.style.filter = isLowMemoryDevice() ? 'blur(8px)' : 'blur(12px)';
+  
+  // デバイスに応じたアニメーション
+  if (isLowMemoryDevice() || isSafari()) {
+    // 低メモリデバイスとSafariでは単純なCSSアニメーション
+    const duration = isLowMemoryDevice() ? 3 : 4;
+    const delay = timeOffset;
+    
+    particle.style.opacity = '0';
+    particle.style.animation = `steam-animation ${duration}s ease-out ${delay}s forwards`;
+    
+    // アニメーション終了時に削除
+    setTimeout(() => {
+      if (particle.parentNode) {
+        particle.parentNode.removeChild(particle);
+      }
+    }, (duration + delay) * 1000 + 100);
+  } else {
+    // 標準ブラウザではWeb Animations API - より高度なアニメーション
+    const duration = 4 + Math.random() * 2;
+    const baseOpacity = 0.7 + Math.random() * 0.3;
+    
+    try {
+      // 広がりながら上昇するキーフレーム
+      const keyframes = [
+        { 
+          opacity: 0.3, 
+          transform: 'translateY(0) translateX(0) scale(0.3)'
+        },
+        { 
+          opacity: baseOpacity, 
+          transform: `translateY(-${size}px) translateX(${Math.random() * 20 - 10}px) scale(0.8)`,
+          offset: 0.2
+        },
+        { 
+          opacity: baseOpacity * 0.7, 
+          transform: `translateY(-${size * 2}px) translateX(${Math.random() * 40 - 20}px) scale(1.2)`,
+          offset: 0.6
+        },
+        {
+          opacity: 0,
+          transform: `translateY(-${size * 3}px) translateX(${Math.random() * 60 - 30}px) scale(1.8)`
+        }
+      ];
+      
+      const animation = particle.animate(keyframes, {
+        duration: duration * 1000,
+        easing: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+        fill: 'forwards',
+        delay: timeOffset * 1000
+      });
+      
+      // アニメーション終了時に削除
+      animation.onfinish = () => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      };
+    } catch (e) {
+      // フォールバック: CSSアニメーション
+      console.warn("Animation API error, using fallback:", e);
+      
+      const duration = 4;
+      const delay = timeOffset;
+      
+      particle.style.opacity = '0';
+      particle.style.animation = `steam-animation ${duration}s ease-out ${delay}s forwards`;
+      
+      setTimeout(() => {
+        if (particle.parentNode) {
+          particle.parentNode.removeChild(particle);
+        }
+      }, (duration + delay) * 1000 + 100);
+    }
+  }
+  
+  // コンテナに追加
+  container.appendChild(particle);
+}
+
+// 写真撮影処理 - 湯気エフェクト対応版
+function takePhoto() {
+  try {
+    console.log("Taking photo");
+    
+    // フラッシュ効果
+    const shutterEffect = document.getElementById('shutter-effect');
+    if (shutterEffect) {
+      shutterEffect.style.opacity = '0.8';
+    }
+    
+    // フラッシュ表示後に撮影処理
+    setTimeout(() => {
+      if (shutterEffect) {
+        shutterEffect.style.opacity = '0';
+      }
+      
+      try {
+        // フレーム全体をキャプチャ（湯気エフェクトを含む）
+        capturePhotoFrame();
+      } catch (e) {
+        console.warn("Photo capture error:", e);
+        // エラー時はシンプルな方法に
+        simpleVideoCapture();
+      }
+    }, 200);
+  } catch (e) {
+    console.warn("Take photo error:", e);
+    alert("写真を撮影しました！");
+  }
+}
+
+// フォトフレーム全体をキャプチャ（湯気エフェクトを含む）- 画質向上版
+function capturePhotoFrame() {
+  // フォトフレームコンテナを取得
+  const frameContainer = document.getElementById('photo-frame-container');
+  if (!frameContainer) {
+    alert("写真撮影エラー");
+    return;
+  }
+  
+  // html2canvasライブラリがすでにロードされているか確認
+  if (window.html2canvas) {
+    performCapture();
+    return;
+  }
+  
+  // ライブラリを動的に読み込み
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+  script.onload = performCapture;
+  
+  // エラー処理
+  script.onerror = function() {
+    console.warn("Failed to load html2canvas");
+    // フォールバック: 単純なビデオキャプチャ
+    simpleVideoCapture();
+  };
+  
+  document.head.appendChild(script);
+  
+  // キャプチャ実行関数
+  function performCapture() {
+    // 画質向上のためにオプションを調整
+    const options = {
+      allowTaint: true,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#000000',
+      // 画質向上：スケール値を上げる
+      scale: isLowMemoryDevice() ? 0.8 : (isIOS() ? 1.0 : (window.devicePixelRatio || 1)),
+      // クローン時の処理
+      onclone: function(clonedDoc) {
+        const clonedFrame = clonedDoc.getElementById('photo-frame-container');
+        if (clonedFrame) {
+          // 不要なUI要素を非表示化
+          const popups = clonedFrame.querySelectorAll('#photo-instruction-popup');
+          popups.forEach(popup => { if (popup) popup.style.display = 'none'; });
+          
+          const buttons = clonedFrame.querySelectorAll('#back-button');
+          buttons.forEach(btn => { if (btn) btn.style.display = 'none'; });
+        }
+      }
+    };
+    
+    // html2canvas実行
+    html2canvas(frameContainer, options)
+      .then(function(canvas) {
+        try {
+          // キャンバスから画像データを取得
+          // 画質向上：JPEGの品質を上げる
+          const imageDataURL = canvas.toDataURL('image/jpeg', isLowMemoryDevice() ? 0.85 : 0.92);
+          
+          // 画像表示
+          displayCapturedImage(imageDataURL);
+          
+          // iOS以外は自動ダウンロードの代わりに手動のダウンロードボタンを表示
+        } catch (e) {
+          console.warn("Canvas to image conversion error:", e);
+          // エラー時はシンプルな方法に
+          simpleVideoCapture();
+        }
+      })
+      .catch(function(e) {
+        console.warn("HTML2Canvas error:", e);
+        // エラー時のフォールバック
+        simpleVideoCapture();
+      });
+  }
+}
+
+// シンプルなビデオキャプチャ（画質向上版）
+function simpleVideoCapture() {
+  const video = document.getElementById('frame-camera-view');
+  if (!video || !video.videoWidth) {
+    alert("ビデオキャプチャできません");
+    return;
+  }
+  
+  try {
+    const canvas = document.createElement('canvas');
+    // 画質向上：スケール値を上げる
+    const scale = isLowMemoryDevice() ? 0.8 : 1.0;
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    try {
+      // 画質向上：JPEGの品質を上げる
+      const quality = isLowMemoryDevice() ? 0.85 : 0.92;
+      const imageDataURL = canvas.toDataURL('image/jpeg', quality);
+      displayCapturedImage(imageDataURL);
+      
+      // 自動ダウンロードはしない
+    } catch (e) {
+      console.warn("Simple capture error:", e);
+      alert("写真撮影完了！（表示のみ）");
+    }
+  } catch (e) {
+    console.warn("Video capture error:", e);
+    alert("写真撮影エラー");
+  }
+}
+
+// 画像ダウンロード関数
+function downloadImage(dataURL) {
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'kozou-photo-' + new Date().getTime() + '.jpg';
+  
+  // iOS対応のためのタイムアウト
+  setTimeout(function() {
+    // iOSチェックを追加
+    if (!isIOS()) {
+      a.click();
+    }
+  }, 100);
+}
+
+// 撮影画像表示 - 保存ボタンと成功通知付き
+function displayCapturedImage(imageDataURL) {
+  // 既存プレビューを削除
+  const existingPreview = document.getElementById('captured-image-preview');
+  if (existingPreview) {
+    document.body.removeChild(existingPreview);
+  }
+  
+  // プレビューコンテナ
+  const previewContainer = document.createElement('div');
+  previewContainer.id = 'captured-image-preview';
+  previewContainer.style.position = 'fixed';
+  previewContainer.style.top = '0';
+  previewContainer.style.left = '0';
+  previewContainer.style.width = '100%';
+  previewContainer.style.height = '100%';
+  previewContainer.style.backgroundColor = 'rgba(0,0,0,0.8)';
+  previewContainer.style.zIndex = '9999';
+  previewContainer.style.display = 'flex';
+  previewContainer.style.flexDirection = 'column';
+  previewContainer.style.justifyContent = 'center';
+  previewContainer.style.alignItems = 'center';
+  previewContainer.style.fontFamily = 'Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif';
+  
+  // 画像要素
+  const img = document.createElement('img');
+  img.src = imageDataURL;
+  img.style.maxWidth = '90%';
+  img.style.maxHeight = '60%'; // 高さを少し小さく（説明テキスト用）
+  img.style.objectFit = 'contain';
+  img.style.border = '2px solid #00a2ff';
+  img.style.boxShadow = '0 0 20px rgba(0, 162, 255, 0.5)';
+  
+  // 説明コンテナ
+  const infoContainer = document.createElement('div');
+  infoContainer.style.backgroundColor = 'rgba(0, 40, 80, 0.6)';
+  infoContainer.style.borderRadius = '10px';
+  infoContainer.style.padding = '15px';
+  infoContainer.style.marginTop = '15px';
+  infoContainer.style.maxWidth = '90%';
+  infoContainer.style.width = '350px';
+  infoContainer.style.textAlign = 'center';
+  
+  // 説明テキスト
+  const infoText = document.createElement('p');
+  infoText.style.color = 'white';
+  infoText.style.margin = '0';
+  infoText.style.fontSize = '16px';
+  infoText.style.fontFamily = 'Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif';
+  
+  // 保存成功メッセージ - 最初は非表示
+  const successMessage = document.createElement('div');
+  successMessage.style.color = '#4cff4c'; // 緑色
+  successMessage.style.fontWeight = 'bold';
+  successMessage.style.marginTop = '10px';
+  successMessage.style.padding = '8px';
+  successMessage.style.borderRadius = '5px';
+  successMessage.style.backgroundColor = 'rgba(0, 80, 0, 0.3)';
+  successMessage.style.display = 'none'; // 初期状態では非表示
+  successMessage.textContent = '写真が保存されました！';
+  
+  // 保存ボタン（iOSと非iOSで異なる挙動）
+  const saveButton = document.createElement('button');
+  saveButton.textContent = isIOS() ? 'iOSに保存' : '写真を保存';
+  saveButton.style.padding = '10px 20px';
+  saveButton.style.marginTop = '15px';
+  saveButton.style.backgroundColor = '#00a2ff';
+  saveButton.style.color = 'white';
+  saveButton.style.border = 'none';
+  saveButton.style.borderRadius = '5px';
+  saveButton.style.cursor = 'pointer';
+  saveButton.style.fontFamily = 'Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif';
+  saveButton.style.fontWeight = 'bold';
+  
+  saveButton.addEventListener('click', function() {
+    if (isIOS()) {
+      // iOS向けガイド表示
+      infoText.innerHTML = '<b>iOSに保存する方法:</b><br>' + 
+        '1. 画像を<b>長押し</b>してください<br>' +
+        '2. メニューから「<b>写真に追加</b>」を選択してください';
+      successMessage.style.display = 'block';
+      successMessage.textContent = '↑ 上の画像を長押しして保存してください ↑';
+    } else {
+      // 非iOSデバイスでは直接ダウンロード
+      downloadImage(imageDataURL);
+      
+      // 成功メッセージ表示
+      successMessage.style.display = 'block';
+      
+      // 3秒後にメッセージを消す
+      setTimeout(() => {
+        successMessage.style.display = 'none';
+      }, 3000);
+    }
+  });
+  
+  // SNS共有ボタン
+  const shareButton = document.createElement('button');
+  shareButton.textContent = 'SNSで共有';
+  shareButton.style.padding = '10px 20px';
+  shareButton.style.marginTop = '15px';
+  shareButton.style.backgroundColor = '#0095ff';
+  shareButton.style.color = 'white';
+  shareButton.style.border = 'none';
+  shareButton.style.borderRadius = '5px';
+  shareButton.style.cursor = 'pointer';
+  shareButton.style.fontFamily = 'Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif';
+  shareButton.style.fontWeight = 'bold';
+  
+  // Web Share API実装
+  shareButton.addEventListener('click', function() {
+    if (navigator.share) {
+      try {
+        // 低メモリデバイスではテキストのみ共有
+        if (isLowMemoryDevice()) {
+          navigator.share({
+            title: 'KOZOU+で撮った写真',
+            text: '小僧まぜそばを食べました！'
+          });
+        } else {
+          // 画像共有を試みる
+          fetch(imageDataURL)
+            .then(res => res.blob())
+            .then(blob => {
+              const file = new File([blob], 'kozou-photo.jpg', { type: 'image/jpeg' });
+              navigator.share({
+                files: [file],
+                title: 'KOZOU+で撮った写真',
+                text: '小僧まぜそばを食べました！'
+              }).catch(err => {
+                console.warn('Share with file failed:', err);
+                // ファイルなしで共有を試みる
+                navigator.share({
+                  title: 'KOZOU+で撮った写真',
+                  text: '小僧まぜそばを食べました！'
+                });
+              });
+            })
+            .catch(err => {
+              console.warn('Blob creation failed:', err);
+              // テキストのみ共有
+              navigator.share({
+                title: 'KOZOU+で撮った写真',
+                text: '小僧まぜそばを食べました！'
+              });
+            });
+        }
+      } catch(e) {
+        console.warn('Share preparation error:', e);
+        alert('共有できませんでした');
+      }
+    } else {
+      alert('この機能はお使いのブラウザでサポートされていません');
+    }
+  });
+  
+  // 閉じるボタン
+  const closeButton = document.createElement('button');
+  closeButton.textContent = '閉じる';
+  closeButton.style.padding = '10px 20px';
+  closeButton.style.marginTop = '15px';
+  closeButton.style.backgroundColor = '#444';
+  closeButton.style.color = 'white';
+  closeButton.style.border = 'none';
+  closeButton.style.borderRadius = '5px';
+  closeButton.style.cursor = 'pointer';
+  closeButton.style.fontFamily = 'Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif';
+  
+  closeButton.addEventListener('click', function() {
+    document.body.removeChild(previewContainer);
+  });
+  
+  // 要素追加
+  previewContainer.appendChild(img);
+  previewContainer.appendChild(infoContainer);
+  infoContainer.appendChild(infoText);
+  infoContainer.appendChild(successMessage);
+  previewContainer.appendChild(saveButton);
+  previewContainer.appendChild(shareButton);
+  previewContainer.appendChild(closeButton);
+  document.body.appendChild(previewContainer);
+  
+  // プレビュー領域クリックでも閉じる
+  previewContainer.addEventListener('click', function(e) {
+    if (e.target === previewContainer) {
+      document.body.removeChild(previewContainer);
+    }
+  });
+}
+
+// ページ離脱時のクリーンアップ - メモリリーク防止
+window.addEventListener('beforeunload', function() {
+  // リソース解放
+  cleanupResources();
+  
+  // カメラストリーム停止
+  if (streamObject) {
+    streamObject.getTracks().forEach(track => {
+      track.stop();
+    });
+    streamObject = null;
+  }
+  
+  // ビデオ要素のクリーンアップ
+  if (videoElement) {
+    videoElement.srcObject = null;
+    videoElement = null;
+  }
+  
+  const frameVideo = document.getElementById('frame-camera-view');
+  if (frameVideo) {
+    frameVideo.srcObject = null;
+  }
+});
+
+// ページサイズ変更時の処理 - 負荷軽減
+let resizeTimeout = null;
+window.addEventListener('resize', function() {
+  // 連続リサイズ時の処理を間引く
+  if (resizeTimeout) {
+    clearTimeout(resizeTimeout);
+  }
+  
+  resizeTimeout = setTimeout(function() {
+    // アニメーション中でなければカード位置を更新
+    if (!isAnimating) {
+      updateCardPositions();
+    }
+    resizeTimeout = null;
+  }, 200); // 200ms間引く
+}); = '40px';
   // 背景グラデーションの透明度を下げる（0.8→0.5）
   core.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%)';
   core.style.filter = 'blur(10px)';
