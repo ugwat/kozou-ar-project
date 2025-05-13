@@ -1336,42 +1336,48 @@ function initSteamEffect() {
   
   // コンテナのクリア - メモリリーク防止
   container.innerHTML = '';
-  container.style.top = '20%';
+  container.style.top = '15%';
   container.style.width = '400px'; // より広く
   container.style.height = '350px'; // より高く
   container.style.overflow = 'visible';
   
   // 中心コア要素 - 湯気の発生源
-  const core = document.createElement('div');
-  core.className = 'steam-core';
-  core.style.position = 'absolute';
-  core.style.bottom = '0';
-  core.style.left = '50%';
-  core.style.transform = 'translateX(-50%)';
-  core.style.width = `${config.steamCoreSize}px`;
-  core.style.height = '40px';
-  core.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 70%)';
-  core.style.filter = 'blur(10px)';
-  core.style.borderRadius = '50%';
-  core.style.animation = 'core-pulse 2s ease-in-out infinite';
-  core.style.zIndex = '5';
-  container.appendChild(core);
-  
-  // 発光効果 - 下部の光る部分
-  const glow = document.createElement('div');
-  glow.className = 'steam-glow';
-  glow.style.position = 'absolute';
-  glow.style.bottom = '-30px';
-  glow.style.left = '50%';
-  glow.style.transform = 'translateX(-50%)';
-  glow.style.width = '220px';
-  glow.style.height = '60px';
-  glow.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%)';
-  glow.style.filter = 'blur(12px)';
-  glow.style.opacity = '0.7';
-  glow.style.animation = 'glow-pulse 3s ease-in-out infinite';
-  glow.style.zIndex = '4';
-  container.appendChild(glow);
+  // 中心コア要素 - 湯気の発生源
+const core = document.createElement('div');
+core.className = 'steam-core';
+core.style.position = 'absolute';
+core.style.bottom = '0';
+core.style.left = '50%';
+core.style.transform = 'translateX(-50%)';
+core.style.width = `${config.steamCoreSize}px`;
+core.style.height = '40px';
+// 背景グラデーションの透明度を下げる（0.8→0.5）
+core.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 70%)';
+core.style.filter = 'blur(10px)';
+core.style.borderRadius = '50%';
+// 全体の透明度も下げる
+core.style.opacity = '0.7'; // 追加：透明度を設定
+core.style.animation = 'core-pulse 2s ease-in-out infinite';
+core.style.zIndex = '5';
+container.appendChild(core);
+
+// 発光効果 - 下部の光る部分
+const glow = document.createElement('div');
+glow.className = 'steam-glow';
+glow.style.position = 'absolute';
+glow.style.bottom = '-30px';
+glow.style.left = '50%';
+glow.style.transform = 'translateX(-50%)';
+glow.style.width = '220px';
+glow.style.height = '60px';
+// 背景グラデーションの透明度を下げる（0.5→0.3）
+glow.style.background = 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%)';
+glow.style.filter = 'blur(12px)';
+// 透明度を下げる（0.7→0.5）
+glow.style.opacity = '0.5';
+glow.style.animation = 'glow-pulse 3s ease-in-out infinite';
+glow.style.zIndex = '4';
+container.appendChild(glow);
   
   // 初期バースト生成
   createSteamBurst(container);
