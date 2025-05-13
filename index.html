@@ -1157,24 +1157,26 @@ function setupSwipeEvents() {
     }
   }, { passive: isIOS() ? false : true });
   
-  document.addEventListener('touchend', function() {
-    if (!isSwipeEnabled || !isSwiping) return;
+  // スワイプ終了処理
+document.addEventListener('touchend', function() {
+  if (!isSwipeEnabled || !isSwiping) return;
+  
+  const diffX = currentX - startX;
+  const threshold = 50;
+  
+  if (Math.abs(diffX) >= threshold) {
+    isAnimating = true;
     
-    // スワイプ終了処理
-    const diffX = currentX - startX;
-    const threshold = 50;
+    // ここが重要：スワイプ方向の判定を反転
+    if (diffX > 0) {
+      // 右スワイプ = 左のカード表示（前へ）
+      activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+    } else {
+      // 左スワイプ = 右のカード表示（次へ）
+      activeCardIndex = (activeCardIndex + 1) % config.cardCount;
+    }
     
-    if (Math.abs(diffX) >= threshold) {
-      isAnimating = true;
-      
-      // スワイプの方向を調整：右スワイプで右のカード、左スワイプで左のカード
-      if (diffX > 0) {
-        // 右スワイプ = 右のカード表示 (インデックス増加)
-        activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-      } else {
-        // 左スワイプ = 左のカード表示 (インデックス減少)
-        activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
-      }
+    // 以下は同じ...
       
       // 少し遅延してアニメーションを解除
       setTimeout(function() {
