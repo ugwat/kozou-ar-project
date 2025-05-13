@@ -1,5 +1,616 @@
-  <!-- デザイン要素：角の飾り -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KOZOU+ AR Experience</title>
+<style>
+  /* 基本スタイル */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    width: 100%; 
+    height: 100vh;
+    background: #000; 
+    overflow: hidden; 
+  }
 
+  /* ローディング画面 */
+  #loading-screen { 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    width: 100%; 
+    height: 100%; 
+    background: black; 
+    display: none; 
+    flex-direction: column; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 1000; 
+    color: white; 
+  }
+
+  /* AR コンテナ */
+  #ar-container { 
+    width: 100%; 
+    height: 100%; 
+    position: fixed; 
+    top: 0; 
+    left: 0; 
+    z-index: 1; 
+    display: none; 
+  }
+
+  /* カメラビュー */
+  #camera-view { 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    z-index: 10; 
+    background: #000; 
+  }
+
+  /* フォトフレーム画面 */
+  #photo-frame-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: transparent;
+    z-index: 2000;
+    display: none;
+    color: white;
+    overflow: hidden;
+  }
+
+  /* 左上のロゴ - シンプル化 */
+  #logo-container {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    width: 80px;
+    height: 80px;
+    z-index: 2110;
+  }
+
+  #logo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  /* カード番号スタイル - HUD風に修正 */
+.card-number {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 200, 255, 0.3);
+  color: white;
+  font-weight: bold;
+  font-size: 28px;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+  border: 2px solid rgba(0, 200, 255, 0.8);
+  box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+  text-shadow: 0 0 8px rgba(0, 200, 255, 1);
+  font-family: 'Arial', sans-serif;
+}
+
+  /* マゼルナキケンエフェクト - 上下テープ */
+/* ✅マゼルナキケン テープ 改善版CSS */
+.marquee-container {
+  position: absolute;
+  width: 120%; /* 幅を広げる */
+  left: -10%; /* 左にずらす */
+  overflow: visible; /* overflow: hiddenを解除 */
+  z-index: 2500; /* z-indexを高くする */
+}
+
+.marquee-container.top { top: 100px; }
+.marquee-container.bottom { bottom: 10px; }
+
+.marquee {
+  --marquee-color: #f3bb0b;
+  --marquee-duration: 20s;
+  background: var(--marquee-color);
+  color: black;
+  overflow: hidden;
+  transform: rotate(-5deg);
+  transform-origin: center center; /* 👈 これを追加 */
+  white-space: nowrap;
+  width: 120%;
+  margin-left: 0%;
+  height: 40px;
+  margin-bottom: 5px;
+
+  font-size: clamp(24px, 5vw, 40px);
+  font-weight: 900;
+  font-family: "BIZ UDPGothic", sans-serif;
+}
+
+/* 下部テープ専用のスタイルを追加 */
+.marquee-container.bottom .marquee {
+  --marquee-color: #000000; /* 黒に変更（下部テープのみ） */
+  background: var(--marquee-color);
+  color: white; /* 白に変更（下部テープのみ） */
+}
+
+/* 下部テープの反転スタイルも変更 */
+.marquee-container.bottom .marquee.reverse {
+  background: none;
+  color: var(--marquee-color); /* 黒を参照 */
+}
+
+.marquee.reverse {
+  background: none;
+  color: var(--marquee-color);
+  transform: rotate(5deg);
+}
+
+.marquee--inner {
+  display: inline-block;
+  padding-left: 0;       /* 👈 不要な余白を削除 */
+  padding-right: 0;
+  animation: scroll-left var(--marquee-duration) linear infinite;
+  font-size: clamp(24px, 5vw, 40px);  /* 👈 テープに収まる範囲で文字を大きく */
+  font-weight: 900;                   /* 👈 太字を強調 */
+  font-family: "BIZ UDPGothic", sans-serif; /* 👈 読みやすく太いゴシック体に */
+}
+
+.marquee.reverse .marquee--inner {
+  animation: scroll-right var(--marquee-duration) linear infinite;
+}
+
+.marquee--inner p {
+  display: inline;
+  margin: 0 0.5em;
+  position: relative;
+}
+
+.marquee--inner p::after {
+  content: "🍜";
+  margin-left: 0.5em;
+}
+
+/* 🍜 の削除は下部テープのみ */
+.marquee-container.bottom .marquee--inner p::after {
+  content: ""; /* 🍜を削除 */
+  margin-left: 0.5em;
+}
+
+@keyframes scroll-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scroll-right {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
+
+  /* 湯気エフェクト */
+#enhanced-steam-container {
+  position: absolute;
+  top: 30%; /* 上部に余裕を持たせる */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 350px; /* より幅広に */
+  height: 300px; /* より高く */
+  z-index: 2105;
+  pointer-events: none;
+  overflow: visible; /* hiddenからvisibleに変更 */
+}
+
+  .steam-particle {
+    position: absolute;
+    bottom: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 70%);
+    opacity: 0;
+    transform: translateY(0) scale(0.1);
+    filter: blur(5px);
+  }
+
+  .steam-glow {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 30px;
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+    filter: blur(5px);
+    opacity: 0.6;
+    animation: steam-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes steam-glow {
+    0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.6; transform: translateX(-50%) scale(1.2); }
+  }
+
+  @keyframes steam-animation {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(0.1);
+    }
+    20% {
+      opacity: 0.7;
+      transform: translateY(-50px) scale(0.6);
+    }
+    60% {
+      opacity: 0.3;
+      transform: translateY(-120px) scale(1.2);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-180px) scale(1.8);
+    }
+  }
+
+  /* シャッターエフェクト */
+  #shutter-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    opacity: 0;
+    z-index: 3000;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+
+  /* カメラビュー */
+  #frame-camera-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 2010;
+    pointer-events: none; /* スマホでは必須 */
+  }
+
+  /* 戻るボタン */
+  #back-button {
+    position: absolute;
+    bottom: 80px; /* マゼルナキケンテープの上に配置 */
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    background-color: rgba(0, 162, 255, 0.7);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 2900;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+  }
+
+  /* 既存のスタイルを維持 */
+  .scene { position: absolute; width: 100%; height: 100%; transform-style: preserve-3d; perspective: 1400px; z-index: 20; }
+  .carousel { 
+    position: absolute; 
+    width: 100%; 
+    height: 100%; 
+    transform-style: preserve-3d; 
+    transform: translateY(-80px) rotateX(20deg);
+  }
+  .card-wrapper {
+    position: absolute;
+    width: 343.2px;
+    height: 589.2px;
+    transform-style: preserve-3d;
+    opacity: 1;
+    left: 50%;
+    top: 50%;
+    margin-left: -171.6px;
+    margin-top: -294.6px;
+    will-change: transform, opacity;
+    transition: transform 0.5s ease-out, opacity 0.5s ease-out;
+  }
+  .card {
+    position: absolute;
+    width: 100%;
+    height: 10px;
+    bottom: 0;
+    border-radius: 12px;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px rgba(0,255,255,0.5));
+    transition: height 2.0s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 2.0s, filter 0.5s;
+    backface-visibility: hidden;
+    will-change: height, opacity, filter;
+  }
+
+  /* カードタイプごとの背景設定 */
+  .card[data-card-type="1"] {
+    background-image: url('./assets/c1.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .card[data-card-type="2"] {
+    background-image: url('./assets/c2.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .card[data-card-type="3"] {
+    background-image: url('./assets/c3.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .card[data-card-type="4"] {
+    background-image: url('./assets/c4.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  /* カード5（写真撮影カード） */
+  .card[data-card-type="5"] {
+    background-image: url('./assets/c5.png');
+    background-size: 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .photo-button {
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+  }
+
+  /* カード番号スタイル */
+  .card-number {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 200, 255, 0.8);
+    color: white;
+    font-weight: bold;
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); filter: brightness(1); }
+    50% { transform: scale(1.05); filter: brightness(1.2); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+
+  /* 中央カードのみに適用する特別効果 */
+  .card-wrapper.center .card {
+    filter: drop-shadow(0 0 20px rgba(0,255,255,0.8)) drop-shadow(0 0 40px rgba(0,255,255,0.5));
+  }
+  /* スキャンライン効果 */
+  .center .card::before {  /* ::afterを使わないように変更 */
+    content: '';
+    position: absolute;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: rgba(0,255,255,0.5);
+    animation: scanline 2s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scanline {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+  .overlay { 
+    position: absolute; top:0; left:0; width:100%; height:100%; 
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%); 
+    z-index:15; pointer-events:none;
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  /* 説明ポップアップのスタイル */
+  #photo-instruction-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 400px;
+    background-color: rgba(0, 20, 40, 0.85);
+    border: 2px solid rgba(0, 200, 255, 0.8);
+    border-radius: 10px;
+    box-shadow: 0 0 30px rgba(0, 200, 255, 0.5), inset 0 0 20px rgba(0, 200, 255, 0.2);
+    padding: 25px;
+    color: white;
+    text-align: center;
+    z-index: 3000;
+    backdrop-filter: blur(5px);
+    display: none;
+  }
+
+  #popup-close-button {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0, 162, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 18px;
+    color: white;
+    box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+  }
+
+  #popup-title {
+    margin-bottom: 15px;
+    font-size: 18px;
+    text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+  }
+
+  #popup-subtitle {
+    font-size: 14px;
+    opacity: 0.8;
+    margin-top: 15px;
+  }
+
+  .popup-scanline {
+    position: absolute;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: rgba(0, 200, 255, 0.5);
+    animation: scanline 4s linear infinite;
+    pointer-events: none;
+  }
+
+  .popup-corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+  }
+
+  .popup-corner-tl {
+    top: 0;
+    left: 0;
+    border-top: 2px solid rgba(0, 200, 255, 0.8);
+    border-left: 2px solid rgba(0, 200, 255, 0.8);
+  }
+
+  .popup-corner-tr {
+    top: 0;
+    right: 0;
+    border-top: 2px solid rgba(0, 200, 255, 0.8);
+    border-right: 2px solid rgba(0, 200, 255, 0.8);
+  }
+
+  .popup-corner-bl {
+    bottom: 0;
+    left: 0;
+    border-bottom: 2px solid rgba(0, 200, 255, 0.8);
+    border-left: 2px solid rgba(0, 200, 255, 0.8);
+  }
+
+  .popup-corner-br {
+    bottom: 0;
+    right: 0;
+    border-bottom: 2px solid rgba(0, 200, 255, 0.8);
+    border-right: 2px solid rgba(0, 200, 255, 0.8);
+  }
+</style>
+</head>
+
+<body>
+<!-- エラー抑制用のダミー要素 -->
+<div id="error-suppression-container">
+  <div id="ShowOneChild-dummy"></div>
+</div>
+
+<!-- AR コンテナ -->
+<div id="ar-container">
+  <video id="camera-view" autoplay playsinline muted></video>
+  <div class="overlay"></div>
+  <div class="scene">
+    <div class="carousel"></div>
+  </div>
+</div>
+
+<!-- フォトフレーム画面 -->
+<div id="photo-frame-container">
+  <!-- カメラビュー -->
+  <video id="frame-camera-view" autoplay playsinline muted></video>
+  
+  <!-- 1. 左上のロゴ -->
+  <div id="logo-container">
+    <img src="./assets/logo3d.gif" alt="KOZOU+ Logo">
+  </div>
+  
+  <!-- 2. マゼルナキケンエフェクト - 上部テープ（変更なし） -->
+  <div class="marquee-container top">
+    <div class="marquee">
+      <div class="marquee--inner">
+        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      </div>
+    </div>
+    <div class="marquee reverse">
+      <div class="marquee--inner">
+        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      </div>
+    </div>
+  </div>
+  
+  
+  <!-- 3. 湯気エフェクト -->
+  <div id="enhanced-steam-container"></div>
+  
+  <!-- 4. マゼルナキケンエフェクト - 下部テープ（テキスト変更） -->
+  <div class="marquee-container bottom">
+    <div class="marquee">
+      <div class="marquee--inner">
+       <!-- 黒いテープに白文字で「TONKOTSU MAZESOBA」に変更 -->
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      </div>
+    </div>
+    <div class="marquee reverse">
+      <div class="marquee--inner">
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      </div>
+      
+    </div>
+  </div>
+  
+  
+  
+  <!-- シャッターエフェクト -->
+  <div id="shutter-effect"></div>
+  
+  <!-- 戻るボタン -->
+  <button id="back-button">戻る</button>
+</div>
+
+<!-- 説明ポップアップ -->
+<div id="photo-instruction-popup">
+  <div id="popup-close-button">×</div>
+  <h3 id="popup-title">湯気に合わせて、ラーメンを配置して撮影せよ！</h3>
+  <p id="popup-subtitle">※撮影は画面のどこをタップしても可能</p>
+  
+  <!-- デザイン要素：スキャンライン -->
+  <div class="popup-scanline"></div>
+  
+  <!-- デザイン要素：角の飾り -->
+  <div class="popup-corner popup-corner-tl"></div>
+  <div class="popup-corner popup-corner-tr"></div>
+  <div class="popup-corner popup-corner-bl"></div>
+  <div class="popup-corner popup-corner-br"></div>
+</div>
 <script>
   // KOZOU+ AR プロジェクト 最終版（メモリ最適化とiOS対応強化）
   
