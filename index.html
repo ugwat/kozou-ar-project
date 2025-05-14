@@ -596,6 +596,7 @@
   <div id="popup-close-button">×</div>
   <h3 id="popup-title">湯気に合わせて、ラーメンを配置して撮影せよ！</h3>
   <p id="popup-subtitle">※撮影は画面のどこをタップしても可能</p>
+  <p id="popup-note">※左上のロゴをタップで食べ方ページに戻れます。</p>
   
   <!-- デザイン要素：スキャンライン -->
   <div class="popup-scanline"></div>
@@ -1753,7 +1754,7 @@ function displayCapturedImage(imageDataURL) {
   // iOSでの詳細な保存手順を表示
   if (isIOS()) {
     infoText.innerHTML = '<b>カメラロールに保存する方法:</b><br>' +
-      '画像を<b>長押し</b>して「<b>写真に追加</b>」を選択してください';
+      '画像を<b>長押し</b>して「<b>写真に保存</b>」を選択してください';
   } else {
     infoText.textContent = '写真を保存しました！';
   }
