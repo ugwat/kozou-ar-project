@@ -1226,7 +1226,6 @@ function setupSwipeEvents() {
     });
   }
 }
-// フォトフレーム表示 - メモリ最適化
 function showPhotoFrame() {
   try {
     console.log("Showing photo frame");
@@ -1271,14 +1270,14 @@ function showPhotoFrame() {
       }
     }
     
-    // ポップアップを表示
-const popup = document.getElementById('photo-instruction-popup');
-if (popup) {
-  popup.style.display = 'block';
-}
+    // ポップアップを表示（ここを修正）
+    const popup = document.getElementById('photo-instruction-popup');
+    if (popup) {
+      popup.style.display = 'block';
+    }
     
-    // 撮影フラグを有効化
-    canTakePhoto = true;
+    // 撮影フラグはまだ無効（ポップアップが閉じられるまで）
+    canTakePhoto = false;
     
     // 戻るボタン非表示
     const backButton = document.getElementById('back-button');
@@ -1295,7 +1294,6 @@ if (popup) {
     returnToARMode(); // エラー時は元に戻す
   }
 }
-
 // AR画面に戻る - メモリ最適化
 function returnToARMode() {
   try {
