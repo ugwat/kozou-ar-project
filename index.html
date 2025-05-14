@@ -1043,9 +1043,9 @@ function createCards() {
 const cardNumber = document.createElement('div');
 cardNumber.className = 'card-number';
 
-// 表示番号の計算：5枚なので (i + 1) % 5 で循環させ、0になった場合は5に変換
-let displayNumber = (i + 1) % 5;
-if (displayNumber === 0) displayNumber = 5;
+// 表示番号の計算：インデックス+1 から 初期カードインデックス+1 を引いて循環させる
+let displayNumber = ((i - 4) + 5) % 5 + 1;
+// これは (i - 4 + 5) % 5 + 1 と同じで、index 4 → 表示番号1になる
 
 cardNumber.textContent = displayNumber.toString();
     
