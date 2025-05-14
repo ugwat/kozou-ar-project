@@ -484,6 +484,18 @@
     border-bottom: 2px solid rgba(0, 200, 255, 0.8);
     border-right: 2px solid rgba(0, 200, 255, 0.8);
   }
+/* ポップアップ指示テキスト用の新しいスタイル */
+.popup-instructions {
+  margin-top: 15px;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+.popup-instructions p {
+  white-space: nowrap; /* 改行を防止 */
+  margin: 5px 0; /* 行間のマージン調整 */
+}
+/* ポップアップ指示テキスト用スタイル終了 */  
 </style>
 </head>
 
@@ -595,8 +607,10 @@
 <div id="photo-instruction-popup">
   <div id="popup-close-button">×</div>
   <h3 id="popup-title">湯気に合わせて、ラーメンを配置して撮影せよ！</h3>
-  <p id="popup-subtitle">※撮影は画面のどこをタップしても可能</p>
-  <p id="popup-note">※左上のロゴをタップで食べ方ページに戻れます。</p>
+  <div class="popup-instructions">
+    <p>※撮影は画面のどこをタップしても可能</p>
+    <p>※左上のロゴをタップで食べ方ページに戻れます。</p>
+  </div>
   
   <!-- デザイン要素：スキャンライン -->
   <div class="popup-scanline"></div>
@@ -1317,6 +1331,12 @@ function returnToARMode() {
     const photoFrame = document.getElementById('photo-frame-container');
     if (photoFrame) {
       photoFrame.style.display = 'none';
+    }
+    
+    // ポップアップを非表示にする（追加）
+    const popup = document.getElementById('photo-instruction-popup');
+    if (popup) {
+      popup.style.display = 'none';
     }
     
     // ARコンテナを表示
