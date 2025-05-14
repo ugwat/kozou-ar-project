@@ -571,21 +571,23 @@
   <!-- 3. 湯気エフェクト -->
   <div id="enhanced-steam-container"></div>
   
-  <!-- 4. マゼルナキケンエフェクト - 下部テープ（テキスト変更） -->
-  <div class="marquee-container bottom">
-    <div class="marquee">
-      <div class="marquee--inner">
-        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
-        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
-      </div>
-    </div>
-    <div class="marquee reverse">
-      <div class="marquee--inner">
-        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
-        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
-      </div>
+  <!-- 4. マゼルナキケンエフェクト - 下部テープ -->
+<div class="marquee-container bottom">
+  <!-- 黒テープを配置 (z-index: 2500) -->
+  <div class="marquee reverse">
+    <div class="marquee--inner">
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
     </div>
   </div>
+  <!-- 黄色テープを配置 (z-index: 2600) - これを上に -->
+  <div class="marquee" style="z-index: 2600;">
+    <div class="marquee--inner">
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+    </div>
+  </div>
+</div>
   
   <!-- シャッターエフェクト -->
   <div id="shutter-effect"></div>
