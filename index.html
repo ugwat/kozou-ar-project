@@ -395,7 +395,8 @@
   }
 
   /* 説明ポップアップのスタイル */
-#photo-instruction-popup {
+  #photo-instruction-popup {
+  /* 既存のスタイルは変更なし */
   position: fixed;
   top: 50%;
   left: 50%;
@@ -411,24 +412,35 @@
   text-align: center;
   z-index: 3000;
   backdrop-filter: blur(5px);
-  font-family: 'Helvetica', 'Arial', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif; /* フォント指定を追加 */
+  font-family: 'Helvetica', 'Arial', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+  display: none; /* 初期状態では非表示に設定 */
 }
-
-#popup-title {
-  margin-bottom: 15px;
+/* 以下は既存のままで変更なし */
+#popup-close-button {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 30px;
+  height: 30px;
+  background-color: rgba(0, 162, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
   font-size: 18px;
-  text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
-  font-weight: bold;
+  color: white;
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
 }
 
+/* サブタイトルは改行されないように調整 */
 #popup-subtitle {
   font-size: 14px;
   opacity: 0.8;
-  margin-top: 20px; /* より下に配置 */
+  margin-top: 15px;
   white-space: nowrap; /* 改行を防止 */
-  padding: 0 5px; /* 余白を調整 */
 }
-
   .popup-scanline {
     position: absolute;
     left: 0;
