@@ -104,33 +104,70 @@
     font-family: 'Arial', sans-serif;
   }
 
-  /* マゼルナキケンエフェクト - 上下テープ */
-  .marquee-container {
-    position: absolute;
-    width: 120%; /* 幅を広げる */
-    left: -10%; /* 左にずらす */
-    overflow: visible; /* overflow: hiddenを解除 */
-    z-index: 2500; /* z-indexを高くする */
-  }
-  /* 下部テープ専用のスタイルを追加 */
-.marquee-container.bottom .marquee {
-  --marquee-color: #000000; /* 黒に変更（下部テープのみ） */
+ /* マゼルナキケンエフェクト - 上下テープ */
+.marquee-container {
+  position: absolute;
+  width: 120%; /* 幅を広げる */
+  left: -10%; /* 左にずらす */
+  overflow: visible; /* overflow: hiddenを解除 */
+  z-index: 2500; /* z-indexを高くする */
+}
+
+.marquee-container.top { top: 100px; }
+.marquee-container.bottom { bottom: 10px; }
+
+.marquee {
+  --marquee-color: #f3bb0b;
+  --marquee-duration: 20s;
   background: var(--marquee-color);
-  color: white; /* 白に変更（下部テープのみ） */
+  color: black;
+  overflow: hidden;
+  transform: rotate(-5deg);
+  transform-origin: center center; /* 👈 これを追加 */
+  white-space: nowrap;
+  width: 120%;
+  margin-left: 0%;
+  height: 40px;
+  margin-bottom: 5px;
+
+  font-size: clamp(24px, 5vw, 40px);
+  font-weight: 900;
+  font-family: "BIZ UDPGothic", sans-serif;
 }
 
-/* 下部テープの反転スタイルも変更 */
-.marquee-container.bottom .marquee.reverse {
-  background: none;
-  color: var(--marquee-color); /* 黒を参照 */
+/* 黒背景の反転テープのみスタイルを変更 */
+.marquee.reverse {
+  --marquee-color: #000000; /* 黒に変更 */
+  background: var(--marquee-color);
+  color: white; /* 白に変更 */
+  transform: rotate(5deg);
 }
 
-/* 🍜 の削除は下部テープのみ */
-.marquee-container.bottom .marquee--inner p::after {
-  content: ""; /* 🍜を削除 */
+.marquee--inner {
+  display: inline-block;
+  padding-left: 0;       /* 👈 不要な余白を削除 */
+  padding-right: 0;
+  animation: scroll-left var(--marquee-duration) linear infinite;
+  font-size: clamp(24px, 5vw, 40px);  /* 👈 テープに収まる範囲で文字を大きく */
+  font-weight: 900;                   /* 👈 太字を強調 */
+  font-family: "BIZ UDPGothic", sans-serif; /* 👈 読みやすく太いゴシック体に */
+}
+
+.marquee.reverse .marquee--inner {
+  animation: scroll-right var(--marquee-duration) linear infinite;
+}
+
+.marquee--inner p {
+  display: inline;
+  margin: 0 0.5em;
+  position: relative;
+}
+
+/* 🍜を完全に削除 - 両方のテープから */
+.marquee--inner p::after {
+  content: "";
   margin-left: 0.5em;
 }
-
   .marquee-container.top { top: 100px; }
   .marquee-container.bottom { bottom: 10px; }
 
@@ -549,19 +586,35 @@
     <img src="./assets/logo3d.gif" alt="KOZOU+ Logo">
   </div>
   
-  <!-- 2. マゼルナキケンエフェクト - 上部テープ（変更なし） -->
-  <div class="marquee-container top">
-    <div class="marquee">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
-    </div>
-    <div class="marquee reverse">
-      <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      </div>
+  <!-- 2. マゼルナキケンエフェクト - 上部テープ -->
+<div class="marquee-container top">
+  <div class="marquee">
+    <div class="marquee--inner">
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
     </div>
   </div>
+  <div class="marquee reverse">
+    <div class="marquee--inner">
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+    </div>
+  </div>
+</div>
+
+<!-- 4. マゼルナキケンエフェクト - 下部テープ -->
+<div class="marquee-container bottom">
+  <div class="marquee">
+    <div class="marquee--inner">
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+    </div>
+  </div>
+  <div class="marquee reverse">
+    <div class="marquee--inner">
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+    </div>
+  </div>
+</div>
   
   <!-- 3. 湯気エフェクト -->
   <div id="enhanced-steam-container"></div>
