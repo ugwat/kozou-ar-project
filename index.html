@@ -395,54 +395,39 @@
   }
 
   /* 説明ポップアップのスタイル */
-  #photo-instruction-popup {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%;
-    max-width: 400px;
-    background-color: rgba(0, 20, 40, 0.85);
-    border: 2px solid rgba(0, 200, 255, 0.8);
-    border-radius: 10px;
-    box-shadow: 0 0 30px rgba(0, 200, 255, 0.5), inset 0 0 20px rgba(0, 200, 255, 0.2);
-    padding: 25px;
-    color: white;
-    text-align: center;
-    z-index: 3000;
-    backdrop-filter: blur(5px);
-    display: none;
-  }
+#photo-instruction-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 400px;
+  background-color: rgba(0, 20, 40, 0.85);
+  border: 2px solid rgba(0, 200, 255, 0.8);
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(0, 200, 255, 0.5), inset 0 0 20px rgba(0, 200, 255, 0.2);
+  padding: 25px;
+  color: white;
+  text-align: center;
+  z-index: 3000;
+  backdrop-filter: blur(5px);
+  font-family: 'Helvetica', 'Arial', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif; /* フォント指定を追加 */
+}
 
-  #popup-close-button {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    width: 30px;
-    height: 30px;
-    background-color: rgba(0, 162, 255, 0.9);
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    font-size: 18px;
-    color: white;
-    box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
-  }
+#popup-title {
+  margin-bottom: 15px;
+  font-size: 18px;
+  text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+  font-weight: bold;
+}
 
-  #popup-title {
-    margin-bottom: 15px;
-    font-size: 18px;
-    text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
-  }
-
-  #popup-subtitle {
-    font-size: 14px;
-    opacity: 0.8;
-    margin-top: 15px;
-  }
+#popup-subtitle {
+  font-size: 14px;
+  opacity: 0.8;
+  margin-top: 20px; /* より下に配置 */
+  white-space: nowrap; /* 改行を防止 */
+  padding: 0 5px; /* 余白を調整 */
+}
 
   .popup-scanline {
     position: absolute;
