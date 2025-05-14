@@ -81,29 +81,27 @@
     object-fit: contain;
   }
   
-  /* カード番号スタイル - HUD風に修正 */
-  .card-number {
-    position: absolute;
-    top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(0, 200, 255, 0.3);
-    color: white;
-    font-weight: bold;
-    font-size: 28px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    border: 2px solid rgba(0, 200, 255, 0.8);
-    box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
-    text-shadow: 0 0 8px rgba(0, 200, 255, 1);
-    font-family: 'Arial', sans-serif;
-  }
-
+  /* カード番号スタイル - 上部に配置 */
+.card-number {
+  position: absolute;
+  top: -30px; /* カード上部に出るように負の値に設定 */
+  left: 50%;  /* 中央揃え */
+  transform: translateX(-50%);
+  background-color: rgba(0, 200, 255, 0.8);
+  color: white;
+  font-weight: bold;
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 110; /* カードより前面に表示するために高い値に設定 */
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+  font-family: 'Helvetica', 'Arial', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif; /* フォント指定を追加 */
+  text-shadow: 0 0 5px rgba(0, 200, 255, 0.8); /* 視認性向上のためのシャドウ */
+}
  /* マゼルナキケンエフェクト - 上下テープ */
 .marquee-container {
   position: absolute;
