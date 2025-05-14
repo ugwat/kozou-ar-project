@@ -497,6 +497,7 @@
 }
 /* ポップアップ指示テキスト用スタイル終了 */  
 </style>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 </head>
 
 <body>
@@ -710,7 +711,72 @@
     './assets/c1.png', './assets/c2.png', './assets/c3.png', 
     './assets/c4.png', './assets/c5.png'
   ];
+  // アニメーションを一時停止して現在のtransform状態を固定する関数
+function freezeAnimations() {
+  // テープアニメーションを停止
+  const marqueeElements = document.querySelectorAll('.marquee--inner');
+  marqueeElements.forEach(elem => {
+    const computed = window.getComputedStyle(elem);
+    const currentTransform = computed.transform;
+    
+    // アニメーションを停止し、現在の変形状態を維持
+    elem.style.animation = 'none';
+    if (currentTransform && currentTransform !== 'none') {
+      elem.style.transform = currentTransform;
+    }
+  });
   
+  // 湯気エフェクトも停止
+  const steamParticles = document.querySelectorAll('.steam-particle');
+  steamParticles.forEach(particle => {
+    const computed = window.getComputedStyle(particle);
+    
+    // アニメーションを停止し、現在の状態を維持
+    particle.style.animation = 'none';
+    particle.style.transform = computed.transform;
+    particle.style.opacity = computed.opacity;
+  });
+  
+  // 中心発光部分も停止
+  const steamCore = document.querySelector('.steam-core');
+  if (steamCore) {
+    steamCore.style.animation = 'none';
+  }
+  
+  const steamGlow = document.querySelector('.steam-glow');
+  if (steamGlow) {
+    steamGlow.style.animation = 'none';
+  }
+}
+
+// アニメーションを元に戻す関数
+function restoreAnimations() {
+  // テープアニメーションを再開
+  const marqueeElements = document.querySelectorAll('.marquee--inner');
+  marqueeElements.forEach(elem => {
+    elem.style.animation = '';
+    elem.style.transform = '';
+  });
+  
+  // 湯気エフェクトを再開
+  const steamParticles = document.querySelectorAll('.steam-particle');
+  steamParticles.forEach(particle => {
+    particle.style.animation = '';
+    particle.style.transform = '';
+    particle.style.opacity = '';
+  });
+  
+  // 中心発光部分も再開
+  const steamCore = document.querySelector('.steam-core');
+  if (steamCore) {
+    steamCore.style.animation = '';
+  }
+  
+  const steamGlow = document.querySelector('.steam-glow');
+  if (steamGlow) {
+    steamGlow.style.animation = '';
+  }
+}
   // 設定 - 低メモリデバイスでは軽量化
   const config = {
     cardSpacing: 320,
@@ -1559,6 +1625,7 @@ function createSteamParticle(container, centerX = 0, timeOffset = 0) {
 // 現在表示されている湯気エフェクトをそのまま写真に反映する方法
 // 写真撮影処理 - すべてのUI要素を含む版
 // 写真撮影処理 - 湯気エフェクト対応版
+// 写真撮影処理 - アニメーション停止版
 function takePhoto() {
   try {
     console.log("Taking photo");
@@ -1575,15 +1642,84 @@ function takePhoto() {
         shutterEffect.style.opacity = '0';
       }
       
-      // すべてのUI要素を含む撮影処理
-      captureWithCurrentSteam();
+      // アニメーションを停止して状態を固定
+      freezeAnimations();
+      
+      // ビデオフレームをキャンバスに描画
+      const video = document.getElementById('frame-camera-view');
+      if (!video || !video.videoWidth) {
+        alert("ビデオキャプチャできません");
+        restoreAnimations();
+        return;
+      }
+      
+      // ビデオフレームを描画するキャンバスを作成
+      const videoCanvas = document.createElement('canvas');
+      const scale = isLowMemoryDevice() ? 0.5 : 1.0;
+      videoCanvas.width = video.videoWidth * scale;
+      videoCanvas.height = video.videoHeight * scale;
+      const videoCtx = videoCanvas.getContext('2d');
+      
+      // ビデオフレームを描画
+      videoCtx.drawImage(video, 0, 0, videoCanvas.width, videoCanvas.height);
+      
+      // html2canvasでUI要素をキャプチャ
+      html2canvas(document.getElementById('photo-frame-container'), {
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        ignoreElements: (element) => {
+          // videoタグは無視（すでに別のキャンバスに描画済み）
+          return element.tagName.toLowerCase() === 'video';
+        },
+        scale: scale
+      }).then(uiCanvas => {
+        try {
+          // 合成用のキャンバスを作成
+          const finalCanvas = document.createElement('canvas');
+          finalCanvas.width = videoCanvas.width;
+          finalCanvas.height = videoCanvas.height;
+          const finalCtx = finalCanvas.getContext('2d');
+          
+          // 背景にビデオフレームを描画
+          finalCtx.drawImage(videoCanvas, 0, 0);
+          
+          // UI要素を合成
+          finalCtx.drawImage(uiCanvas, 0, 0, finalCanvas.width, finalCanvas.height);
+          
+          // 画像データを取得
+          const quality = isLowMemoryDevice() ? 0.7 : 0.9;
+          const imageDataURL = finalCanvas.toDataURL('image/jpeg', quality);
+          
+          // アニメーションを元に戻す
+          restoreAnimations();
+          
+          // 画像を表示
+          displayCapturedImage(imageDataURL);
+          
+          // iOS以外でダウンロード
+          if (!isIOS()) {
+            downloadImage(imageDataURL);
+          }
+        } catch (e) {
+          console.warn("Canvas processing error:", e);
+          restoreAnimations();
+          // エラー時はシンプルなキャプチャにフォールバック
+          simpleVideoCapture();
+        }
+      }).catch(error => {
+        console.warn("html2canvas error:", error);
+        restoreAnimations();
+        // エラー時はシンプルなキャプチャにフォールバック
+        simpleVideoCapture();
+      });
     }, 200);
   } catch (e) {
     console.warn("Take photo error:", e);
+    restoreAnimations();
     alert("写真を撮影しました！");
   }
 }
-
 // すべてのUI要素を含むキャプチャ
 function captureWithCurrentSteam() {
   const video = document.getElementById('frame-camera-view');
