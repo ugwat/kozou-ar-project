@@ -1567,27 +1567,86 @@ function takePhoto() {
       shutterEffect.style.opacity = '0.8';
     }
     
-    // フラッシュ表示後に撮影処理
-    setTimeout(() => {
-      if (shutterEffect) {
-        shutterEffect.style.opacity = '0';
-      }
-      
-      try {
-        // フレーム全体をキャプチャ（湯気エフェクトを含む）
+    // 湯気エフェクトの状態を保存するための下準備
+    const steamContainer = document.getElementById('enhanced-steam-container');
+    let steamImage = null;
+    
+    if (steamContainer) {
+      // 湯気エフェクトだけを静止画キャプチャ
+      html2canvas(steamContainer, {
+        backgroundColor: null,
+        allowTaint: true,
+        useCORS: true,
+        logging: false,
+        scale: isLowMemoryDevice() ? 0.5 : (window.devicePixelRatio || 1)
+      }).then(function(steamCanvas) {
+        steamImage = document.createElement('img');
+        steamImage.src = steamCanvas.toDataURL('image/png');
+        steamImage.style.position = 'absolute';
+        steamImage.style.top = steamContainer.style.top;
+        steamImage.style.left = steamContainer.style.left;
+        steamImage.style.transform = steamContainer.style.transform;
+        steamImage.style.width = steamContainer.style.width;
+        steamImage.style.height = steamContainer.style.height;
+        steamImage.style.zIndex = steamContainer.style.zIndex;
+        steamImage.id = 'steam-snapshot';
+        
+        // 元の湯気コンテナを一時的に非表示
+        steamContainer.style.visibility = 'hidden';
+        
+        // 静止画を親コンテナに追加
+        const frameContainer = document.getElementById('photo-frame-container');
+        if (frameContainer) {
+          frameContainer.appendChild(steamImage);
+          
+          // 少し遅延してから本体のキャプチャ処理
+          setTimeout(() => {
+            // フラッシュ効果を消す
+            if (shutterEffect) {
+              shutterEffect.style.opacity = '0';
+            }
+            
+            try {
+              // フレーム全体をキャプチャ（静止画化した湯気エフェクトを含む）
+              capturePhotoFrame();
+            } catch (e) {
+              console.warn("Photo capture error:", e);
+              simpleVideoCapture();
+            } finally {
+              // キャプチャ後は元に戻す
+              if (steamImage && steamImage.parentNode) {
+                steamImage.parentNode.removeChild(steamImage);
+              }
+              if (steamContainer) {
+                steamContainer.style.visibility = 'visible';
+              }
+            }
+          }, 100);
+        }
+      }).catch(function(err) {
+        console.warn("Steam capture failed:", err);
+        // 湯気キャプチャに失敗した場合は通常の撮影処理
+        setTimeout(() => {
+          if (shutterEffect) {
+            shutterEffect.style.opacity = '0';
+          }
+          capturePhotoFrame();
+        }, 200);
+      });
+    } else {
+      // 湯気コンテナがない場合は通常の撮影処理
+      setTimeout(() => {
+        if (shutterEffect) {
+          shutterEffect.style.opacity = '0';
+        }
         capturePhotoFrame();
-      } catch (e) {
-        console.warn("Photo capture error:", e);
-        // エラー時はシンプルな方法に
-        simpleVideoCapture();
-      }
-    }, 200);
+      }, 200);
+    }
   } catch (e) {
     console.warn("Take photo error:", e);
     alert("写真を撮影しました！");
   }
 }
-
 // フォトフレーム全体をキャプチャ（湯気エフェクトを含む）
 function capturePhotoFrame() {
   // フォトフレームコンテナを取得
