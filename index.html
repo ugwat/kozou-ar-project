@@ -535,30 +535,35 @@
 
 <!-- 3. マゼルナキケンエフェクト - 下部テープ -->
 <div class="marquee-container bottom">
-  <div class="marquee">
-    <div class="marquee--inner">
-      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-    </div>
-  </div>
+  <!-- 下部グループではテープの順序を入れ替え - 黒テープを先に配置して、z-indexで黄色を上に -->
   <div class="marquee reverse">
     <div class="marquee--inner">
       <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
       <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+    </div>
+  </div>
+  <div class="marquee" style="z-index: 2600;"><!-- 黄色テープを上に表示するためにz-indexを上げる -->
+    <div class="marquee--inner">
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
     </div>
   </div>
 </div>
 
 <!-- 3. マゼルナキケンエフェクト - 下部テープ -->
 <div class="marquee-container bottom">
-  <div class="marquee">
-    <div class="marquee--inner">
-      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-    </div>
-  </div>
+  <!-- 黒テープを先に配置（下になる） -->
   <div class="marquee reverse">
     <div class="marquee--inner">
       <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+    </div>
+  </div>
+  <!-- 黄色テープを後に配置（上になる）し、z-indexをさらに高く設定 -->
+  <div class="marquee" style="z-index: 2700;">
+    <div class="marquee--inner">
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
     </div>
   </div>
 </div>
