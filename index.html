@@ -1040,9 +1040,14 @@ function createCards() {
     card.style.opacity = '0.8';
     
     // カード番号
-    const cardNumber = document.createElement('div');
-    cardNumber.className = 'card-number';
-    cardNumber.textContent = (i + 1).toString();
+const cardNumber = document.createElement('div');
+cardNumber.className = 'card-number';
+
+// 表示番号の計算：5枚なので (i + 1) % 5 で循環させ、0になった場合は5に変換
+let displayNumber = (i + 1) % 5;
+if (displayNumber === 0) displayNumber = 5;
+
+cardNumber.textContent = displayNumber.toString();
     
     wrapper.appendChild(cardNumber);
     wrapper.appendChild(card);
