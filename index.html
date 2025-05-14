@@ -106,6 +106,7 @@
 
  /* マゼルナキケンエフェクト - 上下テープ */
 /* マゼルナキケンエフェクト - 上下テープ */
+/* マゼルナキケンエフェクト - 上下テープ */
 .marquee-container {
   position: absolute;
   width: 120%; /* 幅を広げる */
@@ -168,6 +169,33 @@
 .marquee--inner p::after {
   content: "";
   margin-left: 0.5em;
+}
+
+/* 文字が途切れないようにテキスト量を増やす */
+.marquee--inner {
+  min-width: 300%; /* 必ず画面より広くなるように */
+}
+
+/* アニメーションの開始位置を調整して最初から見える */
+@keyframes scroll-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes scroll-right {
+  0%   { transform: translateX(-50%); } /* -100%から-50%に変更 */
+  100% { transform: translateX(0); }
+}
+
+/* 下のグループの順序を反転 */
+.marquee-container.bottom .marquee {
+  margin-bottom: 0; /* 上下の間隔を調整 */
+  margin-top: 5px;
+}
+
+.marquee-container.bottom .marquee.reverse {
+  margin-bottom: 5px;
+  margin-top: 0;
 }
 
 /* アニメーション定義 */
@@ -518,30 +546,39 @@
   </div>
   
   <!-- 2. マゼルナキケンエフェクト - 上部テープ -->
-<div class="marquee-container top">
-  <div class="marquee">
-    <div class="marquee--inner">
-      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-    </div>
-  </div>
-  <div class="marquee reverse">
-    <div class="marquee--inner">
-      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
-    </div>
-  </div>
-</div>
-
-<!-- 4. マゼルナキケンエフェクト - 下部テープ -->
 <!-- 2. マゼルナキケンエフェクト - 上部テープ -->
 <div class="marquee-container top">
   <div class="marquee">
     <div class="marquee--inner">
       <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
     </div>
   </div>
   <div class="marquee reverse">
     <div class="marquee--inner">
       <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+    </div>
+  </div>
+</div>
+
+<!-- 3. マゼルナキケンエフェクト - 下部テープ -->
+<div class="marquee-container bottom">
+  <!-- 順序を入れ替え: 黒テープが下、黄色テープが上 -->
+  <div class="marquee reverse">
+    <div class="marquee--inner">
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+      <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+    </div>
+  </div>
+  <div class="marquee">
+    <div class="marquee--inner">
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+      <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
     </div>
   </div>
 </div>
