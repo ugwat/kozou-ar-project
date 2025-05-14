@@ -1145,9 +1145,9 @@ function updateCardPositions(offsetRatio = 0) {
   // ボタン表示のチェック
   checkPhotoButtonVisibility();
 }
-// スワイプイベント - 修正版（直感的な方向に）
+// スワイプイベント - ネイティブな動きに修正
 function setupSwipeEvents() {
-  // タッチイベント - 修正：直感的な動きのため符号を調整
+  // タッチイベント - 直感的な動きになるよう修正
   document.addEventListener('touchstart', function(e) {
     if (!isSwipeEnabled) return;
     startX = e.touches[0].clientX;
@@ -1160,8 +1160,8 @@ function setupSwipeEvents() {
     currentX = e.touches[0].clientX;
     const diffX = currentX - startX;
     
-    // オフセット計算を修正：符号を調整して直感的な動きに
-    const offsetRatio = diffX / config.swipeSensitivity;
+    // オフセット計算を修正：マイナス符号を追加して方向を反転
+    const offsetRatio = -diffX / config.swipeSensitivity;
     updateCardPositions(offsetRatio);
     
     // iOSでのスクロール防止（オプション）
@@ -1180,13 +1180,13 @@ function setupSwipeEvents() {
     if (Math.abs(diffX) >= threshold) {
       isAnimating = true;
       
-      // スワイプの方向を調整：右スワイプで右のカード、左スワイプで左のカード
+      // スワイプの方向を修正：方向を反転
       if (diffX > 0) {
-        // 右スワイプ = 右のカード表示 (インデックス増加)
-        activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-      } else {
-        // 左スワイプ = 左のカード表示 (インデックス減少)
+        // 右スワイプ = 左のカード表示（前へ）
         activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+      } else {
+        // 左スワイプ = 右のカード表示（次へ）
+        activeCardIndex = (activeCardIndex + 1) % config.cardCount;
       }
       
       // 少し遅延してアニメーションを解除
@@ -1202,7 +1202,7 @@ function setupSwipeEvents() {
     isSwiping = false;
   }, { passive: true });
   
-  // PCの場合のマウスイベント（オプション）
+  // PCの場合のマウスイベント - こちらも同様に修正
   if (!isIOS() && !isSafari()) {
     document.addEventListener('mousedown', function(e) {
       if (!isSwipeEnabled) return;
@@ -1216,8 +1216,8 @@ function setupSwipeEvents() {
       currentX = e.clientX;
       const diffX = currentX - startX;
       
-      // 同様に符号を調整
-      const offsetRatio = diffX / config.swipeSensitivity;
+      // マウスイベントも同様に符号を反転
+      const offsetRatio = -diffX / config.swipeSensitivity;
       updateCardPositions(offsetRatio);
     });
     
@@ -1228,12 +1228,13 @@ function setupSwipeEvents() {
       const threshold = 50;
       
       if (Math.abs(diffX) >= threshold) {
+        // マウスイベントも同様に方向を反転
         if (diffX > 0) {
-          // 右スワイプ = 右のカード表示
-          activeCardIndex = (activeCardIndex + 1) % config.cardCount;
-        } else {
-          // 左スワイプ = 左のカード表示
+          // 右スワイプ = 左のカード表示（前へ）
           activeCardIndex = (activeCardIndex - 1 + config.cardCount) % config.cardCount;
+        } else {
+          // 左スワイプ = 右のカード表示（次へ）
+          activeCardIndex = (activeCardIndex + 1) % config.cardCount;
         }
       }
       
