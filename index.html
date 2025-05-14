@@ -1557,6 +1557,7 @@ function createSteamParticle(container, centerX = 0, timeOffset = 0) {
   container.appendChild(particle);
 }
 // 現在表示されている湯気エフェクトをそのまま写真に反映する方法
+// 写真撮影処理 - すべてのUI要素を含む版
 function takePhoto() {
   try {
     console.log("Taking photo");
@@ -1573,7 +1574,7 @@ function takePhoto() {
         shutterEffect.style.opacity = '0';
       }
       
-      // 現在表示中の湯気を含む撮影処理
+      // すべてのUI要素を含む撮影処理
       captureWithCurrentSteam();
     }, 200);
   } catch (e) {
@@ -1582,10 +1583,12 @@ function takePhoto() {
   }
 }
 
-// 現在の湯気エフェクトを含むキャプチャ
+// すべてのUI要素を含むキャプチャ
 function captureWithCurrentSteam() {
   const video = document.getElementById('frame-camera-view');
-  if (!video || !video.videoWidth) {
+  const photoFrameContainer = document.getElementById('photo-frame-container');
+  
+  if (!video || !video.videoWidth || !photoFrameContainer) {
     alert("ビデオキャプチャできません");
     return;
   }
@@ -1601,7 +1604,42 @@ function captureWithCurrentSteam() {
     // ビデオフレームを描画
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // 現在表示中の湯気パーティクルを検索
+    // フォトフレームコンテナの寸法を取得
+    const containerRect = photoFrameContainer.getBoundingClientRect();
+    const videoRect = video.getBoundingClientRect();
+    
+    // ロゴを描画
+    const logo = document.querySelector('#logo-container img');
+    if (logo) {
+      const logoRect = logo.getBoundingClientRect();
+      
+      // ビデオ座標系における相対位置に変換
+      const relX = (logoRect.left - videoRect.left) / videoRect.width;
+      const relY = (logoRect.top - videoRect.top) / videoRect.height;
+      const relWidth = logoRect.width / videoRect.width;
+      const relHeight = logoRect.height / videoRect.height;
+      
+      // キャンバス上の位置に変換
+      const canvasX = relX * canvas.width;
+      const canvasY = relY * canvas.height;
+      const canvasWidth = relWidth * canvas.width;
+      const canvasHeight = relHeight * canvas.height;
+      
+      // ロゴをキャンバスに描画
+      try {
+        ctx.drawImage(logo, canvasX, canvasY, canvasWidth, canvasHeight);
+      } catch (e) {
+        console.warn("Logo drawing error:", e);
+      }
+    }
+    
+    // マゼルナキケンテープを描画（上部）
+    drawTape(ctx, '.marquee-container.top', videoRect, canvas, 0.2);
+    
+    // マゼルナキケンテープを描画（下部）
+    drawTape(ctx, '.marquee-container.bottom', videoRect, canvas, 0.8);
+    
+    // 湯気パーティクルを描画
     const steamParticles = document.querySelectorAll('.steam-particle');
     if (steamParticles && steamParticles.length > 0) {
       console.log(`Found ${steamParticles.length} steam particles to capture`);
@@ -1612,9 +1650,6 @@ function captureWithCurrentSteam() {
       if (steamContainer) {
         containerRect = steamContainer.getBoundingClientRect();
       }
-      
-      // ビデオの位置情報を取得
-      const videoRect = video.getBoundingClientRect();
       
       // 各湯気パーティクルを描画
       steamParticles.forEach(particle => {
@@ -1698,93 +1733,74 @@ function captureWithCurrentSteam() {
       alert("写真撮影完了！（表示のみ）");
     }
   } catch (e) {
-    console.warn("Current steam capture error:", e);
+    console.warn("Full UI capture error:", e);
     // エラー時は元のシンプルな方法にフォールバック
     simpleVideoCapture();
   }
 }
-// フォトフレーム全体をキャプチャ（湯気エフェクトを含む）
-function capturePhotoFrame() {
-  // フォトフレームコンテナを取得
-  const frameContainer = document.getElementById('photo-frame-container');
-  if (!frameContainer) {
-    alert("写真撮影エラー");
-    return;
-  }
+
+// テープを描画するヘルパー関数
+function drawTape(ctx, selector, videoRect, canvas, yPosition) {
+  const tapeContainer = document.querySelector(selector);
+  if (!tapeContainer) return;
   
-  // html2canvasライブラリがすでにロードされているか確認
-  if (window.html2canvas) {
-    performCapture();
-    return;
-  }
+  const tapeRect = tapeContainer.getBoundingClientRect();
   
-  // ライブラリを動的に読み込み
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-  script.onload = performCapture;
+  // テープの位置とサイズを計算
+  const relX = (tapeRect.left - videoRect.left) / videoRect.width;
+  const relY = (tapeRect.top - videoRect.top) / videoRect.height;
+  const relWidth = tapeRect.width / videoRect.width;
+  const relHeight = tapeRect.height / videoRect.height;
   
-  // エラー処理
-  script.onerror = function() {
-    console.warn("Failed to load html2canvas");
-    // フォールバック: 単純なビデオキャプチャ
-    simpleVideoCapture();
-  };
+  // キャンバス上の位置に変換
+  const canvasX = relX * canvas.width;
+  const canvasY = relY * canvas.height;
+  const canvasWidth = relWidth * canvas.width;
+  const canvasHeight = relHeight * canvas.height;
   
-  document.head.appendChild(script);
-  
-  // キャプチャ実行関数
-  function performCapture() {
-    // 低メモリデバイスに最適化したオプション
-    const options = {
-      allowTaint: true,
-      useCORS: true,
-      logging: false,
-      backgroundColor: '#000000',
-      // 低メモリデバイスでは低スケール
-      scale: isLowMemoryDevice() ? 0.5 : (isIOS() ? 0.75 : (window.devicePixelRatio || 1)),
-      // クローン時の処理
-      onclone: function(clonedDoc) {
-        const clonedFrame = clonedDoc.getElementById('photo-frame-container');
-        if (clonedFrame) {
-          // 不要なUI要素を非表示化
-          const popups = clonedFrame.querySelectorAll('#photo-instruction-popup');
-          popups.forEach(popup => { if (popup) popup.style.display = 'none'; });
-          
-          const buttons = clonedFrame.querySelectorAll('#back-button');
-          buttons.forEach(btn => { if (btn) btn.style.display = 'none'; });
-        }
-      }
-    };
+  // 黄色テープと黒テープを描画
+  try {
+    // 黄色テープ（上）
+    ctx.save();
+    ctx.translate(canvasX + canvasWidth/2, canvasY + canvasHeight/4);
+    ctx.rotate(-5 * Math.PI / 180); // -5度回転
+    ctx.fillStyle = '#f3bb0b'; // 黄色
+    ctx.fillRect(-canvasWidth/2, -canvasHeight/8, canvasWidth, canvasHeight/4);
     
-    // html2canvas実行
-    html2canvas(frameContainer, options)
-      .then(function(canvas) {
-        try {
-          // キャンバスから画像データを取得
-          const imageDataURL = canvas.toDataURL('image/jpeg', 0.8); // 品質を少し下げてサイズ縮小
-          
-          // 画像表示
-          displayCapturedImage(imageDataURL);
-          
-          // ダウンロード処理（iOS以外）
-          if (!isIOS()) {
-            downloadImage(imageDataURL);
-          }
-        } catch (e) {
-          console.warn("Canvas to image conversion error:", e);
-          // エラー時はシンプルな方法に
-          simpleVideoCapture();
-        }
-      })
-      .catch(function(e) {
-        console.warn("HTML2Canvas error:", e);
-        // エラー時のフォールバック
-        simpleVideoCapture();
-      });
+    // テキスト
+    ctx.fillStyle = 'black';
+    ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // テープの種類によってテキスト内容を変更
+    const text = (selector.includes('top')) ? 'マゼルナキケン' : 'マゼルナキケン';
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+    
+    // 黒テープ（下）
+    ctx.save();
+    ctx.translate(canvasX + canvasWidth/2, canvasY + canvasHeight*3/4);
+    ctx.rotate(5 * Math.PI / 180); // 5度回転
+    ctx.fillStyle = '#000000'; // 黒
+    ctx.fillRect(-canvasWidth/2, -canvasHeight/8, canvasWidth, canvasHeight/4);
+    
+    // テキスト
+    ctx.fillStyle = 'white';
+    ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // テープの種類によってテキスト内容を変更
+    const bottomText = (selector.includes('top')) ? 'TONKOTSU MAZESOBA' : 'TONKOTSU MAZESOBA';
+    ctx.fillText(bottomText, 0, 0);
+    ctx.restore();
+  } catch (e) {
+    console.warn("Tape drawing error:", e);
   }
 }
 
-// シンプルなビデオキャプチャ（湯気エフェクトなし）
+// シンプルなビデオキャプチャ（フォールバック用）
 function simpleVideoCapture() {
   const video = document.getElementById('frame-camera-view');
   if (!video || !video.videoWidth) {
@@ -1821,7 +1837,6 @@ function simpleVideoCapture() {
     alert("写真撮影エラー");
   }
 }
-
 // 画像ダウンロード
 function downloadImage(dataURL) {
   const a = document.createElement('a');
