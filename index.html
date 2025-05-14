@@ -80,114 +80,151 @@
     height: 100%;
     object-fit: contain;
   }
+  
   /* カード番号スタイル - HUD風に修正 */
-.card-number {
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 200, 255, 0.3);
-  color: white;
-  font-weight: bold;
-  font-size: 28px;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 100;
-  border: 2px solid rgba(0, 200, 255, 0.8);
-  box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
-  text-shadow: 0 0 8px rgba(0, 200, 255, 1);
-  font-family: 'Arial', sans-serif;
-}
+  .card-number {
+    position: absolute;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 200, 255, 0.3);
+    color: white;
+    font-weight: bold;
+    font-size: 28px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    border: 2px solid rgba(0, 200, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.7);
+    text-shadow: 0 0 8px rgba(0, 200, 255, 1);
+    font-family: 'Arial', sans-serif;
+  }
 
   /* マゼルナキケンエフェクト - 上下テープ */
-/* ✅マゼルナキケン テープ 改善版CSS */
-.marquee-container {
-  position: absolute;
-  width: 120%; /* 幅を広げる */
-  left: -10%; /* 左にずらす */
-  overflow: visible; /* overflow: hiddenを解除 */
-  z-index: 2500; /* z-indexを高くする */
-}
-
-.marquee-container.top { top: 100px; }
-.marquee-container.bottom { bottom: 10px; }
-
-.marquee {
-  --marquee-color: #f3bb0b;
-  --marquee-duration: 20s;
+  .marquee-container {
+    position: absolute;
+    width: 120%; /* 幅を広げる */
+    left: -10%; /* 左にずらす */
+    overflow: visible; /* overflow: hiddenを解除 */
+    z-index: 2500; /* z-indexを高くする */
+  }
+  /* 下部テープ専用のスタイルを追加 */
+.marquee-container.bottom .marquee {
+  --marquee-color: #000000; /* 黒に変更（下部テープのみ） */
   background: var(--marquee-color);
-  color: black;
-  overflow: hidden;
-  transform: rotate(-5deg);
-  transform-origin: center center; /* 👈 これを追加 */
-  white-space: nowrap;
-  width: 120%;
-  margin-left: 0%;
-  height: 40px;
-  margin-bottom: 5px;
-
-  font-size: clamp(24px, 5vw, 40px);
-  font-weight: 900;
-  font-family: "BIZ UDPGothic", sans-serif;
+  color: white; /* 白に変更（下部テープのみ） */
 }
 
-.marquee.reverse {
+/* 下部テープの反転スタイルも変更 */
+.marquee-container.bottom .marquee.reverse {
   background: none;
-  color: var(--marquee-color);
-  transform: rotate(5deg);
+  color: var(--marquee-color); /* 黒を参照 */
 }
 
-.marquee--inner {
-  display: inline-block;
-  padding-left: 0;       /* 👈 不要な余白を削除 */
-  padding-right: 0;
-  animation: scroll-left var(--marquee-duration) linear infinite;
-  font-size: clamp(24px, 5vw, 40px);  /* 👈 テープに収まる範囲で文字を大きく */
-  font-weight: 900;                   /* 👈 太字を強調 */
-  font-family: "BIZ UDPGothic", sans-serif; /* 👈 読みやすく太いゴシック体に */
-}
-.marquee.reverse .marquee--inner {
-  animation: scroll-right var(--marquee-duration) linear infinite;
-}
-
-.marquee--inner p {
-  display: inline;
-  margin: 0 0.5em;
-  position: relative;
-}
-
-.marquee--inner p::after {
-  content: "🍜";
+/* 🍜 の削除は下部テープのみ */
+.marquee-container.bottom .marquee--inner p::after {
+  content: ""; /* 🍜を削除 */
   margin-left: 0.5em;
 }
 
-@keyframes scroll-left {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
+  .marquee-container.top { top: 100px; }
+  .marquee-container.bottom { bottom: 10px; }
 
-@keyframes scroll-right {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(0); }
-}
+  .marquee {
+    --marquee-color: #f3bb0b;
+    --marquee-duration: 20s;
+    background: var(--marquee-color);
+    color: black;
+    overflow: hidden;
+    transform: rotate(-5deg);
+    transform-origin: center center;
+    white-space: nowrap;
+    width: 120%;
+    margin-left: 0%;
+    height: 40px;
+    margin-bottom: 5px;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 900;
+    font-family: "BIZ UDPGothic", sans-serif;
+  }
 
+  /* 下部テープ専用のスタイルを追加 */
+  .marquee-container.bottom .marquee {
+    --marquee-color: #000000; /* 黒に変更（下部テープのみ） */
+    background: var(--marquee-color);
+    color: white; /* 白に変更（下部テープのみ） */
+  }
+
+  .marquee.reverse {
+    background: none;
+    color: var(--marquee-color);
+    transform: rotate(5deg);
+  }
+
+  /* 下部テープの反転スタイルも変更 */
+  .marquee-container.bottom .marquee.reverse {
+    background: none;
+    color: var(--marquee-color); /* 黒を参照 */
+  }
+
+  .marquee--inner {
+    display: inline-block;
+    padding-left: 0;
+    padding-right: 0;
+    animation: scroll-left var(--marquee-duration) linear infinite;
+    font-size: clamp(24px, 5vw, 40px);
+    font-weight: 900;
+    font-family: "BIZ UDPGothic", sans-serif;
+  }
+
+  .marquee.reverse .marquee--inner {
+    animation: scroll-right var(--marquee-duration) linear infinite;
+  }
+
+  .marquee--inner p {
+    display: inline;
+    margin: 0 0.5em;
+    position: relative;
+  }
+
+  /* まずデフォルトの状態を設定 */
+  .marquee--inner p::after {
+    content: "🍜";
+    margin-left: 0.5em;
+  }
+
+  /* 次に、より具体的なセレクタで上書き */
+  .marquee-container.bottom .marquee--inner p::after {
+    content: ""; /* 下部テープは🍜を削除 */
+    margin-left: 0.5em;
+  }
+
+  @keyframes scroll-left {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  @keyframes scroll-right {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(0); }
+  }
 
   /* 湯気エフェクト */
-#enhanced-steam-container {
-  position: absolute;
-  top: 30%; /* 上部に余裕を持たせる */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 350px; /* より幅広に */
-  height: 300px; /* より高く */
-  z-index: 2105;
-  pointer-events: none;
-  overflow: visible; /* hiddenからvisibleに変更 */
-}
+  #enhanced-steam-container {
+    position: absolute;
+    top: 30%; /* 上部に余裕を持たせる */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 350px; /* より幅広に */
+    height: 300px; /* より高く */
+    z-index: 2105;
+    pointer-events: none;
+    overflow: visible; /* hiddenからvisibleに変更 */
+  }
 
   .steam-particle {
     position: absolute;
@@ -356,25 +393,6 @@
     z-index: 9999 !important;
   }
 
-  /* カード番号スタイル */
-  .card-number {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(0, 200, 255, 0.8);
-    color: white;
-    font-weight: bold;
-    font-size: 24px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    box-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
-  }
-
   @keyframes pulse {
     0% { transform: scale(1); filter: brightness(1); }
     50% { transform: scale(1.05); filter: brightness(1.2); }
@@ -409,6 +427,7 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
+
   /* 説明ポップアップのスタイル */
   #photo-instruction-popup {
     position: fixed;
@@ -530,7 +549,7 @@
     <img src="./assets/logo3d.gif" alt="KOZOU+ Logo">
   </div>
   
-  <!-- 2. マゼルナキケンエフェクト - 上部テープ -->
+  <!-- 2. マゼルナキケンエフェクト - 上部テープ（変更なし） -->
   <div class="marquee-container top">
     <div class="marquee">
       <div class="marquee--inner">
@@ -544,33 +563,24 @@
     </div>
   </div>
   
-  
   <!-- 3. 湯気エフェクト -->
   <div id="enhanced-steam-container"></div>
   
-  <!-- 4. マゼルナキケンエフェクト - 下部テープ -->
+  <!-- 4. マゼルナキケンエフェクト - 下部テープ（テキスト変更） -->
   <div class="marquee-container bottom">
     <div class="marquee">
       <div class="marquee--inner">
-       <!-- before: 4回 -->
-<p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-
-<!-- after: 10回以上推奨 -->
-<p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-<p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
       </div>
     </div>
     <div class="marquee reverse">
       <div class="marquee--inner">
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
-        <p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p><p>マゼルナキケン</p>
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
+        <p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p><p>TONKOTSU MAZESOBA</p>
       </div>
-      
     </div>
   </div>
-  
-  
   
   <!-- シャッターエフェクト -->
   <div id="shutter-effect"></div>
@@ -648,7 +658,7 @@
   console.log("Script loaded, Safari: " + isSafari() + ", iOS: " + isIOS() + ", Low memory: " + isLowMemoryDevice());
   
   // グローバル変数 - 最小限に抑えてメモリ使用を節約
-  let activeCardIndex = 0;
+  let activeCardIndex = 4;
   let isSwipeEnabled = false;
   let startX = 0;
   let currentX = 0;
