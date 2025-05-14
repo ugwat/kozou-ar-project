@@ -1741,6 +1741,7 @@ function captureWithCurrentSteam() {
 }
 
 // テープを描画するヘルパー関数 - スクロール位置を反映
+// テープを描画するヘルパー関数 - スクロール位置をより正確に反映
 function drawTape(ctx, selector, videoRect, canvas, yPosition) {
   const tapeContainer = document.querySelector(selector);
   if (!tapeContainer) return;
@@ -1770,34 +1771,38 @@ function drawTape(ctx, selector, videoRect, canvas, yPosition) {
       const yellowInner = yellowTape.querySelector('.marquee--inner');
       const blackInner = blackTape.querySelector('.marquee--inner');
       
-      // スクロール位置を取得
-      const yellowTransform = window.getComputedStyle(yellowInner).transform;
-      const blackTransform = window.getComputedStyle(blackInner).transform;
+      // アニメーション情報の取得
+      const yellowComputedStyle = window.getComputedStyle(yellowInner);
+      const blackComputedStyle = window.getComputedStyle(blackInner);
       
-      // TransformMatrixから現在のX位置を取得
-      let yellowOffsetX = 0;
-      let blackOffsetX = 0;
+      // アニメーション期間を取得 (CSSのvar(--marquee-duration)から)
+      const yellowDuration = parseFloat(window.getComputedStyle(yellowTape).getPropertyValue('--marquee-duration')) * 1000 || 20000; // デフォルト20秒
+      const blackDuration = parseFloat(window.getComputedStyle(blackTape).getPropertyValue('--marquee-duration')) * 1000 || 20000;
       
-      if (yellowTransform && yellowTransform !== 'none') {
-        // matrix(a, b, c, d, tx, ty) から tx を抽出
-        const match = yellowTransform.match(/matrix\(([^)]+)\)/);
-        if (match && match[1]) {
-          const values = match[1].split(',');
-          if (values.length >= 5) {
-            yellowOffsetX = parseFloat(values[4]) * canvas.width / videoRect.width;
-          }
-        }
-      }
+      // スクロール幅の算出 - コンテンツの幅を測定
+      const yellowContent = yellowInner.textContent;
+      const blackContent = blackInner.textContent;
       
-      if (blackTransform && blackTransform !== 'none') {
-        const match = blackTransform.match(/matrix\(([^)]+)\)/);
-        if (match && match[1]) {
-          const values = match[1].split(',');
-          if (values.length >= 5) {
-            blackOffsetX = parseFloat(values[4]) * canvas.width / videoRect.width;
-          }
-        }
-      }
+      ctx.save();
+      ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
+      const yellowTextWidth = ctx.measureText(yellowContent).width;
+      const blackTextWidth = ctx.measureText(blackContent).width;
+      ctx.restore();
+      
+      // 現在の時間とアニメーション進行度を計算
+      const currentTime = performance.now();
+      // scroll-left アニメーションの場合：0→-50%への移動
+      const yellowProgressRatio = (currentTime % yellowDuration) / yellowDuration;
+      // scroll-right アニメーションの場合：-50%→0への移動
+      const blackProgressRatio = (currentTime % blackDuration) / blackDuration;
+      
+      // オフセット計算 - スクロール方向で調整
+      const yellowScrollWidth = yellowTextWidth * 0.5; // 50%移動のため
+      const blackScrollWidth = blackTextWidth * 0.5;
+      
+      // オフセット計算 - アニメーション進行度から算出
+      const yellowOffsetX = -yellowProgressRatio * yellowScrollWidth;
+      const blackOffsetX = (1 - blackProgressRatio) * blackScrollWidth * -1;
       
       // 黄色テープ描画
       ctx.save();
@@ -1811,17 +1816,18 @@ function drawTape(ctx, selector, videoRect, canvas, yPosition) {
       // テキスト
       ctx.fillStyle = 'black';
       ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
-      ctx.textAlign = 'left';  // 中央揃えから左揃えに変更
+      ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       
       // テープの種類によってテキスト内容を変更
       const yellowText = (selector.includes('top')) ? 'マゼルナキケン' : 'マゼルナキケン';
-      const yellowTextWidth = ctx.measureText(yellowText).width;
+      const yellowTextUnitWidth = ctx.measureText(yellowText).width;
+      const spacing = 20;
       
-      // 複数のテキストを描画（スクロール位置を反映）
-      for (let i = -2; i < 8; i++) {
-        const x = (i * (yellowTextWidth + 20)) + yellowOffsetX;
-        if (x < -yellowTextWidth * 2 || x > canvasWidth + yellowTextWidth) continue; // 画面外はスキップ
+      // テキストを複数回描画してスクロール効果を表現
+      for (let i = -3; i < 10; i++) {
+        const x = (i * (yellowTextUnitWidth + spacing)) + yellowOffsetX;
+        if (x < -yellowTextUnitWidth * 2 || x > canvasWidth + yellowTextUnitWidth) continue;
         ctx.fillText(yellowText, x, canvasHeight/4);
       }
       ctx.restore();
@@ -1843,12 +1849,12 @@ function drawTape(ctx, selector, videoRect, canvas, yPosition) {
       
       // テープの種類によってテキスト内容を変更
       const blackText = (selector.includes('top')) ? 'TONKOTSU MAZESOBA' : 'TONKOTSU MAZESOBA';
-      const blackTextWidth = ctx.measureText(blackText).width;
+      const blackTextUnitWidth = ctx.measureText(blackText).width;
       
       // 複数のテキストを描画（スクロール位置を反映）
-      for (let i = -2; i < 8; i++) {
-        const x = (i * (blackTextWidth + 20)) + blackOffsetX;
-        if (x < -blackTextWidth * 2 || x > canvasWidth + blackTextWidth) continue; // 画面外はスキップ
+      for (let i = -3; i < 10; i++) {
+        const x = (i * (blackTextUnitWidth + spacing)) + blackOffsetX;
+        if (x < -blackTextUnitWidth * 2 || x > canvasWidth + blackTextUnitWidth) continue;
         ctx.fillText(blackText, x, canvasHeight/4);
       }
       ctx.restore();
@@ -1862,46 +1868,6 @@ function drawTape(ctx, selector, videoRect, canvas, yPosition) {
     drawBasicTape(ctx, selector, canvasX, canvasY, canvasWidth, canvasHeight, canvas);
   }
 }
-
-// 基本テープ描画（フォールバック用）
-function drawBasicTape(ctx, selector, canvasX, canvasY, canvasWidth, canvasHeight, canvas) {
-  // 黄色テープ（上）
-  ctx.save();
-  ctx.translate(canvasX + canvasWidth/2, canvasY + canvasHeight/4);
-  ctx.rotate(-5 * Math.PI / 180); // -5度回転
-  ctx.fillStyle = '#f3bb0b'; // 黄色
-  ctx.fillRect(-canvasWidth/2, -canvasHeight/8, canvasWidth, canvasHeight/4);
-  
-  // テキスト
-  ctx.fillStyle = 'black';
-  ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  
-  // テープの種類によってテキスト内容を変更
-  const text = (selector.includes('top')) ? 'マゼルナキケン' : 'マゼルナキケン';
-  ctx.fillText(text, 0, 0);
-  ctx.restore();
-  
-  // 黒テープ（下）
-  ctx.save();
-  ctx.translate(canvasX + canvasWidth/2, canvasY + canvasHeight*3/4);
-  ctx.rotate(5 * Math.PI / 180); // 5度回転
-  ctx.fillStyle = '#000000'; // 黒
-  ctx.fillRect(-canvasWidth/2, -canvasHeight/8, canvasWidth, canvasHeight/4);
-  
-  // テキスト
-  ctx.fillStyle = 'white';
-  ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  
-  // テープの種類によってテキスト内容を変更
-  const bottomText = (selector.includes('top')) ? 'TONKOTSU MAZESOBA' : 'TONKOTSU MAZESOBA';
-  ctx.fillText(bottomText, 0, 0);
-  ctx.restore();
-}
-
 
 // シンプルなビデオキャプチャ（フォールバック用）
 function simpleVideoCapture() {
