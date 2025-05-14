@@ -1556,7 +1556,7 @@ function createSteamParticle(container, centerX = 0, timeOffset = 0) {
   // コンテナに追加
   container.appendChild(particle);
 }
-// 写真撮影処理 - シンプル化版
+// 現在表示されている湯気エフェクトをそのまま写真に反映する方法
 function takePhoto() {
   try {
     console.log("Taking photo");
@@ -1573,8 +1573,8 @@ function takePhoto() {
         shutterEffect.style.opacity = '0';
       }
       
-      // シンプルにビデオと湯気を別々にキャプチャして合成
-      simpleCombinedCapture();
+      // 現在表示中の湯気を含む撮影処理
+      captureWithCurrentSteam();
     }, 200);
   } catch (e) {
     console.warn("Take photo error:", e);
@@ -1582,67 +1582,103 @@ function takePhoto() {
   }
 }
 
-// シンプルな合成キャプチャ
-function simpleCombinedCapture() {
+// 現在の湯気エフェクトを含むキャプチャ
+function captureWithCurrentSteam() {
   const video = document.getElementById('frame-camera-view');
-  const steamContainer = document.getElementById('enhanced-steam-container');
-  
   if (!video || !video.videoWidth) {
     alert("ビデオキャプチャできません");
     return;
   }
   
   try {
-    // キャンバス作成
+    // 基本のキャンバスを作成
     const canvas = document.createElement('canvas');
     const scale = isLowMemoryDevice() ? 0.5 : 1.0;
     canvas.width = video.videoWidth * scale;
     canvas.height = video.videoHeight * scale;
-    
     const ctx = canvas.getContext('2d');
     
-    // ビデオフレームをキャンバスに描画
+    // ビデオフレームを描画
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // 湯気エフェクトの表現（簡易版）
-    if (steamContainer) {
-      // 湯気の代わりに半透明の白い円を描画
-      const steamCenterX = canvas.width / 2;
-      const steamCenterY = canvas.height * 0.3; // 画面上部1/3あたり
+    // 現在表示中の湯気パーティクルを検索
+    const steamParticles = document.querySelectorAll('.steam-particle');
+    if (steamParticles && steamParticles.length > 0) {
+      console.log(`Found ${steamParticles.length} steam particles to capture`);
       
-      // グラデーション作成
-      const gradient = ctx.createRadialGradient(
-        steamCenterX, steamCenterY, 0,
-        steamCenterX, steamCenterY, canvas.width * 0.2
-      );
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
-      gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      // 湯気コンテナの位置情報を取得
+      const steamContainer = document.getElementById('enhanced-steam-container');
+      let containerRect = { top: 0, left: 0, width: canvas.width, height: canvas.height };
+      if (steamContainer) {
+        containerRect = steamContainer.getBoundingClientRect();
+      }
       
-      // 円を描画
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(steamCenterX, steamCenterY, canvas.width * 0.2, 0, Math.PI * 2);
-      ctx.fill();
+      // ビデオの位置情報を取得
+      const videoRect = video.getBoundingClientRect();
       
-      // いくつかの小さい湯気の粒を追加
-      for (let i = 0; i < 10; i++) {
-        const x = steamCenterX + (Math.random() * 2 - 1) * canvas.width * 0.15;
-        const y = steamCenterY - Math.random() * canvas.height * 0.15;
-        const size = (Math.random() * 0.05 + 0.02) * canvas.width;
+      // 各湯気パーティクルを描画
+      steamParticles.forEach(particle => {
+        // パーティクルの情報を取得
+        const particleRect = particle.getBoundingClientRect();
         
-        const particleGradient = ctx.createRadialGradient(
-          x, y, 0,
-          x, y, size
+        // ビデオ座標系における相対位置に変換
+        const relX = (particleRect.left - videoRect.left) / videoRect.width;
+        const relY = (particleRect.top - videoRect.top) / videoRect.height;
+        const relWidth = particleRect.width / videoRect.width;
+        const relHeight = particleRect.height / videoRect.height;
+        
+        // キャンバス上の位置に変換
+        const canvasX = relX * canvas.width;
+        const canvasY = relY * canvas.height;
+        const canvasWidth = relWidth * canvas.width;
+        const canvasHeight = relHeight * canvas.height;
+        
+        // 湯気パーティクルの現在の不透明度を取得
+        let opacity = parseFloat(window.getComputedStyle(particle).opacity) || 0.5;
+        
+        // グラデーションを作成
+        const gradient = ctx.createRadialGradient(
+          canvasX + canvasWidth/2, canvasY + canvasHeight/2, 0,
+          canvasX + canvasWidth/2, canvasY + canvasHeight/2, canvasWidth/2
         );
-        particleGradient.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-        particleGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        gradient.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
         
-        ctx.fillStyle = particleGradient;
+        // パーティクルを描画
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.arc(
+          canvasX + canvasWidth/2, 
+          canvasY + canvasHeight/2, 
+          canvasWidth/2, 
+          0, Math.PI * 2
+        );
+        ctx.fill();
+      });
+      
+      // 中心発光部分（元の湯気の発生源）も描画
+      const steamCore = document.querySelector('.steam-core');
+      const steamGlow = document.querySelector('.steam-glow');
+      
+      if (steamCore || steamGlow) {
+        const coreX = canvas.width / 2;
+        const coreY = canvas.height * 0.65; // 画面下寄り
+        
+        // 発光部分を描画
+        const glowGradient = ctx.createRadialGradient(
+          coreX, coreY, 0,
+          coreX, coreY, canvas.width * 0.1
+        );
+        glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+        glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        
+        ctx.fillStyle = glowGradient;
+        ctx.beginPath();
+        ctx.arc(coreX, coreY, canvas.width * 0.1, 0, Math.PI * 2);
         ctx.fill();
       }
+    } else {
+      console.log("No steam particles found to capture");
     }
     
     // キャンバスから画像データを取得
@@ -1662,8 +1698,9 @@ function simpleCombinedCapture() {
       alert("写真撮影完了！（表示のみ）");
     }
   } catch (e) {
-    console.warn("Combined capture error:", e);
-    alert("写真撮影エラー");
+    console.warn("Current steam capture error:", e);
+    // エラー時は元のシンプルな方法にフォールバック
+    simpleVideoCapture();
   }
 }
 // フォトフレーム全体をキャプチャ（湯気エフェクトを含む）
