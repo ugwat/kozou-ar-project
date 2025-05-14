@@ -1286,11 +1286,11 @@ function showPhotoFrame() {
       }
     }
     
-    // ポップアップを最初から非表示
-    const popup = document.getElementById('photo-instruction-popup');
-    if (popup) {
-      popup.style.display = 'none';
-    }
+    // ポップアップを表示
+const popup = document.getElementById('photo-instruction-popup');
+if (popup) {
+  popup.style.display = 'block';
+}
     
     // 撮影フラグを有効化
     canTakePhoto = true;
