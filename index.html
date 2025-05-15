@@ -442,7 +442,7 @@
 /* タイトルスタイル */
 #popup-title {
   font-size: 18px;
-  line-height: 1.4;
+  line-height: 1.5;
   margin-bottom: 15px;
   font-weight: bold;
 }
@@ -511,7 +511,7 @@
   line-height: 1.4;
   margin: 5px 0;
   text-align: left;
-  white-space: normal; /* 改行を許可 */
+  padding-left: 5px;
 }
 </style>
 </head>
@@ -622,12 +622,22 @@
 
 <div id="photo-instruction-popup">
   <div id="popup-close-button">×</div>
-  <h3 id="popup-title">湯気に合わせてまぜそばを配置して、スクリーンショットで撮影せよ！</h3>
+  <h3 id="popup-title">湯気に合わせてまぜそばを<br>配置して、スクショで撮影せよ！</h3>
   <div class="popup-instructions">
-    <p>※iPhoneはサイドボタン+音量アップボタン同時押し、</p>
-    <p>Androidは電源ボタン+音量ダウンボタン同時押しでスクショが可能です</p>
+    <p>※iPhoneはサイドボタン+音量アップボタン同時押し</p>
+    <p>Androidは電源ボタン+音量ダウンボタン同時押しで<br>スクショが可能です。</p>
     <p>※ロゴをタップで前のページに戻ります。</p>
   </div>
+  
+  <!-- デザイン要素：スキャンライン -->
+  <div class="popup-scanline"></div>
+  
+  <!-- デザイン要素：角の飾り -->
+  <div class="popup-corner popup-corner-tl"></div>
+  <div class="popup-corner popup-corner-tr"></div>
+  <div class="popup-corner popup-corner-bl"></div>
+  <div class="popup-corner popup-corner-br"></div>
+</div>
   
   <!-- デザイン要素：スキャンライン -->
   <div class="popup-scanline"></div>
