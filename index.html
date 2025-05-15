@@ -395,19 +395,23 @@
   }
 
   /* 説明ポップアップのスタイル */
-  #photo-instruction-popup {
-  /* 既存のスタイルは変更なし */
+#photo-instruction-popup {
+  /* 基本サイズと位置 */
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 80%;
-  max-width: 400px;
+  max-width: 450px;
+  
+  /* 背景とボーダー */
   background-color: rgba(0, 20, 40, 0.85);
   border: 2px solid rgba(0, 200, 255, 0.8);
   border-radius: 10px;
   box-shadow: 0 0 30px rgba(0, 200, 255, 0.5), inset 0 0 20px rgba(0, 200, 255, 0.2);
-  padding: 25px;
+  
+  /* 内部余白とテキスト設定 */
+  padding: 25px 20px;
   color: white;
   text-align: center;
   z-index: 3000;
@@ -415,7 +419,8 @@
   font-family: 'Helvetica', 'Arial', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
   display: none; /* 初期状態では非表示に設定 */
 }
-/* 以下は既存のままで変更なし */
+
+/* 閉じるボタン */
 #popup-close-button {
   position: absolute;
   top: -10px;
@@ -434,56 +439,80 @@
   box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
 }
 
-/* サブタイトルは改行されないように調整 */
+/* タイトルスタイル */
+#popup-title {
+  font-size: 18px;
+  line-height: 1.4;
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+/* サブタイトル */
 #popup-subtitle {
   font-size: 14px;
   opacity: 0.8;
   margin-top: 15px;
-  white-space: nowrap; /* 改行を防止 */
+  white-space: normal; /* 改行を許可 */
 }
-  .popup-scanline {
-    position: absolute;
-    left: 0;
-    height: 2px;
-    width: 100%;
-    background-color: rgba(0, 200, 255, 0.5);
-    animation: scanline 4s linear infinite;
-    pointer-events: none;
-  }
 
-  .popup-corner {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-  }
+/* ポップアップのスキャンライン効果 */
+.popup-scanline {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  width: 100%;
+  background-color: rgba(0, 200, 255, 0.5);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+}
 
-  .popup-corner-tl {
-    top: 0;
-    left: 0;
-    border-top: 2px solid rgba(0, 200, 255, 0.8);
-    border-left: 2px solid rgba(0, 200, 255, 0.8);
-  }
+/* ポップアップの角装飾 */
+.popup-corner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+}
 
-  .popup-corner-tr {
-    top: 0;
-    right: 0;
-    border-top: 2px solid rgba(0, 200, 255, 0.8);
-    border-right: 2px solid rgba(0, 200, 255, 0.8);
-  }
+.popup-corner-tl {
+  top: 0;
+  left: 0;
+  border-top: 2px solid rgba(0, 200, 255, 0.8);
+  border-left: 2px solid rgba(0, 200, 255, 0.8);
+}
 
-  .popup-corner-bl {
-    bottom: 0;
-    left: 0;
-    border-bottom: 2px solid rgba(0, 200, 255, 0.8);
-    border-left: 2px solid rgba(0, 200, 255, 0.8);
-  }
+.popup-corner-tr {
+  top: 0;
+  right: 0;
+  border-top: 2px solid rgba(0, 200, 255, 0.8);
+  border-right: 2px solid rgba(0, 200, 255, 0.8);
+}
 
-  .popup-corner-br {
-    bottom: 0;
-    right: 0;
-    border-bottom: 2px solid rgba(0, 200, 255, 0.8);
-    border-right: 2px solid rgba(0, 200, 255, 0.8);
-  }
+.popup-corner-bl {
+  bottom: 0;
+  left: 0;
+  border-bottom: 2px solid rgba(0, 200, 255, 0.8);
+  border-left: 2px solid rgba(0, 200, 255, 0.8);
+}
+
+.popup-corner-br {
+  bottom: 0;
+  right: 0;
+  border-bottom: 2px solid rgba(0, 200, 255, 0.8);
+  border-right: 2px solid rgba(0, 200, 255, 0.8);
+}
+
+/* ポップアップ指示テキスト用のスタイル */
+.popup-instructions {
+  margin-top: 15px;
+}
+
+.popup-instructions p {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 5px 0;
+  text-align: left;
+  white-space: normal; /* 改行を許可 */
+}
 </style>
 </head>
 
@@ -591,11 +620,14 @@
   <button id="back-button">戻る</button>
 </div>
 
-<!-- 説明ポップアップ -->
 <div id="photo-instruction-popup">
   <div id="popup-close-button">×</div>
-  <h3 id="popup-title">湯気に合わせて、ラーメンを配置して撮影せよ！</h3>
-  <p id="popup-subtitle">※撮影は画面のどこをタップしても可能</p>
+  <h3 id="popup-title">湯気に合わせてまぜそばを配置して、<br>スクリーンショットで撮影せよ！</h3>
+  <div class="popup-instructions">
+    <p>※iPhoneはサイドボタン+音量アップボタン同時押し、</p>
+    <p>　Androidは電源ボタン+音量ダウンボタン同時押し<br>　でスクショが可能です</p>
+    <p>※ロゴをタップで前のページに戻ります。</p>
+  </div>
   
   <!-- デザイン要素：スキャンライン -->
   <div class="popup-scanline"></div>
