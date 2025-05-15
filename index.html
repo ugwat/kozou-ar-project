@@ -731,23 +731,16 @@ function freezeAnimations() {
 }
 
 // ロゴを描画する関数
+// ロゴを描画する関数（座標変換を単純化）
 function drawLogo(ctx, videoRect, canvas) {
   const logo = document.querySelector('#logo-container img');
   if (!logo) return;
   
-  const logoRect = logo.getBoundingClientRect();
-  
-  // ビデオ座標系における相対位置に変換
-  const relX = (logoRect.left - videoRect.left) / videoRect.width;
-  const relY = (logoRect.top - videoRect.top) / videoRect.height;
-  const relWidth = logoRect.width / videoRect.width;
-  const relHeight = logoRect.height / videoRect.height;
-  
-  // キャンバス上の位置に変換
-  const canvasX = relX * canvas.width;
-  const canvasY = relY * canvas.height;
-  const canvasWidth = relWidth * canvas.width;
-  const canvasHeight = relHeight * canvas.height;
+  // キャンバス上の絶対位置を直接指定（相対計算を避ける）
+  const canvasX = canvas.width * 0.05; // 左端から5%の位置
+  const canvasY = canvas.height * 0.05; // 上端から5%の位置
+  const canvasWidth = canvas.width * 0.2; // 画面幅の20%
+  const canvasHeight = canvasWidth; // 正方形を維持
   
   // ロゴをキャンバスに描画
   try {
@@ -757,300 +750,70 @@ function drawLogo(ctx, videoRect, canvas) {
   }
 }
 
-// テープを描画するヘルパー関数 - スクロール位置を反映
-function drawTape(ctx, selector, videoRect, canvas, yPosition) {
-  const tapeContainer = document.querySelector(selector);
-  if (!tapeContainer) return;
+// テープを描画する関数（単純化版）
+function drawTape(ctx, isTop, canvas) {
+  // 上部テープか下部テープかによってY位置を調整
+  const yPosition = isTop ? 
+    canvas.height * 0.15 : // 上部テープ：上から15%の位置
+    canvas.height * 0.85; // 下部テープ：下から15%の位置
   
-  const tapeRect = tapeContainer.getBoundingClientRect();
+  // テープの幅と高さ
+  const tapeWidth = canvas.width * 1.2; // 画面より少し広く
+  const tapeHeight = canvas.height * 0.08; // 画面高さの8%
   
-  // テープの位置とサイズを計算
-  const relX = (tapeRect.left - videoRect.left) / videoRect.width;
-  const relY = (tapeRect.top - videoRect.top) / videoRect.height;
-  const relWidth = tapeRect.width / videoRect.width;
-  const relHeight = tapeRect.height / videoRect.height;
+  // テープの回転角度
+  const rotation = isTop ? -5 : 5; // 上部:-5度、下部:5度
   
-  // キャンバス上の位置に変換
-  const canvasX = relX * canvas.width;
-  const canvasY = relY * canvas.height;
-  const canvasWidth = relWidth * canvas.width;
-  const canvasHeight = relHeight * canvas.height;
+  // テープの色
+  const bgColor = isTop ? '#f3bb0b' : '#000000'; // 上部:黄色、下部:黒
+  const textColor = isTop ? 'black' : 'white'; // 上部:黒、下部:白
   
-  // 黄色テープと黒テープを描画
-  try {
-    // 実際のテープ要素から情報を取得
-    const yellowTape = tapeContainer.querySelector('.marquee');
-    const blackTape = tapeContainer.querySelector('.marquee.reverse');
-    
-    if (yellowTape && blackTape) {
-      // テープの実際の内容を取得
-      const yellowInner = yellowTape.querySelector('.marquee--inner');
-      const blackInner = blackTape.querySelector('.marquee--inner');
-      
-      // スクロール位置を取得
-      const yellowComputedStyle = window.getComputedStyle(yellowInner);
-      const blackComputedStyle = window.getComputedStyle(blackInner);
-      
-      // 現在のtransform値を取得
-      const yellowTransform = yellowComputedStyle.transform;
-      const blackTransform = blackComputedStyle.transform;
-      
-      // TransformMatrixから現在のX位置を取得
-      let yellowOffsetX = 0;
-      let blackOffsetX = 0;
-      
-      if (yellowTransform && yellowTransform !== 'none') {
-        // matrix(a, b, c, d, tx, ty) から tx を抽出
-        const match = yellowTransform.match(/matrix\(([^)]+)\)/);
-        if (match && match[1]) {
-          const values = match[1].split(',');
-          if (values.length >= 5) {
-            yellowOffsetX = parseFloat(values[4]) * canvas.width / videoRect.width;
-          }
-        }
-      }
-      
-      if (blackTransform && blackTransform !== 'none') {
-        const match = blackTransform.match(/matrix\(([^)]+)\)/);
-        if (match && match[1]) {
-          const values = match[1].split(',');
-          if (values.length >= 5) {
-            blackOffsetX = parseFloat(values[4]) * canvas.width / videoRect.width;
-          }
-        }
-      }
-      
-      // 黄色テープ描画
-      ctx.save();
-      ctx.translate(canvasX, canvasY);
-      ctx.rotate(-5 * Math.PI / 180); // -5度回転
-      
-      // テープ背景
-      ctx.fillStyle = '#f3bb0b'; // 黄色
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight/2 - 5);
-      
-      // テキスト
-      ctx.fillStyle = 'black';
-      ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
-      ctx.textAlign = 'left';  // 中央揃えから左揃えに変更
-      ctx.textBaseline = 'middle';
-      
-      // テープの種類によってテキスト内容を変更
-      const yellowText = (selector.includes('top')) ? 'マゼルナキケン' : 'マゼルナキケン';
-      const yellowTextWidth = ctx.measureText(yellowText).width;
-      
-      // 複数のテキストを描画（スクロール位置を反映）
-      for (let i = -2; i < 8; i++) {
-        const x = (i * (yellowTextWidth + 20)) + yellowOffsetX;
-        if (x < -yellowTextWidth * 2 || x > canvasWidth + yellowTextWidth) continue; // 画面外はスキップ
-        ctx.fillText(yellowText, x, canvasHeight/4);
-      }
-      ctx.restore();
-      
-      // 黒テープ描画
-      ctx.save();
-      ctx.translate(canvasX, canvasY + canvasHeight/2);
-      ctx.rotate(5 * Math.PI / 180); // 5度回転
-      
-      // テープ背景
-      ctx.fillStyle = '#000000'; // 黒
-      ctx.fillRect(0, 0, canvasWidth, canvasHeight/2 - 5);
-      
-      // テキスト
-      ctx.fillStyle = 'white';
-      ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      
-      // テープの種類によってテキスト内容を変更
-      const blackText = (selector.includes('top')) ? 'TONKOTSU MAZESOBA' : 'TONKOTSU MAZESOBA';
-      const blackTextWidth = ctx.measureText(blackText).width;
-      
-      // 複数のテキストを描画（スクロール位置を反映）
-      for (let i = -2; i < 8; i++) {
-        const x = (i * (blackTextWidth + 20)) + blackOffsetX;
-        if (x < -blackTextWidth * 2 || x > canvasWidth + blackTextWidth) continue; // 画面外はスキップ
-        ctx.fillText(blackText, x, canvasHeight/4);
-      }
-      ctx.restore();
-    } else {
-      // フォールバック: 基本テープ描画
-      drawBasicTape(ctx, selector, canvasX, canvasY, canvasWidth, canvasHeight, canvas);
-    }
-  } catch (e) {
-    console.warn("Tape animation drawing error:", e);
-    // エラー時はシンプルなテープ描画にフォールバック
-    drawBasicTape(ctx, selector, canvasX, canvasY, canvasWidth, canvasHeight, canvas);
-  }
-}
-
-// 基本テープ描画（フォールバック用）
-function drawBasicTape(ctx, selector, canvasX, canvasY, canvasWidth, canvasHeight, canvas) {
-  // 黄色テープ（上）
+  // テープのテキスト
+  const text = isTop ? 'マゼルナキケン' : 'TONKOTSU MAZESOBA';
+  
+  // テープを描画
   ctx.save();
-  ctx.translate(canvasX + canvasWidth/2, canvasY + canvasHeight/4);
-  ctx.rotate(-5 * Math.PI / 180); // -5度回転
-  ctx.fillStyle = '#f3bb0b'; // 黄色
-  ctx.fillRect(-canvasWidth/2, -canvasHeight/8, canvasWidth, canvasHeight/4);
+  ctx.translate(canvas.width / 2, yPosition);
+  ctx.rotate(rotation * Math.PI / 180);
   
-  // テキスト
-  ctx.fillStyle = 'black';
-  ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
+  // 背景
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(-tapeWidth/2, -tapeHeight/2, tapeWidth, tapeHeight);
+  
+  // テキスト（複数表示、スクロールはなし）
+  ctx.fillStyle = textColor;
+  ctx.font = `bold ${canvas.height * 0.04}px "BIZ UDPGothic", sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
-  // テープの種類によってテキスト内容を変更
-  const text = (selector.includes('top')) ? 'マゼルナキケン' : 'マゼルナキケン';
-  ctx.fillText(text, 0, 0);
-  ctx.restore();
+  // 左右に3つずつテキストを配置
+  for (let i = -3; i <= 3; i++) {
+    ctx.fillText(text, i * canvas.width * 0.2, 0);
+  }
   
-  // 黒テープ（下）
-  ctx.save();
-  ctx.translate(canvasX + canvasWidth/2, canvasY + canvasHeight*3/4);
-  ctx.rotate(5 * Math.PI / 180); // 5度回転
-  ctx.fillStyle = '#000000'; // 黒
-  ctx.fillRect(-canvasWidth/2, -canvasHeight/8, canvasWidth, canvasHeight/4);
-  
-  // テキスト
-  ctx.fillStyle = 'white';
-  ctx.font = `bold ${canvas.width * 0.05}px "BIZ UDPGothic", sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  
-  // テープの種類によってテキスト内容を変更
-  const bottomText = (selector.includes('top')) ? 'TONKOTSU MAZESOBA' : 'TONKOTSU MAZESOBA';
-  ctx.fillText(bottomText, 0, 0);
   ctx.restore();
 }
+// 湯気GIFを読み込む
+const steamGif = new Image();
+steamGif.src = './assets/steam.gif'; // 適切なパスに変更してください
 
-// 湯気パーティクルを描画する関数
-function drawSteamParticles(ctx, videoRect, canvas) {
-  // 湯気パーティクルを描画
-  const steamParticles = document.querySelectorAll('.steam-particle');
-  if (steamParticles && steamParticles.length > 0) {
-    console.log(`Found ${steamParticles.length} steam particles to capture`);
-    
-    // 湯気コンテナの位置情報を取得
-    const steamContainer = document.getElementById('enhanced-steam-container');
-    let containerRect = { top: 0, left: 0, width: canvas.width, height: canvas.height };
-    if (steamContainer) {
-      containerRect = steamContainer.getBoundingClientRect();
-    }
-    
-    // 各湯気パーティクルを描画
-    steamParticles.forEach(particle => {
-      // パーティクルの情報を取得
-      const particleRect = particle.getBoundingClientRect();
-      const computed = window.getComputedStyle(particle);
-      
-      // ビデオ座標系における相対位置に変換
-      const relX = (particleRect.left - videoRect.left) / videoRect.width;
-      const relY = (particleRect.top - videoRect.top) / videoRect.height;
-      const relWidth = particleRect.width / videoRect.width;
-      const relHeight = particleRect.height / videoRect.height;
-      
-      // キャンバス上の位置に変換
-      const canvasX = relX * canvas.width;
-      const canvasY = relY * canvas.height;
-      const canvasWidth = relWidth * canvas.width;
-      const canvasHeight = relHeight * canvas.height;
-      
-      // 湯気パーティクルの現在の不透明度を取得
-      let opacity = parseFloat(computed.opacity) || 0.5;
-      
-      // パーティクルの現在のフィルター効果とトランスフォームを取得
-      const filterBlur = computed.filter.match(/blur\(([^)]+)\)/);
-      let blurRadius = 5;
-      if (filterBlur && filterBlur[1]) {
-        blurRadius = parseFloat(filterBlur[1]);
-        if (filterBlur[1].includes('px')) {
-          blurRadius = parseFloat(filterBlur[1]) * canvas.width / videoRect.width;
-        }
-      }
-      
-      // グラデーションを作成
-      const gradient = ctx.createRadialGradient(
-        canvasX + canvasWidth/2, canvasY + canvasHeight/2, 0,
-        canvasX + canvasWidth/2, canvasY + canvasHeight/2, canvasWidth/2
-      );
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${opacity})`);
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      
-      // ぼかし効果をシミュレート（Canvasでは完全再現が難しいため近似）
-      ctx.save();
-      ctx.globalAlpha = opacity;
-      
-      // パーティクルを描画
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(
-        canvasX + canvasWidth/2, 
-        canvasY + canvasHeight/2, 
-        canvasWidth/2, 
-        0, Math.PI * 2
-      );
-      ctx.fill();
-      ctx.restore();
-    });
-    
-    // 中心発光部分（元の湯気の発生源）も描画
-    const steamCore = document.querySelector('.steam-core');
-    const steamGlow = document.querySelector('.steam-glow');
-    
-    if (steamCore || steamGlow) {
-      const coreX = canvas.width / 2;
-      const coreY = canvas.height * 0.65; // 画面下寄り
-      
-      // 発光部分を描画
-      const glowGradient = ctx.createRadialGradient(
-        coreX, coreY, 0,
-        coreX, coreY, canvas.width * 0.1
-      );
-      glowGradient.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
-      glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      
-      ctx.fillStyle = glowGradient;
-      ctx.beginPath();
-      ctx.arc(coreX, coreY, canvas.width * 0.1, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else {
-    console.log("No steam particles found to capture");
-  }
+// 湯気を描画する関数
+function drawSteam(ctx, canvas) {
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height * 0.4; // 上部に配置
+  
+  const gifWidth = canvas.width * 0.7;
+  const gifHeight = gifWidth * 0.6; // 適切なアスペクト比に調整
+  
+  // GIFを描画
+  ctx.drawImage(
+    steamGif,
+    centerX - gifWidth/2,
+    centerY - gifHeight/2,
+    gifWidth,
+    gifHeight
+  );
 }
-
-// アニメーションを元に戻す関数
-function restoreAnimations() {
-  // テープアニメーションを再開
-  const marqueeElements = document.querySelectorAll('.marquee--inner');
-  marqueeElements.forEach(elem => {
-    elem.style.animation = '';
-    elem.style.transform = '';
-  });
-  
-  // 湯気エフェクトを再開
-  const steamParticles = document.querySelectorAll('.steam-particle');
-  steamParticles.forEach(particle => {
-    particle.style.animation = '';
-    particle.style.transform = '';
-    particle.style.opacity = '';
-    particle.style.filter = '';
-  });
-  
-  // 中心発光部分も再開
-  const steamCore = document.querySelector('.steam-core');
-  if (steamCore) {
-    steamCore.style.animation = '';
-    steamCore.style.opacity = '';
-  }
-  
-  const steamGlow = document.querySelector('.steam-glow');
-  if (steamGlow) {
-    steamGlow.style.animation = '';
-    steamGlow.style.opacity = '';
-  }
-}
-
 // メモリ解放のためのクリーンアップ関数
 function cleanupResources() {
   // 湯気エフェクトのクリーンアップ
@@ -1929,7 +1692,7 @@ function createSteamParticle(container, centerX = 0, timeOffset = 0) {
   container.appendChild(particle);
 }
 
-// 写真撮影処理 - 改良版
+// 写真撮影処理（単純化版）
 function takePhoto() {
   try {
     console.log("Taking photo");
@@ -1946,34 +1709,24 @@ function takePhoto() {
         shutterEffect.style.opacity = '0';
       }
       
-      // アニメーションを一時停止 - 200ms待機して確実に反映
-      freezeAnimations();
-      
-      setTimeout(() => {
-        // captureWithCurrentSteam を正式な撮影方法として使用
-        captureWithCurrentSteam();
-      }, 200);
+      captureSimplified();
     }, 200);
   } catch (e) {
     console.warn("Take photo error:", e);
-    restoreAnimations(); // エラー時もアニメーションを戻す
     alert("写真を撮影しました！");
   }
 }
 
-// すべてのUI要素を含むキャプチャ - 湯気とテープを手動描画
-function captureWithCurrentSteam() {
+// 単純化された撮影処理
+function captureSimplified() {
   const video = document.getElementById('frame-camera-view');
-  const photoFrameContainer = document.getElementById('photo-frame-container');
-  
-  if (!video || !video.videoWidth || !photoFrameContainer) {
+  if (!video || !video.videoWidth) {
     alert("ビデオキャプチャできません");
-    restoreAnimations();
     return;
   }
   
   try {
-    // 基本のキャンバスを作成
+    // キャンバスを作成
     const canvas = document.createElement('canvas');
     const scale = isLowMemoryDevice() ? 0.5 : 1.0;
     canvas.width = video.videoWidth * scale;
@@ -1983,85 +1736,26 @@ function captureWithCurrentSteam() {
     // ビデオフレームを描画
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     
-    // フォトフレームコンテナの寸法を取得
-    const containerRect = photoFrameContainer.getBoundingClientRect();
-    const videoRect = video.getBoundingClientRect();
+    // UIを固定位置に描画
+    drawLogo(ctx, null, canvas);
+    drawTape(ctx, true, canvas); // 上部テープ
+    drawTape(ctx, false, canvas); // 下部テープ
+    drawSteam(ctx, canvas); // 湯気GIF
     
-    // ロゴを描画
-    drawLogo(ctx, videoRect, canvas);
+    // 画像データを取得
+    const quality = isLowMemoryDevice() ? 0.7 : 0.9;
+    const imageDataURL = canvas.toDataURL('image/jpeg', quality);
     
-    // マゼルナキケンテープを描画（上部）
-    drawTape(ctx, '.marquee-container.top', videoRect, canvas, 0.2);
+    // 画像を表示
+    displayCapturedImage(imageDataURL);
     
-    // マゼルナキケンテープを描画（下部）
-    drawTape(ctx, '.marquee-container.bottom', videoRect, canvas, 0.8);
-    
-    // 湯気パーティクルを描画
-    drawSteamParticles(ctx, videoRect, canvas);
-    
-    // キャンバスから画像データを取得
-    try {
-      const quality = isLowMemoryDevice() ? 0.7 : 0.9;
-      const imageDataURL = canvas.toDataURL('image/jpeg', quality);
-      
-      // アニメーションを元に戻す
-      restoreAnimations();
-      
-      // 画像を表示
-      displayCapturedImage(imageDataURL);
-      
-      // iOS以外でダウンロード
-      if (!isIOS()) {
-        downloadImage(imageDataURL);
-      }
-    } catch (e) {
-      console.warn("Canvas to image conversion error:", e);
-      restoreAnimations();
-      alert("写真撮影完了！（表示のみ）");
+    // iOS以外でダウンロード
+    if (!isIOS()) {
+      downloadImage(imageDataURL);
     }
   } catch (e) {
-    console.warn("Full UI capture error:", e);
-    restoreAnimations();
-    // エラー時は元のシンプルな方法にフォールバック
-    simpleVideoCapture();
-  }
-}
-
-// シンプルなビデオキャプチャ（フォールバック用）
-function simpleVideoCapture() {
-  const video = document.getElementById('frame-camera-view');
-  if (!video || !video.videoWidth) {
-    alert("ビデオキャプチャできません");
-    return;
-  }
-  
-  try {
-    const canvas = document.createElement('canvas');
-    // 低メモリデバイスでは解像度を下げる
-    const scale = isLowMemoryDevice() ? 0.5 : 1.0;
-    canvas.width = video.videoWidth * scale;
-    canvas.height = video.videoHeight * scale;
-    
-    const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    try {
-      // 低品質設定でサイズを小さく
-      const quality = isLowMemoryDevice() ? 0.7 : 0.9;
-      const imageDataURL = canvas.toDataURL('image/jpeg', quality);
-      displayCapturedImage(imageDataURL);
-      
-      // iOS以外でダウンロード
-      if (!isIOS()) {
-        downloadImage(imageDataURL);
-      }
-    } catch (e) {
-      console.warn("Simple capture error:", e);
-      alert("写真撮影完了！（表示のみ）");
-    }
-  } catch (e) {
-    console.warn("Video capture error:", e);
-    alert("写真撮影エラー");
+    console.warn("Capture error:", e);
+    simpleVideoCapture(); // フォールバック
   }
 }
 
